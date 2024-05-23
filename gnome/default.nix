@@ -118,7 +118,9 @@
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/"
-          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/"
+          "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6"
+          "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7"
+   
         
         ];
       };
@@ -146,17 +148,24 @@
         name = "Turn off screen";
         command = "busctl --user call org.gnome.Shell /org/gnome/ScreenSaver org.gnome.ScreenSaver SetActive b true";
         binding = "<Control><Alt>z";
-      };
+      }; 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5" = {
-        name = "Open clipboard manager";
-        command = "copyq menu";
-        binding = "<Super>v";
+        name = "toggle audio";
+        command = "./audio_Output_changer.sh";
+        binding = "<Control><Alt>9";
       };
-      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6" = {
-        name = "Connect headphones";
-        command = "bluetoothctl connect 14:3F:A6:22:76:4A";
-        binding = "<Super>b";
+        "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6" = {
+        name = "suspend ";
+        command = "systemctl suspend";
+        binding = "<Control><super>s";
       };
+        "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7" = {
+        name = "Turn off pc";
+        command = "systemctl poweroff";
+        binding = "<Control><super>d";
+      };
+    
+     
     };
   };
 }
