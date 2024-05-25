@@ -71,6 +71,11 @@
       delta
       brave
       copyq     
+      stremio
+      nodejs_21
+      discord
+      
+  
     ];
   };
   home-manager.users.tig = {...}: {

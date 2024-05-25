@@ -13,6 +13,7 @@
       gnome.gnome-tweaks
       gnome.gnome-shell
       gnome.gnome-shell-extensions
+      
       gnomeExtensions.appindicator
       gnomeExtensions.vitals
       gnomeExtensions.hide-minimized
@@ -21,7 +22,8 @@
       gnomeExtensions.blur-my-shell
       gnomeExtensions.dash-to-dock
       gnome.dconf-editor
-      gnomeExtensions.hide-keyboard-layout
+      gnomeExtensions.gsconnect
+     
     ];
   };
 
@@ -42,6 +44,7 @@
       };
       "org/gnome/desktop/input-sources" = {
         xkb-options = ["terminate:ctrl_alt_bksp" "lv3:ralt_switch" "caps:escape_shifted_capslock"];
+        show-all-sources = false;
       };
       "org/gnome/desktop/wm/keybindings" = {
         switch-input-source = ["XF86Keyboard"];
@@ -97,7 +100,8 @@
           "notification-timeout@chlumskyvaclav.gmail.com"
           "blur-my-shell@aunetx"
           "clipboard-indicator@tudmotu.com"
-         
+          "dash-to-dock@micxgx.gmail.com"
+          "gsconnect@andyholmes.github.io"
         ];
       };
       "org/gnome/shell/keybindings" = {
@@ -106,7 +110,7 @@
       };
       "org/gnome/settings-daemon/plugins/media-keys" = {
         control-center = ["<Super>s"];
-        play = ["<Ctrl>space"];
+        play = ["<Super>space"];
         next = ["<Super>j"];
         previous = ["<Super>k"];
         # playback-rewind = ["<Ctrl><Alt>h"];
@@ -118,10 +122,8 @@
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/"
-          "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6"
-          "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7"
-   
-        
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7/"
         ];
       };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
@@ -132,7 +134,7 @@
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
         name = "Toggle";
         command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause";
-        binding = "<Control><Alt>space";
+        binding = "<Control>space";
       };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
         name = "Next";
@@ -151,20 +153,19 @@
       }; 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5" = {
         name = "toggle audio";
-        command = "./audio_Output_changer.sh";
+        command = "chmod +x /home/tig/dotfiles/scripts/audio_Output_changer.sh && /home/tig/dotfiles/scripts/audio_Output_changer.sh";
         binding = "<Control><Alt>9";
       };
-        "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6" = {
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6" = {
         name = "suspend ";
         command = "systemctl suspend";
         binding = "<Control><super>s";
       };
-        "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7" = {
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7" = {
         name = "Turn off pc";
         command = "systemctl poweroff";
         binding = "<Control><super>d";
       };
-    
      
     };
   };
