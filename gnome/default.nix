@@ -13,7 +13,6 @@
       gnome.gnome-tweaks
       gnome.gnome-shell
       gnome.gnome-shell-extensions
-      
       gnomeExtensions.appindicator
       gnomeExtensions.vitals
       gnomeExtensions.hide-minimized
@@ -124,6 +123,7 @@
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8/"
         ];
       };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
@@ -152,9 +152,9 @@
         binding = "<Control><Alt>z";
       }; 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5" = {
-        name = "toggle audio";
-        command = "chmod +x /home/tig/dotfiles/scripts/audio_Output_changer.sh && /home/tig/dotfiles/scripts/audio_Output_changer.sh";
-        binding = "<Control><Alt>9";
+        name = "toggle audio output ";
+        command = "/home/tig/dotfiles/scripts/audio_Output_changer.sh";
+        binding = "<Control><Alt>p";
       };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6" = {
         name = "suspend ";
@@ -166,7 +166,11 @@
         command = "systemctl poweroff";
         binding = "<Control><super>d";
       };
-     
+       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8" = {
+        name = "spotify";
+        command = "LD_PRELOAD=/home/tig/Downloads/spotify-adblock.so spotify";
+        binding = "<Control><super>w";
+      };
     };
   };
 }

@@ -114,6 +114,21 @@
     (nerdfonts.override {fonts = ["JetBrainsMono"];})
   ];
 
+
+  # enable gsconnect pairing with android by enabling udp ports and tcp ports
+  networking.firewall.interfaces.enp42s0.allowedUDPPortRanges = [
+    {
+      from = 1714;
+      to = 1764;
+    }
+  ];
+  networking.firewall.interfaces.enp42s0.allowedTCPPortRanges = [
+    {
+      from = 1714;
+      to = 1764;
+    }
+  ];
+
   # systemd.user.timers."numlockx_boot" = {
   #   wantedBy = ["timers.target"];
   #   timerConfig = {
