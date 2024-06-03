@@ -17,7 +17,7 @@ in {
       prev.installPhase
       + ''
         wrapProgram $out/share/spotify/spotify \
-        --prefix LD_PRELOAD "${spotify-adblock}/lib/spotify-adblock.so"
+          --set LD_PRELOAD "${spotify-adblock}/lib/spotify-adblock.so"
       '';
   });
 }

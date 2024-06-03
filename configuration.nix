@@ -72,9 +72,8 @@
       brave
       copyq     
       stremio
-      nodejs_21
       discord
-      
+      nodejs_22
   
     ];
   };
@@ -83,13 +82,13 @@
       ./wezterm
       ./neovim
       ./tmux
-      ./hyprland
+     /*  ./hyprland */
       ./starship
     ];
 
     # The state version is required and should stay at the version you
     # originally installed.
-    home.stateVersion = "23.11";
+    home.stateVersion = "24.05";
   };
 
   programs.git = {
@@ -116,7 +115,7 @@
 
 
   # enable gsconnect pairing with android by enabling udp ports and tcp ports
-  networking.firewall.interfaces.enp42s0.allowedUDPPortRanges = [
+/*   networking.firewall.interfaces.enp42s0.allowedUDPPortRanges = [
     {
       from = 1714;
       to = 1764;
@@ -127,8 +126,23 @@
       from = 1714;
       to = 1764;
     }
-  ];
+  ]; */
+  networking.firewall.enable = true;
 
+  # Custom firewall rules
+  networking.firewall.extraCommands = ''
+    iptables -I nixos-fw 1 -p tcp --dport 1716 -j ACCEPT
+    iptables -I nixos-fw 1 -p udp --dport 1716 -j ACCEPT
+    iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
+  '';
+nixpkgs.config.packageOverrides = pkgs: {
+    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
+      inherit pkgs;
+    };
+  };
+  environment.systemPackages = with pkgs; [
+   nur.repos.nltch.spotify-adblock    #for installing spotify-adblock
+];
   # systemd.user.timers."numlockx_boot" = {
   #   wantedBy = ["timers.target"];
   #   timerConfig = {
@@ -168,16 +182,8 @@
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-  environment.systemPackages = [];
 
-  # Configure keymap in X11
-  # services.xserver = {
-  # layout = "us";
-  # xkbVariant = "";
-  # };
 
-  # networking.wireless.enable = true; # Enables wireless support via wpa_supplicant.
-  # networking.networkmanager.enable = true; # Enable networking
 
   # services.xserver.displayManager.sddm.enable = true;
   # services.xserver.displayManager.sddm.wayland.enable = true;
@@ -203,20 +209,7 @@
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
 
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
   # system.autoUpgrade.enable = true;
   # system.autoUpgrade.allowReboot = true;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "23.11"; # Did you read the comment?
+  system.stateVersion = "24.05"; # Did you read the comment?
 }

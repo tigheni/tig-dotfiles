@@ -5,7 +5,6 @@
 }: {
   wayland.windowManager.hyprland = {
     enable = true;
-    enableNvidiaPatches = true;
     extraConfig = ''
       # This is an example configuration file for hyprland
     '';

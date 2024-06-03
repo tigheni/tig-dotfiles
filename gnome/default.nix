@@ -3,11 +3,9 @@
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
   services.xserver.displayManager.gdm.wayland = true;
-  services.xserver.xkbOptions = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
-
+  services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
   services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
   programs.dconf.enable = true;
-
   users.users.tig = {
     packages = with pkgs; [
       gnome.gnome-tweaks
@@ -20,8 +18,10 @@
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.blur-my-shell
       gnomeExtensions.dash-to-dock
+      gnomeExtensions.hide-keyboard-layout
       gnome.dconf-editor
       gnomeExtensions.gsconnect
+      gnomeExtensions.mute-spotify-ads
      
     ];
   };
@@ -101,6 +101,8 @@
           "clipboard-indicator@tudmotu.com"
           "dash-to-dock@micxgx.gmail.com"
           "gsconnect@andyholmes.github.io"
+          "hide-keyboard-layout@sitnik.ru"      
+          "spotify-ad-block@danigm.net"
         ];
       };
       "org/gnome/shell/keybindings" = {
@@ -109,7 +111,7 @@
       };
       "org/gnome/settings-daemon/plugins/media-keys" = {
         control-center = ["<Super>s"];
-        play = ["<Super>space"];
+        play = ["<Control><Super>space"];
         next = ["<Super>j"];
         previous = ["<Super>k"];
         # playback-rewind = ["<Ctrl><Alt>h"];
