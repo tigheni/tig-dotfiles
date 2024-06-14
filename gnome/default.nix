@@ -3,12 +3,12 @@
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
   services.xserver.displayManager.gdm.wayland = true;
-  services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
   services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
+  services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
   programs.dconf.enable = true;
   users.users.tig = {
     packages = with pkgs; [
-      gnome.gnome-tweaks
+      gnome.gnome-tweaks  
       gnome.gnome-shell
       gnome.gnome-shell-extensions
       gnomeExtensions.appindicator
@@ -36,18 +36,18 @@
   home-manager.users.tig = {
     dconf.settings = {
       "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark";
+        color-scheme = "prefer-dark"; 
         enable-hot-corners = false;
         show-battery-percentage = false;
         text-scaling-factor = 1.0;
       };
       "org/gnome/desktop/input-sources" = {
         xkb-options = ["terminate:ctrl_alt_bksp" "lv3:ralt_switch" "caps:escape_shifted_capslock"];
-        show-all-sources = false;
+        show-all-sources = true;
       };
       "org/gnome/desktop/wm/keybindings" = {
-        switch-input-source = ["XF86Keyboard"];
-        switch-input-source-backward = ["<Shift>XF86Keyboard"];
+        switch-input-source = ["<Super>space"];
+        switch-input-source-backward = ["<Shift><Super>space"];
         move-to-monitor-left = ["<Control><Super>h"];
         move-to-monitor-right = ["<Control><Super>l"];
         move-to-workspace-left = ["<Shift><Super>h"];

@@ -3,7 +3,8 @@
   config,
   ...
 }: {
-  nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
+  nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays)); 
+
   nix.nixPath = [
     "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos"
     "nixos-config=${config.users.users.tig.home}/dotfiles/configuration.nix"
@@ -53,7 +54,7 @@
       vscode
       google-chrome
       firefox-devedition
-      spotify
+      
       kitty
       xsel
       neofetch
@@ -74,7 +75,7 @@
       stremio
       discord
       nodejs_22
-  
+   
     ];
   };
   home-manager.users.tig = {...}: {
@@ -135,13 +136,9 @@
     iptables -I nixos-fw 1 -p udp --dport 1716 -j ACCEPT
     iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
   '';
-nixpkgs.config.packageOverrides = pkgs: {
-    nur = import (builtins.fetchTarball "https://github.com/nix-community/NUR/archive/master.tar.gz") {
-      inherit pkgs;
-    };
-  };
+
   environment.systemPackages = with pkgs; [
-   nur.repos.nltch.spotify-adblock    #for installing spotify-adblock
+spotify
 ];
   # systemd.user.timers."numlockx_boot" = {
   #   wantedBy = ["timers.target"];
