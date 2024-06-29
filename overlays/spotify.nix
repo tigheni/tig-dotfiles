@@ -3,15 +3,20 @@ final: prev: let
   spotify-adblock = prev.fetchurl {
     name = "spotify-adblock-${version}";
     url = "https://github.com/abba23/spotify-adblock/releases/download/v${version}/spotify-adblock.so";
-    sha256 = "0jzd7ljaibab1hjrjfmrmszfc21mnbygx39mpsn33lqryzza9gh2";
+    sha256 = "sha256-pOQVhDOPzqE/R15PYrMb8tKs68/W/vpbt1Jz+N15LJs=";
+    downloadToTemp = true;
+    recursiveHash = true;
+    postFetch = ''
+      mkdir -p $out/lib
+      mv $downloadedFile $out/lib/spotify-adblock.so
+    '';
   };
 in {
-  spotify = prev.spotify.overrideAttrs (oldAttrs: {
-    installPhase = ''
-      ${oldAttrs.installPhase}
-      mkdir -p $out/lib
-      cp ${spotify-adblock} $out/lib/spotify-adblock.so
-      sed -i "s:^Exec=.*:Exec=env LD_PRELOAD=$out/lib/spotify-adblock.so spotify %U:" $out/share/applications/spotify.desktop
-    '';
+  spotify = prev.spotify.overrideAttrs (prev: {
+    installPhase =
+      prev.installPhase
+      + ''
+        sed -i "s:^Exec=.*:Exec=env LD_PRELOAD="${spotify-adblock}/lib/spotify-adblock.so" spotify %U:" "$out/share/applications/spotify.desktop"
+      '';
   });
 }
