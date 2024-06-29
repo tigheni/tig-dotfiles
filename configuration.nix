@@ -3,8 +3,7 @@
   config,
   ...
 }: {
-  nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays)); 
-
+  nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
   nix.nixPath = [
     "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos"
     "nixos-config=${config.users.users.tig.home}/dotfiles/configuration.nix"
@@ -28,7 +27,7 @@
   boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = "nixos"; # Define your hostname.
-
+  nix.optimise.automatic = true;
   time.timeZone = "Africa/Algiers";
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
@@ -54,7 +53,7 @@
       vscode
       google-chrome
       firefox-devedition
-      
+      protonvpn-gui
       kitty
       xsel
       neofetch
@@ -71,11 +70,11 @@
       bat
       delta
       brave
-      copyq     
+      copyq
       stremio
       discord
       nodejs_22
-   
+      spotify
     ];
   };
   home-manager.users.tig = {...}: {
@@ -83,7 +82,7 @@
       ./wezterm
       ./neovim
       ./tmux
-     /*  ./hyprland */
+    /*   ./hyprland */
       ./starship
     ];
 
@@ -137,9 +136,7 @@
     iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
   '';
 
-  environment.systemPackages = with pkgs; [
-spotify
-];
+
   # systemd.user.timers."numlockx_boot" = {
   #   wantedBy = ["timers.target"];
   #   timerConfig = {

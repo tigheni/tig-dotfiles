@@ -11,5 +11,5 @@ config.hide_tab_bar_if_only_one_tab = true
 config.warn_about_missing_glyphs = false
 config.term = "xterm-256color"
 config.color_scheme = "Whimsy"
-config.window_background_opacity = 0.9
+config.window_background_opacity = 0.85
 return config

@@ -22,7 +22,7 @@
       gnome.dconf-editor
       gnomeExtensions.gsconnect
       gnomeExtensions.mute-spotify-ads
-     
+    /*   gnomeExtensions.open-bar */
     ];
   };
 
@@ -103,6 +103,7 @@
           "gsconnect@andyholmes.github.io"
           "hide-keyboard-layout@sitnik.ru"      
           "spotify-ad-block@danigm.net"
+   /*        "openbar@neuromorph" */
         ];
       };
       "org/gnome/shell/keybindings" = {
