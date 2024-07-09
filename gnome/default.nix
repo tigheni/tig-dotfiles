@@ -8,7 +8,7 @@
   programs.dconf.enable = true;
   users.users.tig = {
     packages = with pkgs; [
-      gnome.gnome-tweaks  
+      gnome.gnome-tweaks
       gnome.gnome-shell
       gnome.gnome-shell-extensions
       gnomeExtensions.appindicator
@@ -22,7 +22,6 @@
       gnome.dconf-editor
       gnomeExtensions.gsconnect
       gnomeExtensions.mute-spotify-ads
-    /*   gnomeExtensions.open-bar */
     ];
   };
 
@@ -36,7 +35,7 @@
   home-manager.users.tig = {
     dconf.settings = {
       "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark"; 
+        color-scheme = "prefer-dark";
         enable-hot-corners = false;
         show-battery-percentage = false;
         text-scaling-factor = 1.0;
@@ -101,9 +100,9 @@
           "clipboard-indicator@tudmotu.com"
           "dash-to-dock@micxgx.gmail.com"
           "gsconnect@andyholmes.github.io"
-          "hide-keyboard-layout@sitnik.ru"      
+          "hide-keyboard-layout@sitnik.ru"
           "spotify-ad-block@danigm.net"
-   /*        "openbar@neuromorph" */
+
         ];
       };
       "org/gnome/shell/keybindings" = {
@@ -153,7 +152,7 @@
         name = "Turn off screen";
         command = "busctl --user call org.gnome.Shell /org/gnome/ScreenSaver org.gnome.ScreenSaver SetActive b true";
         binding = "<Control><Alt>z";
-      }; 
+      };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5" = {
         name = "toggle audio output ";
         command = "/home/tig/dotfiles/scripts/audio_Output_changer.sh";

@@ -75,6 +75,7 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
       discord
       nodejs_22
       spotify
+      morgen
     ];
   };
   home-manager.users.tig = {...}: {
@@ -130,12 +131,23 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
   networking.firewall.enable = true;
 
   # Custom firewall rules
-  networking.firewall.extraCommands = ''
-    iptables -I nixos-fw 1 -p tcp --dport 1716 -j ACCEPT
-    iptables -I nixos-fw 1 -p udp --dport 1716 -j ACCEPT
-    iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
+  # networking.firewall.extraCommands = ''
+  # iptables -I nixos-fw 1 -p tcp --dport 1716 -j ACCEPT
+  # iptables -I nixos-fw 1 -p udp --dport 1716 -j ACCEPT
+  # iptables -I nixos-fw 1 -p tcp --dport 1739 -j ACCEPT
+  # iptables -I nixos-fw 1 -p udp --dport 1764 -j ACCEPT
+  # iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
   '';
 
+
+ networking.firewall.allowedTCPPortRanges = [
+  # KDE Connect
+  { from = 1714; to = 1764; }
+];
+networking.firewall.allowedUDPPortRanges = [
+  # KDE Connect
+  { from = 1714; to = 1764; }
+];
 
   # systemd.user.timers."numlockx_boot" = {
   #   wantedBy = ["timers.target"];
