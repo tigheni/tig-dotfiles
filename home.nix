@@ -72,11 +72,8 @@
     };
     "org/gnome/settings-daemon/plugins/media-keys" = {
       control-center = ["<Super>s"];
-      play = ["<Super>space"];
       next = ["<Super>j"];
       previous = ["<Super>k"];
-      # playback-rewind = ["<Ctrl><Alt>h"];
-      # playback-forward = ["<Ctrl><Alt>l"];
       custom-keybindings = [
         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
@@ -87,6 +84,7 @@
         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/"
         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7/"
         "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8/"
+        "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/"
       ];
     };
     "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
@@ -95,18 +93,18 @@
       binding = "<Super>t";
     };
     "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
-      name = "Toggle";
-      command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause";
+      name = "Spotify Play/Pause";
+      command = "playerctl -p spotify play-pause";
       binding = "<Control><Alt>space";
     };
     "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
-      name = "Next";
-      command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next";
+      name = "Spotify Next";
+      command = "playerctl -p spotify next";
       binding = "<Control><Alt>j";
     };
     "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3" = {
-      name = "Previous";
-      command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous";
+      name = "Spotify Previous";
+      command = "playerctl -p spotify previous";
       binding = "<Control><Alt>k";
     };
     "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4" = {
@@ -133,6 +131,11 @@
       name = "Connect headphones";
       command = "bluetoothctl connect 14:3F:A6:22:76:4A";
       binding = "<Super>b";
+    };
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9" = {
+      name = "Brave Play/Pause";
+      command = "playerctl -p brave play-pause";
+      binding = "<Super>space";
     };
   };
 
