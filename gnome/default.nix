@@ -21,7 +21,7 @@
       gnomeExtensions.hide-keyboard-layout
       gnome.dconf-editor
       gnomeExtensions.gsconnect
-      gnomeExtensions.mute-spotify-ads
+    gnome46Extensions."openweather-extension@penguin-teal.github.io"
     ];
   };
 
@@ -41,7 +41,7 @@
         text-scaling-factor = 1.0;
       };
       "org/gnome/desktop/input-sources" = {
-        xkb-options = ["terminate:ctrl_alt_bksp" "lv3:ralt_switch" "caps:escape_shifted_capslock"];
+        xkb-options = ["terminate:ctrl_alt_bksp" "lv3:ralt_switch" ];
         show-all-sources = true;
       };
       "org/gnome/desktop/wm/keybindings" = {
@@ -101,7 +101,7 @@
           "dash-to-dock@micxgx.gmail.com"
           "gsconnect@andyholmes.github.io"
           "hide-keyboard-layout@sitnik.ru"
-          "spotify-ad-block@danigm.net"
+          "openweather-extension@penguin-teal.github.io"
 
         ];
       };
@@ -111,11 +111,8 @@
       };
       "org/gnome/settings-daemon/plugins/media-keys" = {
         control-center = ["<Super>s"];
-        play = ["<Control><Super>space"];
         next = ["<Super>j"];
         previous = ["<Super>k"];
-        # playback-rewind = ["<Ctrl><Alt>h"];
-        # playback-forward = ["<Ctrl><Alt>l"];
         custom-keybindings = [
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
@@ -135,18 +132,8 @@
       };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
         name = "Toggle";
-        command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause";
+        command = "playerctl -p spotify play-pause";
         binding = "<Control>space";
-      };
-      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
-        name = "Next";
-        command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next";
-        binding = "<Control><Alt>j";
-      };
-      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3" = {
-        name = "Previous";
-        command = "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous";
-        binding = "<Control><Alt>k";
       };
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4" = {
         name = "Turn off screen";
@@ -168,11 +155,24 @@
         command = "systemctl poweroff";
         binding = "<Control><super>d";
       };
-       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8" = {
-        name = "spotify";
-        command = "LD_PRELOAD=/home/tig/Downloads/spotify-adblock.so spotify";
-        binding = "<Control><super>w";
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8" = {
+        name="toggle chrome player";
+        command="playerctl -p chromium play-pause";
+        binding="<Control><super>space";
+
       };
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3" = {
+        name="position changer";
+        command="playerctl position 20+";
+        binding="<Control><Alt>h";
+
+      };
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
+        name="position changer";
+        command="playerctl position 20-";
+        binding="<Control><alt>l";
+      };
+
     };
   };
 }

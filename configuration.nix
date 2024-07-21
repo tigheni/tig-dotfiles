@@ -76,6 +76,9 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
       nodejs_22
       spotify
       morgen
+      pavucontrol
+      kdenlive
+      playerctl
     ];
   };
   home-manager.users.tig = {...}: {
@@ -110,6 +113,8 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
     silent = true;
   };
 
+
+
   fonts.packages = with pkgs; [
     (nerdfonts.override {fonts = ["JetBrainsMono"];})
   ];
@@ -137,7 +142,7 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
   # iptables -I nixos-fw 1 -p tcp --dport 1739 -j ACCEPT
   # iptables -I nixos-fw 1 -p udp --dport 1764 -j ACCEPT
   # iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
-  '';
+  #'';
 
 
  networking.firewall.allowedTCPPortRanges = [
