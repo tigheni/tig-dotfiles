@@ -1,31 +1,40 @@
 {pkgs, ...}: {
-  services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-  services.xserver.displayManager.gdm.wayland = true;
+  services.xserver = {
+  enable = true;
+  displayManager.gdm.enable = true;
+  desktopManager.gnome.enable = true;
+ xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
+};
   services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
-  services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
   programs.dconf.enable = true;
   users.users.tig = {
     packages = with pkgs; [
       gnome.gnome-tweaks
-      gnome.gnome-shell
-      gnome.gnome-shell-extensions
-      gnomeExtensions.appindicator
+      gnomeExtensions.gsconnect
+      gnome.dconf-editor
       gnomeExtensions.vitals
-      gnomeExtensions.hide-minimized
       gnomeExtensions.notification-timeout
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.blur-my-shell
       gnomeExtensions.dash-to-dock
       gnomeExtensions.hide-keyboard-layout
-      gnome.dconf-editor
-      gnomeExtensions.gsconnect
-    gnome46Extensions."openweather-extension@penguin-teal.github.io"
+      gnome46Extensions."openweather-extension@penguin-teal.github.io"
     ];
   };
 
-  # ln -s /dev/null ~/Pictures/Screenshots
+  environment.gnome.excludePackages = (with pkgs; [
+  gnome-tour
+]) ++ (with pkgs.gnome; [
+  epiphany # web browser
+  geary # email reader
+  tali # poker game
+  iagno # go game
+  hitori # sudoku game
+  atomix # puzzle game
+  totem # video player
+]);
+
+
   system.userActivationScripts.linktosharedfolder.text = ''
     if [[ ! -h "$HOME/Pictures/Screenshots" ]]; then
       ln -s /dev/null  "$HOME/Pictures/Screenshots"
@@ -33,7 +42,8 @@
   '';
 
   home-manager.users.tig = {
-    dconf.settings = {
+    dconf = {
+      settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
         enable-hot-corners = false;
@@ -41,7 +51,6 @@
         text-scaling-factor = 1.0;
       };
       "org/gnome/desktop/input-sources" = {
-        xkb-options = ["terminate:ctrl_alt_bksp" "lv3:ralt_switch" ];
         show-all-sources = true;
       };
       "org/gnome/desktop/wm/keybindings" = {
@@ -57,28 +66,15 @@
         switch-windows-backward = ["<Shift><Alt>Tab"];
         switch-applications = ["<Super>Tab"];
         switch-applications-backward = ["<Shift><Super>Tab"];
-        #   activate-window-menu = "disabled";
-        #   close = ["<Super>q"];
         maximize = ["<Super>m"];
         minimize = ["<Super>comma"];
-        #   move-to-monitor-down = "disabled";
-        #   move-to-monitor-left = "disabled";
-        #   move-to-monitor-right = "disabled";
-        #   move-to-monitor-up = "disabled";
-        #   move-to-workspace-down = "disabled";
-        #   move-to-workspace-up = "disabled";
-        #   toggle-maximized = ["<Super>m"]';
-        #   unmaximize = "disabled";
+        toggle-maximized = ["<Super>m"]';
       };
       "org/gnome/desktop/peripherals/keyboard" = {
         numlock-state = true;
       };
       "org/gnome/mutter" = {
         dynamic-workspaces = true;
-      };
-      "org/gnome/desktop/peripherals/touchpad" = {
-        tap-to-click = true;
-        two-finger-scrolling-enabled = true;
       };
       "org/gnome/settings-daemon/plugins/color" = {
         night-light-enabled = true;
@@ -175,4 +171,5 @@
 
     };
   };
+};
 }

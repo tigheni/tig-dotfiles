@@ -75,7 +75,6 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
       discord
       nodejs_22
       spotify
-      morgen
       pavucontrol
       kdenlive
       playerctl
@@ -92,7 +91,7 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
 
     # The state version is required and should stay at the version you
     # originally installed.
-    home.stateVersion = "24.05";
+    home.stateVersion = "23.11";
   };
 
   programs.git = {
@@ -120,20 +119,8 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
   ];
 
 
-  # enable gsconnect pairing with android by enabling udp ports and tcp ports
-/*   networking.firewall.interfaces.enp42s0.allowedUDPPortRanges = [
-    {
-      from = 1714;
-      to = 1764;
-    }
-  ];
-  networking.firewall.interfaces.enp42s0.allowedTCPPortRanges = [
-    {
-      from = 1714;
-      to = 1764;
-    }
-  ]; */
-  networking.firewall.enable = true;
+
+ networking.firewall.enable = true;
 
   # Custom firewall rules
   # networking.firewall.extraCommands = ''
@@ -146,11 +133,9 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
 
 
  networking.firewall.allowedTCPPortRanges = [
-  # KDE Connect
   { from = 1714; to = 1764; }
 ];
 networking.firewall.allowedUDPPortRanges = [
-  # KDE Connect
   { from = 1714; to = 1764; }
 ];
 
@@ -222,5 +207,5 @@ networking.firewall.allowedUDPPortRanges = [
 
   # system.autoUpgrade.enable = true;
   # system.autoUpgrade.allowReboot = true;
-  system.stateVersion = "24.05"; # Did you read the comment?
+  system.stateVersion = "23.11"; # Did you read the comment?
 }
