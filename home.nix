@@ -65,6 +65,7 @@ in {
     ./tmux
     ./starship
     ./lazygit
+    ./git
   ];
 
   home.file.".zshrc".text = "";

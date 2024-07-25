@@ -70,20 +70,6 @@
     flake = "/home/abdennour/Projects/dotfiles";
   };
 
-  programs.git = {
-    enable = true;
-    config = {
-      user = {
-        name = "Abdennour Zahaf";
-        email = "zfnori@gmail.com";
-      };
-      pull.rebase = true;
-    };
-    prompt = {
-      enable = true;
-    };
-  };
-
   programs.direnv = {
     enable = true;
     silent = true;
