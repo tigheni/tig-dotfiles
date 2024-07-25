@@ -29,7 +29,7 @@ return {
       },
       defaults = {
         vimgrep_arguments = {
-          -- requried
+          -- required
           "rg",
           "--color=never",
           "--no-heading",
@@ -51,11 +51,10 @@ return {
               vim.cmd("norm! jj")
             end,
             ["<esc>"] = "close",
-            ["<C-u>"] = false,
             ["<M-p>"] = action_layout.toggle_preview,
             ["<C-y>"] = function()
               local entry = require("telescope.actions.state").get_selected_entry()
-              vim.fn.setreg("+", entry.text)
+              vim.fn.setreg("+", entry.text or entry.value)
             end,
           },
         },
@@ -80,6 +79,7 @@ return {
     -- vim.keymap.set("n", "<leader>o", builtin.buffers, { desc = "Telescope: Buffers" })
     vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "Telescope: Key Maps" })
     vim.keymap.set("n", "<leader>sc", builtin.commands, { desc = "Telescope: Commands" })
+    vim.keymap.set("n", "<leader>sj", builtin.git_commits, { desc = "Telescope: Commits" })
     vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "Telescope: Help Tags" })
     vim.keymap.set("n", "<leader>sd", function()
       builtin.diagnostics({ bufnr = 0 })
