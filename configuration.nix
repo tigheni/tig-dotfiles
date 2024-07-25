@@ -77,6 +77,7 @@
         name = "Abdennour Zahaf";
         email = "zfnori@gmail.com";
       };
+      pull.rebase = true;
     };
     prompt = {
       enable = true;
