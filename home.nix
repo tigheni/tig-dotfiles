@@ -6,11 +6,6 @@
       binding = "<Super>t";
     }
     {
-      name = "Spotify Play/Pause";
-      command = "playerctl -p spotify play-pause";
-      binding = "<Control><Alt>space";
-    }
-    {
       name = "Turn off screen";
       command = "busctl --user call org.gnome.Shell /org/gnome/ScreenSaver org.gnome.ScreenSaver SetActive b true";
       binding = "<Control><Alt>z";
@@ -26,9 +21,24 @@
       binding = "<Super>b";
     }
     {
-      name = "Brave Play/Pause";
-      command = "playerctl -p brave play-pause";
+      name = "Media Play/Pause";
+      command = "playerctl play-pause";
       binding = "<Super>space";
+    }
+    {
+      name = "Media Play/Pause all";
+      command = "playerctl --all-players play-pause";
+      binding = "<Control><Alt>space";
+    }
+    {
+      name = "Skip backward";
+      command = "playerctl position 5-";
+      binding = "<Shift><Super>k";
+    }
+    {
+      name = "Skip forward";
+      command = "playerctl position 5+";
+      binding = "<Shift><Super>j";
     }
   ];
 
