@@ -40,6 +40,7 @@ return {
           markdown = { "prettierd" },
           lua = { "stylua" },
           nix = { "alejandra" },
+          toml = { "taplo" },
         },
         format_on_save = function()
           if vim.g.disable_autoformat then

@@ -24,6 +24,7 @@
       ltex-ls
       emmet-language-server
       prettierd
+      taplo
     ];
   };
   xdg.configFile.nvim = {
