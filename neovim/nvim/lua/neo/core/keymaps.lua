@@ -69,8 +69,10 @@ vim.keymap.set("n", "<leader>v", function()
   vim.cmd(vim.fn.getqflist({ winid = 0 }).winid > 0 and "cclose" or "copen")
 end, { desc = "Toggle quickfix list" })
 
+-- Change word with . repeat
 vim.keymap.set("n", "g*", "*Ncgn", { desc = "Change word with . repeat" })
 
+-- Overload gx to make it smarter
 vim.keymap.set("n", "gx", function()
   local link = vim.fn.expand("<cfile>") --[[@as string]]
 
@@ -81,3 +83,7 @@ vim.keymap.set("n", "gx", function()
 
   vim.ui.open(link)
 end, { desc = "Open filepath or URI under cursor" })
+
+-- Simple mark and jump
+vim.keymap.set("n", "<leader>;", "mA", { desc = "Set a global mark" })
+vim.keymap.set("n", "<leader>'", "`A", { desc = "Jump to a global mark" })
