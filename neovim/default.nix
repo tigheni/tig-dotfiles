@@ -25,6 +25,7 @@
       emmet-language-server
       prettierd
       taplo
+      typos-lsp
     ];
   };
   xdg.configFile.nvim = {

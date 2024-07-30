@@ -127,18 +127,19 @@ return {
           },
         },
       },
-      -- {
-      -- "ltex",
-      -- {
-      --   settings = {
-      --     ltex = {
-      --       additionalRules = {
-      --         languageModel = "~/ngrams/",
-      --       },
-      --     },
-      --   },
-      -- },
-      -- },
+      { "typos_lsp", { init_options = { diagnosticSeverity = "Info" } } },
+      {
+        "ltex",
+        {
+          settings = {
+            ltex = {
+              additionalRules = {
+                languageModel = "~/Downloads/ngrams/",
+              },
+            },
+          },
+        },
+      },
     }
 
     local lspconfig = require("lspconfig")

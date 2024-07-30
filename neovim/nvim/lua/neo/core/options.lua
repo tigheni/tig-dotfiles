@@ -35,14 +35,11 @@ vim.opt.fillchars = vim.opt.fillchars + "diff:╱"
 -- disable mouse
 vim.opt.mouse = ""
 
--- spelling
-vim.opt.spelllang = { "en" }
-
 -- scroll offset
 vim.opt.scrolloff = 4
 vim.opt.sidescrolloff = 40
 
--- presist undo history
+-- persist undo history
 vim.opt.undofile = true
 vim.opt.undolevels = 1000
 
