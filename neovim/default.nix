@@ -21,7 +21,6 @@
       alejandra
       stylua
       nixd
-      ltex-ls
       emmet-language-server
       prettierd
       taplo
