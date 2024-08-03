@@ -10,14 +10,14 @@
 
   users.users.abdennour = {
     packages = with pkgs; [
-      gnome.gnome-tweaks
+      gnome-tweaks
       gnome.gnome-shell
       gnome.gnome-shell-extensions
       gnomeExtensions.appindicator
       gnomeExtensions.vitals
       gnomeExtensions.hide-minimized
       gnomeExtensions.notification-timeout
-      gnome.dconf-editor
+      dconf-editor
     ];
   };
 
