@@ -2,13 +2,18 @@
 
 tmux start-server
 
-selected="$(fd . "$HOME"/Projects --min-depth 1 --maxdepth 1 --type d --format {/} | fzf)"
+selected="$(fd . "$HOME"/Projects --min-depth 1 --maxdepth 1 --type d --format {/} | fzf --bind=enter:replace-query+print-query)"
 
 if [[ -z $selected ]]; then
     exit 0
 fi
 
 selected="$HOME/Projects/$selected"
+
+if [ ! -d $selected ]; then
+    mkdir $selected
+fi
+
 selected_name=$(basename "$selected" | tr . _)
 tmux_running=$(pgrep tmux)
 
