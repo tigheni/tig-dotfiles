@@ -39,6 +39,7 @@
     extraGroups = ["networkmanager" "wheel"];
     packages = with pkgs; [
       brave
+      spotify
       xsel
       gh
       ripgrep

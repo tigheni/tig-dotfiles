@@ -66,7 +66,6 @@ in {
     ./starship
     ./lazygit
     ./git
-    ./spicetify.nix
   ];
 
   home.file.".zshrc".text = "";
