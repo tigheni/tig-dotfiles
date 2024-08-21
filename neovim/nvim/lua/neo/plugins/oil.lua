@@ -12,8 +12,8 @@ return {
         autosave_changes = true,
       },
       git = {
-        add = function()
-          return true
+        add = function(path)
+          return vim.startswith(path, "/home/abdenneour/dotfiles")
         end,
       },
       view_options = {
