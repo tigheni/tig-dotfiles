@@ -11,6 +11,13 @@ local on_attach = function(client, bufnr)
   vim.keymap.set({ "n", "x" }, "<leader>al", vim.lsp.buf.code_action, { buffer = bufnr, desc = "Show code actions" })
   vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { buffer = bufnr, desc = "Show line diagnostics" })
   vim.keymap.set("i", "<C-l>", vim.lsp.buf.signature_help, { buffer = bufnr, desc = "Show signature help" })
+
+  vim.keymap.set("n", "<leader>aq", function()
+    vim.lsp.buf.code_action({
+      context = { only = { "quickfix" } }, ---@diagnostic disable-line: assign-type-mismatch,missing-fields
+      apply = true,
+    })
+  end, { desc = "Apply quickfix" })
 end
 
 vim.keymap.set("n", "<leader>i", "<cmd>LspInfo<CR>", { desc = "Restart LSP" })
