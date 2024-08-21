@@ -17,7 +17,6 @@
       vscode-langservers-extracted
       tailwindcss-language-server
       yaml-language-server
-      eslint_d
       alejandra
       stylua
       nixd

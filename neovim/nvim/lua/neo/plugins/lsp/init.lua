@@ -33,6 +33,7 @@ return {
     local language_servers = {
       "html",
       "cssls",
+      require("neo.plugins.lsp.eslint"),
       "emmet_language_server",
       require("neo.plugins.lsp.vtsls"),
       "nixd",
