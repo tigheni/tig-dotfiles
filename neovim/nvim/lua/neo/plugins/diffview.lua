@@ -8,9 +8,9 @@ return {
       enhanced_diff_hl = true,
       file_panel = {
         listing_style = "list",
-        -- win_config = {
-        --   width = 70,
-        -- },
+        win_config = {
+          width = 60,
+        },
       },
       view = {
         merge_tool = {
