@@ -1,20 +1,3 @@
-local function map_action(keymap, actions, desc)
-  desc = desc or actions[1]
-  vim.keymap.set({ "n", "v" }, keymap, function()
-    vim.lsp.buf.code_action({
-      filter = function(action)
-        for _, v in ipairs(actions) do
-          if vim.startswith(action.title, v) then
-            return true
-          end
-        end
-        return false
-      end,
-      apply = true,
-    })
-  end, { desc = desc })
-end
-
 local on_attach = function(client, bufnr)
   if client.server_capabilities.inlayHintProvider then
     vim.lsp.inlay_hint.enable(true)
@@ -28,20 +11,6 @@ local on_attach = function(client, bufnr)
   vim.keymap.set({ "n", "x" }, "<leader>al", vim.lsp.buf.code_action, { buffer = bufnr, desc = "Show code actions" })
   vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { buffer = bufnr, desc = "Show line diagnostics" })
   vim.keymap.set("i", "<C-l>", vim.lsp.buf.signature_help, { buffer = bufnr, desc = "Show signature help" })
-
-  map_action(
-    "<leader>aa",
-    { "Remove braces from arrow function", "Add braces to arrow function" },
-    "Toggle arrow function braces"
-  )
-  map_action("<leader>ak", { "Inline variable" })
-  map_action("<leader>ae", { "Extract to constant in enclosing scope", "Extract to type alias" })
-  map_action("<leader>aE", { "Extract to constant in module scope" })
-  map_action("<leader>af", { "Extract to function in module scope" })
-  map_action("<leader>am", { "Convert to named function" })
-  map_action("<leader>an", { "Move to a new file" })
-  map_action("<leader>aN", { "Move to file" })
-  map_action("<leader>ad", { "Convert named export to default export" })
 end
 
 vim.keymap.set("n", "<leader>i", "<cmd>LspInfo<CR>", { desc = "Restart LSP" })
@@ -68,6 +37,7 @@ return {
       require("neo.plugins.lsp.vtsls"),
       "nixd",
       "pyright",
+      require("neo.plugins.lsp.gopls"),
       {
         "tailwindcss",
         {
@@ -135,7 +105,15 @@ return {
 
     for _, lsp in ipairs(language_servers) do
       if type(lsp) == "table" then
-        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], { on_attach = on_attach, capabilities = capabilities }))
+        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], {
+          on_attach = function(client, bufnr)
+            on_attach(client, bufnr)
+            if lsp[2].on_attach then
+              lsp[2].on_attach(client, bufnr)
+            end
+          end,
+          capabilities = capabilities,
+        }))
       else
         lspconfig[lsp].setup({ on_attach = on_attach, capabilities = capabilities })
       end

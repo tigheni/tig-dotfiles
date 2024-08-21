@@ -24,6 +24,8 @@
       emmet-language-server
       prettierd
       taplo
+      gopls
+      golangci-lint
       typos-lsp
     ];
   };

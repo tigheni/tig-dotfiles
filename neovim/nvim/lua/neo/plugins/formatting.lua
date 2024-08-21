@@ -10,6 +10,7 @@ return {
         typescript = { "eslint_d" },
         javascriptreact = { "eslint_d" },
         typescriptreact = { "eslint_d" },
+        go = { "golangcilint" },
       }
 
       vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
@@ -41,6 +42,7 @@ return {
           lua = { "stylua" },
           nix = { "alejandra" },
           toml = { "taplo" },
+          go = { "gofmt" },
         },
         format_on_save = function()
           if vim.g.disable_autoformat then
