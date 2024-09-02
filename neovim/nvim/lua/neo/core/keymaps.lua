@@ -63,8 +63,8 @@ vim.keymap.set({ "n", "x" }, "H", "^")
 vim.keymap.set({ "n", "x" }, "L", "$")
 
 -- quickfix list
-vim.keymap.set("n", "<c-p>", "<cmd>cprevious<cr>", { desc = "Previous quickfix" })
-vim.keymap.set("n", "<c-n>", "<cmd>cnext<cr>", { desc = "Next quickfix" })
+vim.keymap.set("n", "<c-p>", "<cmd>cprevious<cr>zz", { desc = "Previous quickfix" })
+vim.keymap.set("n", "<c-n>", "<cmd>cnext<cr>zz", { desc = "Next quickfix" })
 vim.keymap.set("n", "<leader>v", function()
   vim.cmd(vim.fn.getqflist({ winid = 0 }).winid > 0 and "cclose" or "copen")
 end, { desc = "Toggle quickfix list" })
