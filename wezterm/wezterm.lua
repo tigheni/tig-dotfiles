@@ -9,11 +9,15 @@ wezterm.on("gui-startup", function()
 end)
 
 config.cursor_blink_rate = 0
-config.font = wezterm.font("JetBrains Mono", { weight = "Medium" })
+config.font = wezterm.font("JetBrains Mono", { weight = "Regular" })
 config.font_size = 11
 config.window_padding = { left = 0, right = 0, top = 0, bottom = 0 }
 config.harfbuzz_features = { "calt=0", "clig=1", "liga=1" }
 config.hide_tab_bar_if_only_one_tab = true
 config.warn_about_missing_glyphs = false
+
+-- https://github.com/NixOS/nixpkgs/issues/336069
+config.front_end = "WebGpu"
+config.enable_wayland = false
 
 return config

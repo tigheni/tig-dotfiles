@@ -12,7 +12,7 @@
     packages = with pkgs; [
       gnome-tweaks
       gnome.gnome-shell
-      gnome.gnome-shell-extensions
+      gnome-shell-extensions
       gnomeExtensions.appindicator
       gnomeExtensions.vitals
       gnomeExtensions.hide-minimized
