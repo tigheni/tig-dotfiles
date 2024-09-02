@@ -92,7 +92,3 @@ vim.fn.setreg("c", "vaqSBvaqSbiclsx")
 vim.filetype.add({
   filename = { ["hyprland.conf"] = "hyprlang" },
 })
-
-vim.api.nvim_create_user_command("LintInfo", function()
-  vim.print(require("lint").get_running())
-end, {})
