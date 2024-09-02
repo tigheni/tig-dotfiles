@@ -27,7 +27,7 @@ end
 local function referencePredicate(value)
   return not vim.startswith(value.text, "import")
     and not vim.startswith(string.sub(value.text, value.col - 2, value.col - 1), "</")
-    and not vim.startswith(value.text, "export")
+    and string.sub(value.text, 0, value.col - 1) ~= "export default "
 end
 
 return {

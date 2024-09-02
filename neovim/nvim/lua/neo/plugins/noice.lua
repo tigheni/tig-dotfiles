@@ -29,5 +29,12 @@ return {
     notify = {
       view = "mini",
     },
+
+    -- routes = {
+    --   {
+    --     filter = { event = "notify", find = "_typescript.didOrganizeImports" },
+    --     opts = { skip = true },
+    --   },
+    -- },
   },
 }

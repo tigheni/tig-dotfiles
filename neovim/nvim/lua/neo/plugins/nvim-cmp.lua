@@ -19,6 +19,10 @@ return {
 
     luasnip.filetype_extend("typescript", { "typescriptreact" })
 
+    luasnip.add_snippets("typescriptreact", {
+      luasnip.parser.parse_snippet("dsp", "const dispatch = useAppDispatch()"),
+    })
+
     cmp.setup({
       completion = {
         completeopt = "menu,menuone,noinsert",
@@ -56,8 +60,8 @@ return {
       sources = cmp.config.sources({
         { name = "luasnip" },
         { name = "nvim_lsp" },
-        { name = "buffer" },
-        { name = "path" },
+        -- { name = "buffer" },
+        -- { name = "path" },
       }),
       formatting = {
         format = lspkind.cmp_format({
