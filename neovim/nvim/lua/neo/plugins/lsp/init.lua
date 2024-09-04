@@ -105,7 +105,7 @@ return {
           },
         },
       },
-      { "typos_lsp", { init_options = { diagnosticSeverity = "Info" }, filetypes = { "NeogitCommitMessage" } } },
+      { "typos_lsp", { init_options = { diagnosticSeverity = "Info" }, filetypes = { "*" } } },
     }
 
     local lspconfig = require("lspconfig")
