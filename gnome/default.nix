@@ -5,13 +5,13 @@
   services.xserver.displayManager.gdm.wayland = false;
   services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
 
-  services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
+  services.udev.packages = with pkgs; [gnome-settings-daemon];
   programs.dconf.enable = true;
 
   users.users.abdennour = {
     packages = with pkgs; [
       gnome-tweaks
-      gnome.gnome-shell
+      gnome-shell
       gnome-shell-extensions
       gnomeExtensions.appindicator
       gnomeExtensions.vitals
