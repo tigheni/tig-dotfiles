@@ -75,10 +75,10 @@
         git add --all && git commit -m "$1"
       fi
       }
-      goi() { git fetch origin master:master --update-head-ok && git checkout -b ticket#"$1" master; }
-      gci() { git branch -d ticket#"$1"; }
-      gopi() { git fetch origin production:production --update-head-ok && git checkout -b ticket#"$1"; }
-      gcoi() { git checkout ticket#"$1"; }
+      goi() { git fetch origin master:master --update-head-ok && git checkout -b task#"$1" master; }
+      gci() { git branch -d task#"$1"; }
+      gopi() { git fetch origin production:production --update-head-ok && git checkout -b task#"$1" production; }
+      gcoi() { git checkout task#"$1"; }
       gacp() { git add --all && git commit -m "$1" && git push; }
       gacpi() { git add --all && git commit -m "$1" && gpi; }
       gpi() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first --body "Fixes $(git rev-parse --abbrev-ref HEAD | cut -c 7-)")/files" 1>/dev/null; }
