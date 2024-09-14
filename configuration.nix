@@ -1,36 +1,46 @@
-{
-  pkgs,
-  config,
-  ...
-}: {
-nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
-  nix.nixPath = [
-    "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos"
-    "nixos-config=${config.users.users.tig.home}/dotfiles/configuration.nix"
-    "/nix/var/nix/profiles/per-user/root/channels"
-  ];
-  nix.settings.experimental-features = ["nix-command" "flakes"];
-  imports = [
-    /etc/nixos/hardware-configuration.nix
-    <home-manager/nixos>
-    ./gnome
-    ./zsh
-  ];
-  nixpkgs.config.allowUnfree = true;
+# Edit this configuration file to define what should be installed on
+# your system.  Help is available in the configuration.nix(5) man page
+# and in the NixOS manual (accessible by running ‘nixos-help’).
 
-  hardware.opengl.extraPackages = with pkgs; [
-    intel-media-driver
-  ];
+{ config, pkgs, ... }:
+
+{
+   nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
+    nix.settings.experimental-features = ["nix-command" "flakes"];
+  imports =
+    [ # Include the results of the hardware scan.
+      ./hardware-configuration.nix
+      ./gnome
+      ./zsh
+    ];
 
   # Bootloader.
-  boot.loader.systemd-boot.enable = true;
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = true;
+    device = "/dev/sdb"; # Install GRUB to /dev/sdb
+    useOSProber = true;  # Detect other OSes (Windows)
+
+  };
+
+
   boot.loader.efi.canTouchEfiVariables = true;
 
+
   networking.hostName = "nixos"; # Define your hostname.
-  nix.optimise.automatic = true;
-  time.timeZone = "Africa/Algiers";
-  i18n.defaultLocale = "en_US.UTF-8";
-  i18n.extraLocaleSettings = {
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+
+  # Enable networking
+  networking.networkmanager.enable = true;
+
+  # Set your time zone.
+    time.timeZone = "Africa/Algiers";
+    i18n.defaultLocale = "en_US.UTF-8";
+    i18n.extraLocaleSettings = {
     LC_ADDRESS = "en_US.UTF-8";
     LC_IDENTIFICATION = "en_US.UTF-8";
     LC_MEASUREMENT = "en_US.UTF-8";
@@ -42,69 +52,72 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
     LC_TIME = "en_US.UTF-8";
   };
 
+  # Enable the X11 windowing system.
+  services.xserver.enable = true;
+
+  # Enable the GNOME Desktop Environment.
+
+
+
+  # Configure keymap in X11
+  services.xserver.xkb = {
+    layout = "us";
+    variant = "symbolic";
+  };
+
+  # Enable CUPS to print documents.
+  services.printing.enable = true;
+
+  # Enable sound with pipewire.
+  hardware.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
+
+  # Enable touchpad support (enabled default in most desktopManager).
+  # services.xserver.libinput.enable = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tig = {
     isNormalUser = true;
     description = "tig";
-    extraGroups = ["networkmanager" "wheel"];
+    extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
-      gcc
-      gnumake
-      vscode
-      google-chrome
-      firefox-devedition
-      protonvpn-gui
-      kitty
-      xsel
-      neofetch
-      gh
-      ripgrep
-      fd
-      jq
-      webtorrent_desktop
-      vlc
-      ytarchive
-      ffmpeg
-      zoxide
-      fzf
-      bat
-      delta
-      brave
-      copyq
-      stremio
-      discord
-      nodejs_22
-      spotify
-      pavucontrol
-      kdenlive
-      playerctl
+    #  thunderbird
+        google-chrome
+        vscode
+        brave
+        spotify
+        protonvpn-gui
+        vlc
+        fzf
+        zoxide
+        fd
+        playerctl
+        nodejs_22
+        bat
+        pulseaudio
+        os-prober
     ];
   };
-  home-manager.users.tig = {...}: {
-    imports = [
-      ./wezterm
-      ./neovim
-      ./tmux
-    /*   ./hyprland */
-      ./starship
-    ];
 
-    # The state version is required and should stay at the version you
-    # originally installed.
-    home.stateVersion = "23.11";
-  };
 
-  programs.git = {
+
+  programs.nh = {
     enable = true;
-    config = {
-      user = {
-        name = "tigheni";
-        email = "oussama.adame12@gmail.com";
-      };
-    };
-    prompt = {
-      enable = true;
-    };
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 7d --keep 3";
+    flake = "/home/tig/tig-dotfiles";
   };
 
   programs.direnv = {
@@ -113,84 +126,29 @@ nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builti
   };
 
 
-
   fonts.packages = with pkgs; [
-    (nerdfonts.override {fonts = ["JetBrainsMono"];})
+    (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka"];})
   ];
+  # Enable automatic login for the user.
+  #services.xserver.displayManager.autoLogin.enable = true;
+  #services.displayManager.autoLogin ="tig";
 
+  # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
+  #systemd.services."getty@tty1".enable = false;
+  #systemd.services."autovt@tty1".enable = false;
 
+  # Install firefox.
+  #programs.firefox.enable = true;
 
- networking.firewall.enable = true;
-
-  # Custom firewall rules
-  # networking.firewall.extraCommands = ''
-  # iptables -I nixos-fw 1 -p tcp --dport 1716 -j ACCEPT
-  # iptables -I nixos-fw 1 -p udp --dport 1716 -j ACCEPT
-  # iptables -I nixos-fw 1 -p tcp --dport 1739 -j ACCEPT
-  # iptables -I nixos-fw 1 -p udp --dport 1764 -j ACCEPT
-  # iptables -I nixos-fw 1 -m mac --mac-source 44:8a:5b:95:50:f8 -j ACCEPT
-  #'';
-
-
- networking.firewall.allowedTCPPortRanges = [
-  { from = 1714; to = 1764; }
-];
-networking.firewall.allowedUDPPortRanges = [
-  { from = 1714; to = 1764; }
-];
-
-  # systemd.user.timers."numlockx_boot" = {
-  #   wantedBy = ["timers.target"];
-  #   timerConfig = {
-  #     OnStartupSec = "1us";
-  #     AccuracySec = "1us";
-  #     Unit = "numlockx.service";
-  #   };
-  # };
-
-  # systemd.user.timers."numlockx_sleep" = {
-  #   wantedBy = [
-  #     "suspend.target"
-  #     "hibernate.target"
-  #     "hybrid-sleep.target"
-  #     "suspend-then-hibernate.target"
-  #   ];
-  #   after = [
-  #     "suspend.target"
-  #     "hibernate.target"
-  #     "hybrid-sleep.target"
-  #     "suspend-then-hibernate.target"
-  #   ];
-  #   timerConfig = {
-  #     AccuracySec = "1us";
-  #     Unit = "numlockx.service";
-  #   };
-  # };
-
-  # systemd.user.services."numlockx" = {
-  #   script = ''
-  #     ${pkgs.numlockx}/bin/numlockx on
-  #   '';
-  #   serviceConfig = {
-  #     Type = "oneshot"; # "simple" für Prozesse, die weiterlaufen sollen
-  #   };
-  # };
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-
-
-
-  # services.xserver.displayManager.sddm.enable = true;
-  # services.xserver.displayManager.sddm.wayland.enable = true;
-  # services.xserver.displayManager.sddm.theme = "where_is_my_sddm_theme";
-  # services.xserver.displayManager.autoLogin.enable = true;
-  # services.xserver.displayManager.autoLogin.user = "abdennour";
-
-  # Enable sound.
-  # sound.enable = true;
-  # hardware.pulseaudio.enable = true;
-  # nixpkgs.config.pulseaudio = true;
+  environment.systemPackages = with pkgs; [
+  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+  #  wget
+  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -205,7 +163,21 @@ networking.firewall.allowedUDPPortRanges = [
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
 
-  # system.autoUpgrade.enable = true;
-  # system.autoUpgrade.allowReboot = true;
-  system.stateVersion = "23.11"; # Did you read the comment?
+  # Open ports in the firewall.
+    networking.firewall.allowedTCPPortRanges = [
+  { from = 1714; to = 1764; }
+];
+networking.firewall.allowedUDPPortRanges = [
+  { from = 1714; to = 1764; }
+];
+  # Or disable the firewall altogether.
+  networking.firewall.enable = true;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "24.05"; # Did you read the comment?
 }

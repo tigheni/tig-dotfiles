@@ -1,22 +1,19 @@
 final: prev: let
-  version = "1.0.3";
-  spotify-adblock = prev.fetchurl {
-    name = "spotify-adblock-${version}";
-    url = "https://github.com/abba23/spotify-adblock/releases/download/v${version}/spotify-adblock.so";
-    sha256 = "sha256-pOQVhDOPzqE/R15PYrMb8tKs68/W/vpbt1Jz+N15LJs=";
-    downloadToTemp = true;
-    recursiveHash = true;
-    postFetch = ''
-      mkdir -p $out/lib
-      mv $downloadedFile $out/lib/spotify-adblock.so
-    '';
+  spotx = prev.fetchFromGitHub {
+    owner = "SpotX-Official";
+    repo = "SpotX-Bash";
+    rev = "49409482bcfc558208f992e3c86047c89532a5e8";
+    hash = "sha256-aplhsn7nMwjpsXTiTDn5lEHkJIL1WzkXajeKu3qXcTk=";
   };
 in {
   spotify = prev.spotify.overrideAttrs (prev: {
-    installPhase =
-      prev.installPhase
+    buildInputs = [final.perl final.unzip final.zip];
+    postInstall =
+      (prev.postInstall or "")
       + ''
-        sed -i "s:^Exec=.*:Exec=env LD_PRELOAD="${spotify-adblock}/lib/spotify-adblock.so" spotify %U:" "$out/share/applications/spotify.desktop"
+        cp ${spotx}/spotx.sh spotx.sh
+        chmod +x spotx.sh
+        bash spotx.sh -P $out/share/spotify/ -c
       '';
   });
 }

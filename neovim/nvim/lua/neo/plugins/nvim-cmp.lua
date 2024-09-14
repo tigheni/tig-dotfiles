@@ -16,17 +16,12 @@ return {
     local lspkind = require("lspkind")
 
     require("luasnip.loaders.from_vscode").lazy_load()
-    vim.keymap.set("i", "<tab>", function()
-      return luasnip.jumpable(1) and "<Plug>luasnip-jump-next" or "<tab>"
-    end, { expr = true, silent = true })
-    vim.keymap.set("s", "<tab>", function()
-      return luasnip.jump(1)
-    end)
-    vim.keymap.set({ "i", "s" }, "<s-tab>", function()
-      return luasnip.jump(-1)
-    end)
 
     luasnip.filetype_extend("typescript", { "typescriptreact" })
+
+    luasnip.add_snippets("typescriptreact", {
+      luasnip.parser.parse_snippet("dsp", "const dispatch = useAppDispatch()"),
+    })
 
     cmp.setup({
       completion = {
@@ -40,15 +35,33 @@ return {
       mapping = cmp.mapping.preset.insert({
         ["<C-k>"] = cmp.mapping.select_prev_item(),
         ["<C-j>"] = cmp.mapping.select_next_item(),
+        ["<Up>"] = cmp.mapping.select_prev_item(),
+        ["<Down>"] = cmp.mapping.select_next_item(),
         ["<C-Space>"] = cmp.mapping.complete(),
         ["<C-e>"] = cmp.mapping.abort(),
-        ["<CR>"] = cmp.mapping.confirm(),
+        ["<CR>"] = cmp.mapping.confirm({ select = true }),
+
+        ["<Tab>"] = cmp.mapping(function(fallback)
+          if luasnip.locally_jumpable(1) then
+            luasnip.jump(1)
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+          if luasnip.locally_jumpable(-1) then
+            luasnip.jump(-1)
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
       }),
       sources = cmp.config.sources({
         { name = "luasnip" },
         { name = "nvim_lsp" },
-        { name = "buffer" },
-        { name = "path" },
+        -- { name = "buffer" },
+        -- { name = "path" },
       }),
       formatting = {
         format = lspkind.cmp_format({
@@ -69,6 +82,8 @@ return {
       mapping = {
         ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
         ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
+        ["<Up>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
+        ["<Down>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
         ["<C-e>"] = cmp.mapping(cmp.mapping.abort(), { "c" }),
         ["<CR>"] = cmp.mapping(function(fallback)
           if cmp.visible() then

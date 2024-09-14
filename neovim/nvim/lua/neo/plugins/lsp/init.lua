@@ -1,13 +1,8 @@
-local code_actions = require("neo.utils.code-actions")
+local on_attach = function(client, bufnr)
+  if client.server_capabilities.inlayHintProvider then
+    vim.lsp.inlay_hint.enable(true)
+  end
 
-local function map_action(keymap, action, desc)
-  desc = desc or action[1]
-  vim.keymap.set({ "n", "v" }, keymap, function()
-    code_actions.apply(action)
-  end, { desc = desc })
-end
-
-local on_attach = function(_, bufnr)
   vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = bufnr, desc = "Jump to definition" })
   vim.keymap.set("n", "gr", function()
     vim.lsp.buf.references({ includeDeclaration = false })
@@ -16,21 +11,16 @@ local on_attach = function(_, bufnr)
   vim.keymap.set({ "n", "x" }, "<leader>al", vim.lsp.buf.code_action, { buffer = bufnr, desc = "Show code actions" })
   vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { buffer = bufnr, desc = "Show line diagnostics" })
   vim.keymap.set("i", "<C-l>", vim.lsp.buf.signature_help, { buffer = bufnr, desc = "Show signature help" })
-  vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { buffer = bufnr, desc = "Go to previous diagnostic" })
-  vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { buffer = bufnr, desc = "Go to next diagnostic" })
-  vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = bufnr, desc = "Show hover" })
-  vim.keymap.set("n", "<leader>i", "<cmd>LspRestart<CR>", { buffer = bufnr, desc = "Restart LSP" })
 
-  map_action(
-    "<leader>aa",
-    { "Remove braces from arrow function", "Add braces to arrow function" },
-    "Toggle arrow function braces"
-  )
-  map_action("<leader>ak", { "Inline variable" })
-  map_action("<leader>ae", { "Extract to constant in enclosing scope", "Extract to type alias" })
-  map_action("<leader>af", { "Extract to function in module scope" })
-  map_action("<leader>am", { "Convert to named function" })
+  vim.keymap.set("n", "<leader>aq", function()
+    vim.lsp.buf.code_action({
+      context = { only = { "quickfix" } }, ---@diagnostic disable-line: assign-type-mismatch,missing-fields
+      apply = true,
+    })
+  end, { desc = "Apply quickfix" })
 end
+
+vim.keymap.set("n", "<leader>i", "<cmd>LspInfo<CR>", { desc = "Restart LSP" })
 
 local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
 for type, icon in pairs(signs) do
@@ -50,15 +40,24 @@ return {
     local language_servers = {
       "html",
       "cssls",
+      require("neo.plugins.lsp.eslint"),
       "emmet_language_server",
-      "nil_ls",
-      -- "eslint",
+      require("neo.plugins.lsp.vtsls"),
+      "nixd",
+      "pyright",
+      require("neo.plugins.lsp.gopls"),
       {
         "tailwindcss",
         {
           settings = {
             tailwindCSS = {
               classAttributes = { "class", "className", "classNames" },
+              experimental = {
+                classRegex = {
+                  { "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+                  { "cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+                },
+              },
             },
           },
         },
@@ -106,16 +105,7 @@ return {
           },
         },
       },
-      -- {
-      --   "tsserver",
-      --   {
-      --     init_options = {
-      --       preferences = {
-      --         importModuleSpecifierPreference = "relative",
-      --       },
-      --     },
-      --   },
-      -- },
+      { "typos_lsp", { init_options = { diagnosticSeverity = "Info" }, filetypes = { "*" } } },
     }
 
     local lspconfig = require("lspconfig")
@@ -123,7 +113,15 @@ return {
 
     for _, lsp in ipairs(language_servers) do
       if type(lsp) == "table" then
-        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], { on_attach = on_attach, capabilities = capabilities }))
+        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], {
+          on_attach = function(client, bufnr)
+            on_attach(client, bufnr)
+            if lsp[2].on_attach then
+              lsp[2].on_attach(client, bufnr)
+            end
+          end,
+          capabilities = capabilities,
+        }))
       else
         lspconfig[lsp].setup({ on_attach = on_attach, capabilities = capabilities })
       end

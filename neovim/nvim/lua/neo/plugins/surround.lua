@@ -1,4 +1,5 @@
 return {
+  --  read docs
   "kylechui/nvim-surround",
   event = "VeryLazy",
   config = function()

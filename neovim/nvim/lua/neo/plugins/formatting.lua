@@ -6,10 +6,7 @@ return {
       local lint = require("lint")
 
       lint.linters_by_ft = {
-        javascript = { "eslint_d" },
-        typescript = { "eslint_d" },
-        javascriptreact = { "eslint_d" },
-        typescriptreact = { "eslint_d" },
+        go = { "golangcilint" },
       }
 
       vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
@@ -40,8 +37,10 @@ return {
           markdown = { "prettierd" },
           lua = { "stylua" },
           nix = { "alejandra" },
+          toml = { "taplo" },
+          go = { "gofmt" },
         },
-        format_after_save = function()
+        format_on_save = function()
           if vim.g.disable_autoformat then
             return
           end
@@ -49,7 +48,7 @@ return {
         end,
       })
 
-      vim.keymap.set("n", "<leader>u", function()
+      vim.keymap.set("n", "<leader>h", function()
         vim.g.disable_autoformat = not vim.g.disable_autoformat
       end, { desc = "Toggle autoformatting" })
 

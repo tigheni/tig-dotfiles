@@ -2,12 +2,11 @@ return {
   "nvim-treesitter/nvim-treesitter",
   event = { "BufReadPre", "BufNewFile" },
   build = ":TSUpdate",
-  dependencies = { "windwp/nvim-ts-autotag", "nvim-treesitter/nvim-treesitter-textobjects" },
+  dependencies = { { "windwp/nvim-ts-autotag", config = true }, "nvim-treesitter/nvim-treesitter-textobjects" },
   config = function()
     require("nvim-treesitter.configs").setup({
       highlight = { enable = true },
       indent = { enable = true },
-      autotag = { enable = true },
       incremental_selection = {
         enable = true,
         keymaps = {
@@ -16,21 +15,6 @@ return {
           node_decremental = "sd",
           scope_incremental = "sc",
         },
-      },
-      ensure_installed = {
-        "json",
-        "javascript",
-        "typescript",
-        "tsx",
-        "yaml",
-        "html",
-        "css",
-        "markdown",
-        "markdown_inline",
-        "bash",
-        "lua",
-        "vim",
-        "gitignore",
       },
       auto_install = true,
       textobjects = {
@@ -54,6 +38,9 @@ return {
             ["ie"] = "@assignment.inner", -- arr
             ["al"] = "@assignment.lhs", -- arr
             ["ar"] = "@assignment.rhs", -- [1, 2, 3, 4, 5]
+          },
+          selection_modes = {
+            ["@assignment.outer"] = "V",
           },
         },
         swap = {

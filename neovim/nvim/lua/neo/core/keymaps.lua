@@ -52,7 +52,7 @@ vim.keymap.set("n", "<leader>S", ":%s//g<left><left>", { desc = "Search and repl
 vim.keymap.set("x", "<leader>S", ":s//g<left><left>", { desc = "Search and replace" })
 
 -- Select in visual line mode using matchit
-vim.keymap.set("n", "<leader>k", "$V%")
+vim.keymap.set("n", "<leader>k", "$V%", { desc = "Select matchit block" })
 
 -- Swap p and P in visual mode
 vim.keymap.set("x", "p", "P")
@@ -63,10 +63,27 @@ vim.keymap.set({ "n", "x" }, "H", "^")
 vim.keymap.set({ "n", "x" }, "L", "$")
 
 -- quickfix list
-vim.keymap.set("n", "<c-p>", "<cmd>cprevious<cr>", { desc = "Previous quickfix" })
-vim.keymap.set("n", "<c-n>", "<cmd>cnext<cr>", { desc = "Next quickfix" })
+vim.keymap.set("n", "<c-p>", "<cmd>cprevious<cr>zz", { desc = "Previous quickfix" })
+vim.keymap.set("n", "<c-n>", "<cmd>cnext<cr>zz", { desc = "Next quickfix" })
 vim.keymap.set("n", "<leader>v", function()
   vim.cmd(vim.fn.getqflist({ winid = 0 }).winid > 0 and "cclose" or "copen")
-end, { silent = true })
+end, { desc = "Toggle quickfix list" })
 
+-- Change word with . repeat
 vim.keymap.set("n", "g*", "*Ncgn", { desc = "Change word with . repeat" })
+
+-- Overload gx to make it smarter
+vim.keymap.set("n", "gx", function()
+  local link = vim.fn.expand("<cfile>") --[[@as string]]
+
+  -- Consider anything that looks like string/string a GitHub link.
+  if #vim.split(link, "/") == 2 then
+    link = "https://www.github.com/" .. link
+  end
+
+  vim.ui.open(link)
+end, { desc = "Open filepath or URI under cursor" })
+
+-- Simple mark and jump
+vim.keymap.set("n", "<leader>;", "mA", { desc = "Set a global mark" })
+vim.keymap.set("n", "<leader>'", "`A", { desc = "Jump to a global mark" })

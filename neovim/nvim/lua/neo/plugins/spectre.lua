@@ -1,10 +1,17 @@
 return {
   "nvim-pack/nvim-spectre",
-  dependecies = {
+  dependencies = {
     "nvim-lua/plenary.nvim",
   },
   config = function()
     local spectre = require("spectre")
+
+    spectre.setup({
+      is_insert_mode = true,
+      highlight = {
+        replace = "DiffChange",
+      },
+    })
 
     vim.keymap.set("n", "<leader>sp", spectre.toggle, { desc = "Toggle Spectre" })
     vim.keymap.set("v", "<leader>sp", spectre.open_visual, { desc = "Search current word" })

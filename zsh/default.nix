@@ -2,19 +2,12 @@
   users.users.tig = {
     shell = pkgs.zsh;
   };
-  home-manager.users.tig = {
-    pkgs,
-    config,
-    ...
-  }: {
-    home.file.".zshrc".text = "";
-  };
 
-  # try fish
   programs.zsh = {
     enable = true;
     setOptions = [
       "HIST_IGNORE_ALL_DUPS"
+      "SHARE_HISTORY"
     ];
     syntaxHighlighting = {
       enable = true;
@@ -36,10 +29,16 @@
       autoload -U history-search-end
       zle -N history-beginning-search-backward-end history-search-end
       zle -N history-beginning-search-forward-end history-search-end
+
       bindkey "^[k" history-beginning-search-backward-end
       bindkey "^[j" history-beginning-search-forward-end
       bindkey '^[l' autosuggest-accept
       bindkey '^[h' forward-word
+
+      bindkey "^E" history-beginning-search-backward-end
+      bindkey "^N" history-beginning-search-forward-end
+      bindkey '^Y' autosuggest-accept
+      # bindkey '^O' forward-word
 
       function zle-keymap-select () {
           case $KEYMAP in
@@ -82,11 +81,12 @@
       gcoi() { git checkout ticket#"$1"; }
       gacp() { git add --all && git commit -m "$1" && git push; }
       gacpi() { git add --all && git commit -m "$1" && gpi; }
-      gpi() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first --body "Fixes $(git rev-parse --abbrev-ref HEAD | cut -c 7-)" --reviewer AnaBozovic)/files" 1>/dev/null; }
+      gpi() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first --body "Fixes $(git rev-parse --abbrev-ref HEAD | cut -c 7-)")/files" 1>/dev/null; }
 
       EDITOR="nvim"
 
       eval "$(zoxide init zsh)"
+      source <(fzf --zsh)
     '';
     shellAliases = {
       # Check if git aliases or abbrs are better
@@ -126,9 +126,8 @@
       gm = "git merge";
       gmm = "git merge master";
       gmp = "git merge production";
-      # gmc = "git merge --continue";
-      # gma = "git merge --abort";
-      # gmm = "git merge master";
+      gmc = "git merge --continue";
+      gma = "git merge --abort";
       gpmm = "git fetch origin master:master --update-head-ok && gmm";
       gpmp = "git fetch origin production:production --update-head-ok && gmp";
       # clean-nix = "nix-env --delete-generations old ; nix-store --gc ; nix-collect-garbage -d ; nix-store --optimise";
