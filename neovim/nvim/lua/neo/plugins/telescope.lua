@@ -80,7 +80,7 @@ return {
 
     vim.keymap.set("n", "<leader>sn", function()
       builtin.find_files({ cwd = vim.env.HOME .. "/tig-dotfiles" })
-    end, { desc = "Telescope: Dotfiles" })
+    end, { desc = "Telescope: tig-dotfiles" })
 
     vim.keymap.set("n", "<leader>sw", function()
       builtin.live_grep({ additional_args = { "--smart-case" }, default_text = vim.fn.expand("<cword>") })
