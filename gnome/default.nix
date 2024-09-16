@@ -5,7 +5,6 @@
   services.xserver.desktopManager.gnome.enable = true;
   services.xserver.displayManager.gdm.wayland = false;
   services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
-
   services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
   programs.dconf.enable = true;
 

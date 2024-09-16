@@ -59,6 +59,7 @@ in {
     ./wezterm
     ./neovim
     ./starship
+    ./lazygit
     ./git
   ];
 
