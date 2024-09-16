@@ -44,6 +44,7 @@ return {
       "emmet_language_server",
       require("neo.plugins.lsp.vtsls"),
       "nixd",
+      "hyprls",
       "pyright",
       require("neo.plugins.lsp.gopls"),
       {

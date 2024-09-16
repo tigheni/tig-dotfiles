@@ -4,6 +4,7 @@
 
   imports = [
     ./wezterm
+    ./kitty
     ./neovim
     ./tmux
     ./starship

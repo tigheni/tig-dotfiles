@@ -3,7 +3,6 @@
   nix.settings.experimental-features = ["nix-command" "flakes"];
   imports = [
     ./hardware-configuration.nix
-    ./gnome
     ./zsh
   ];
   nixpkgs.config.allowUnfree = true;
@@ -72,10 +71,19 @@
     flake = "/home/abdennour/Projects/dotfiles";
   };
 
+  specialisation = {
+    gnome.configuration = import ./gnome;
+    hyprland.configuration = import ./hyprland;
+  };
+
   programs.direnv = {
     enable = true;
     silent = true;
   };
+
+  fonts.packages = with pkgs; [
+    (nerdfonts.override {fonts = ["JetBrainsMono"];})
+  ];
 
   # systemd.user.timers."numlockx_boot" = {
   #   wantedBy = ["timers.target"];

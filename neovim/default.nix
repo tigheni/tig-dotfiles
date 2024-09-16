@@ -26,6 +26,7 @@
       gopls
       golangci-lint
       typos-lsp
+      hyprls
     ];
   };
   xdg.configFile.nvim = {

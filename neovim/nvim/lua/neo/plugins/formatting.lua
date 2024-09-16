@@ -33,6 +33,7 @@ return {
           scss = { "prettierd" },
           html = { "prettierd" },
           json = { "prettierd" },
+          jsonc = { "prettierd" },
           yaml = { "prettierd" },
           markdown = { "prettierd" },
           lua = { "stylua" },
