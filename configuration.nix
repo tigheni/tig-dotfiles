@@ -127,7 +127,7 @@
 
 
   fonts.packages = with pkgs; [
-    (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka"];})
+    (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka" ];})
   ];
   # Enable automatic login for the user.
   #services.xserver.displayManager.autoLogin.enable = true;
