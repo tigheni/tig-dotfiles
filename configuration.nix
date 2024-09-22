@@ -58,6 +58,7 @@
       unzip
       tldr
       glab
+      (import ./scripts/npg.nix {inherit pkgs;})
     ];
   };
 
