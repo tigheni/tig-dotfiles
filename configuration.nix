@@ -58,6 +58,7 @@
       unzip
       tldr
       glab
+      comma
       (import ./scripts/npg.nix {inherit pkgs;})
     ];
   };
