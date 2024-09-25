@@ -12,6 +12,7 @@
       ./hardware-configuration.nix
       ./gnome
       ./zsh
+
     ];
 
   # Bootloader.
@@ -108,6 +109,7 @@
         bat
         pulseaudio
         os-prober
+        stremio
     ];
   };
 
