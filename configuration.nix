@@ -1,6 +1,9 @@
 {pkgs, ...}: {
   nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings = {
+    experimental-features = ["nix-command" "flakes"];
+    warn-dirty = false;
+  };
   imports = [
     ./hardware-configuration.nix
     ./zsh
