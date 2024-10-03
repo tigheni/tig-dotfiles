@@ -62,6 +62,7 @@
       glab
       comma
       (import ./scripts/npg.nix {inherit pkgs;})
+      epiphany
     ];
   };
 
