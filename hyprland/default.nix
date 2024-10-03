@@ -14,14 +14,19 @@
       brightnessctl
       wl-clipboard
       wl-gammarelay-rs
-      nemo
       wofi
       clipse
-      swaybg
       grim
       hyprpicker
+      nautilus
     ];
   };
+
+  programs.zsh.loginShellInit = ''
+    if [ -z $DISPLAY ] && [ "$(tty)" = "/dev/tty1" ]; then
+      exec Hyprland
+    fi
+  '';
 
   home-manager.users.abdennour = {config, ...}: {
     imports = [../waybar];

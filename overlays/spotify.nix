@@ -2,8 +2,8 @@ final: prev: let
   spotx = prev.fetchFromGitHub {
     owner = "SpotX-Official";
     repo = "SpotX-Bash";
-    rev = "49409482bcfc558208f992e3c86047c89532a5e8";
-    hash = "sha256-aplhsn7nMwjpsXTiTDn5lEHkJIL1WzkXajeKu3qXcTk=";
+    rev = "5d0824b782680eeaccde2f449fe33b23df059a56";
+    hash = "sha256-eXHW5ybtmWuj9XJ9IH5e4Zl8uXhLC2hgLAQgeeEqoYQ=";
   };
 in {
   spotify = prev.spotify.overrideAttrs (prev: {

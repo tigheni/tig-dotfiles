@@ -61,7 +61,7 @@
 
       function vi-yank-xclip {
           zle vi-yank
-              echo "$CUTBUFFER" | xsel -b
+              echo "$CUTBUFFER" | wl-copy
       }
 
       zle -N vi-yank-xclip

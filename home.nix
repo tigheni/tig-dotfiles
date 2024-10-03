@@ -10,6 +10,7 @@
     ./starship
     ./lazygit
     ./git
+    ./kanshi
   ];
 
   home.file.".zshrc".text = "";

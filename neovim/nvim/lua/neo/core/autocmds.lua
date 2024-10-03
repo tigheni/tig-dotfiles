@@ -89,6 +89,4 @@ inoreabbrev stp // STOPSHIP
 
 vim.fn.setreg("c", "vaqSBvaqSbiclsx")
 
-vim.filetype.add({
-  filename = { ["hyprland.conf"] = "hyprlang" },
-})
+vim.filetype.add({ pattern = { ["hyprland.*.conf"] = "hyprlang" } })
