@@ -83,6 +83,8 @@
       gacpi() { git add --all && git commit -m "$1" && gpi; }
       gpi() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first --body "Fixes $(git rev-parse --abbrev-ref HEAD | cut -c 7-)")/files" 1>/dev/null; }
 
+      npg() { nurl "$1" 2>/dev/null | sed -n 2,5p | wl-copy; }
+
       EDITOR="nvim"
 
       eval "$(zoxide init zsh)"
