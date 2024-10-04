@@ -110,6 +110,7 @@
         pulseaudio
         os-prober
         stremio
+        discord
     ];
   };
 
@@ -126,7 +127,9 @@
     enable = true;
     silent = true;
   };
-
+services.udev.extraRules = ''
+  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
+'';
 
   fonts.packages = with pkgs; [
     (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka" ];})
