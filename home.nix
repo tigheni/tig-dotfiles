@@ -60,6 +60,7 @@ in {
     ./starship
     ./lazygit
     ./git
+    ./neovim
   ];
 
 

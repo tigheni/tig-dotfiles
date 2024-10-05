@@ -95,6 +95,7 @@
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
     #  thunderbird
+        gcc
         google-chrome
         vscode
         brave
@@ -111,6 +112,19 @@
         os-prober
         stremio
         discord
+        gh
+        ripgrep
+        jq
+        ffmpeg
+        delta
+        protonvpn-gui
+        zip
+        unzip
+        tldr
+        glab
+        comma
+        nurl
+        epiphany
     ];
   };
 
