@@ -61,6 +61,7 @@ in {
     ./lazygit
     ./git
     ./neovim
+    ./tmux
   ];
 
 

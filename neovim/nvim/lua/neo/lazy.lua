@@ -13,7 +13,7 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({ import = "neo.plugins" }, {
   install = {
-    colorscheme = { "nightfly" },
+    colorscheme = { "tokyonight" },
   },
   performance = {
     rtp = {
