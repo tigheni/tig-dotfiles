@@ -7,13 +7,9 @@
       url = "github:nix-community/home-manager/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-  };
 
-  outputs = {
-    nixpkgs,
-    home-manager,
-    ...
-  }: {
+  };
+    outputs = { nixpkgs, home-manager,... }: {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
@@ -23,7 +19,11 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.users.tig = import ./home.nix;
+          home-manager.extraSpecialArgs = {
+
+          };
         }
+
       ];
     };
   };

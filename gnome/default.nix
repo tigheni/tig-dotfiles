@@ -20,6 +20,7 @@
       gnomeExtensions.dash-to-dock
       gnomeExtensions.hide-keyboard-layout
       gnome46Extensions."openweather-extension@penguin-teal.github.io"
+      gnomeExtensions.no-titlebar-when-maximized
     ];
   };
 

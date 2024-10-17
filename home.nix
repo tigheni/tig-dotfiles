@@ -18,12 +18,12 @@
     {
       name = "Skip backward";
       command = "playerctl position 5-";
-      binding = "<Control><Alt>l";
+      binding = "<Control><Alt>]";
     }
     {
       name = "Skip forward";
       command = "playerctl position 5+";
-      binding = "<Control><Alt>h";
+      binding = "<Control><Alt>[";
     }
     {
       name = "suspend ";
@@ -62,7 +62,8 @@ in {
     ./git
     ./neovim
     ./tmux
-  ];
+    ./spicetify/spicetify.nix
+    ];
 
 
 
@@ -110,7 +111,7 @@ in {
         night-light-schedule-automatic = false;
         night-light-schedule-from = 18.0;
         night-light-schedule-to = 7.0;
-        night-light-temperature = 2600;
+        night-light-temperature = 2700;
       };
       "ca/desrt/dconf-editor" = {
         show-warning = false;
@@ -127,6 +128,7 @@ in {
           "gsconnect@andyholmes.github.io"
           "hide-keyboard-layout@sitnik.ru"
           "openweather-extension@penguin-teal.github.io"
+          "no-titlebar-when-maximized@alec.ninja"
         ];
       };
       "org/gnome/shell/keybindings" = {

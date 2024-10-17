@@ -5,14 +5,13 @@
 { config, pkgs, ... }:
 
 {
-   nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
+    nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
     nix.settings.experimental-features = ["nix-command" "flakes"];
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       ./gnome
       ./zsh
-
     ];
 
   # Bootloader.
@@ -95,11 +94,11 @@
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
     #  thunderbird
-        gcc
+
         google-chrome
         vscode
         brave
-        spotify
+        #spotify
         protonvpn-gui
         vlc
         fzf
@@ -108,8 +107,6 @@
         playerctl
         nodejs_22
         bat
-        pulseaudio
-        os-prober
         stremio
         discord
         gh
@@ -125,6 +122,7 @@
         comma
         nurl
         epiphany
+         spicetify-cli
     ];
   };
 

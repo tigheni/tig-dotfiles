@@ -15,6 +15,7 @@ config.font = wezterm.font_with_fallback({
 config.window_background_opacity = 0.9
 config.window_close_confirmation = "AlwaysPrompt"
 config.scrollback_lines = 3000
+
 config.default_workspace = "main"
 
 -- Dim inactive panes
@@ -22,7 +23,7 @@ config.inactive_pane_hsb = {
   saturation = 0.24,
   brightness = 0.5
 }
-
+config.automatically_reload_config = true
 -- Keys
 config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 1000 }
 config.keys = {
