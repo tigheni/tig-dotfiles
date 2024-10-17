@@ -62,7 +62,6 @@ in {
     ./git
     ./neovim
     ./tmux
-    ./spicetify/spicetify.nix
     ];
 
 

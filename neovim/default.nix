@@ -14,7 +14,7 @@
       gcc
       pyright
       lua-language-server
-      /* vscode-langservers-extracted */
+       vscode-langservers-extracted
       tailwindcss-language-server
       yaml-language-server
       alejandra
