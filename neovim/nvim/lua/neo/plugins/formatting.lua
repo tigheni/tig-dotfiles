@@ -45,7 +45,7 @@ return {
           if vim.g.disable_autoformat then
             return
           end
-          return {}
+          return { timeout_ms = 1500 }
         end,
       })
 
