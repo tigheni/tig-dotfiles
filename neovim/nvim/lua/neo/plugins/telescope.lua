@@ -46,6 +46,8 @@ return {
           i = {
             ["<C-k>"] = "move_selection_previous",
             ["<C-j>"] = "move_selection_next",
+            ["<C-u>"] = "results_scrolling_up",
+            ["<C-d>"] = "results_scrolling_down",
             ["<C-p>"] = function()
               spectre.open({ search_text = string.sub(vim.api.nvim_get_current_line(), 3) })
               vim.cmd("norm! jj")
