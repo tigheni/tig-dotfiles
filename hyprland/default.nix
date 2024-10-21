@@ -34,17 +34,6 @@
     imports = [../waybar];
     xdg.configFile."hypr/hyprland.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hyprland.conf";
 
-    services.flameshot = {
-      enable = true;
-      settings = {
-        General = {
-          showDesktopNotification = false;
-          saveLastRegion = true;
-          showHelp = false;
-        };
-      };
-    };
-
     home.pointerCursor = {
       gtk.enable = true;
       package = pkgs.bibata-cursors;

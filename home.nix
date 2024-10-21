@@ -11,6 +11,7 @@
     ./lazygit
     ./git
     ./kanshi
+    ./flameshot
   ];
 
   home.file.".zshrc".text = "";
