@@ -57,6 +57,7 @@ return {
             "Input.tsx",
             "Button.tsx",
             "react-leaflet",
+            "leaflet",
           },
           preferTypeOnlyAutoImports = true,
         },
