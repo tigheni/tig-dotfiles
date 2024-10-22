@@ -8,6 +8,8 @@
   hardware.bluetooth.enable = true;
   services.pipewire.enable = true;
 
+  services.devmon.enable = true;
+
   users.users.abdennour = {
     packages = with pkgs; [
       dunst
