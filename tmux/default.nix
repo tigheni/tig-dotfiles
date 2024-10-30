@@ -38,7 +38,6 @@ in {
       bind -n 'M-e' if-shell "$is_vim" 'send-keys M-e'  'select-pane -U ; resize-pane -Z'
       bind -n 'M-i' if-shell "$is_vim" 'send-keys M-i'  'select-pane -R'
 
-      bind g display-popup -w 100% -h 100% -E "lazygit"
       bind s display-popup -E "s"
       bind k switch-client -n
       bind e switch-client -n

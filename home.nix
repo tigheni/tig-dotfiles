@@ -3,12 +3,10 @@
   home.homeDirectory = "/home/abdennour";
 
   imports = [
-    ./wezterm
     ./kitty
     ./neovim
     ./tmux
     ./starship
-    ./lazygit
     ./git
     ./kanshi
     ./flameshot

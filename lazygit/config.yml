@@ -1,8 +1,0 @@
-gui:
-  showFileTree: false
-  expandFocusedSidePanel: true
-  skipStashWarning: true
-
-git:
-  paging:
-    pager: delta --dark --paging=never
