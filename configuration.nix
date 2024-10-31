@@ -61,6 +61,7 @@
       comma
       nurl
       epiphany
+      htop
     ];
   };
 
