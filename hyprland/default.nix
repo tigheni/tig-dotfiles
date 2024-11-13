@@ -3,6 +3,7 @@
     enable = true;
     portalPackage = pkgs.xdg-desktop-portal-wlr;
   };
+  programs.hyprlock.enable = true;
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
@@ -33,6 +34,8 @@
   home-manager.users.abdennour = {config, ...}: {
     imports = [../waybar];
     xdg.configFile."hypr/hyprland.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hyprland.conf";
+    xdg.configFile."hypr/hyprlock.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hyprlock.conf";
+    xdg.configFile."hypr/hypridle.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hypridle.conf";
 
     home.pointerCursor = {
       gtk.enable = true;
