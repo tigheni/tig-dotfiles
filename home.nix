@@ -56,12 +56,12 @@ in {
   home.homeDirectory = "/home/tig";
 
   imports = [
-    ./wezterm
-    ./starship
     ./lazygit
     ./git
     ./neovim
     ./tmux
+    ./starship
+    ./wezterm
     ];
 
 

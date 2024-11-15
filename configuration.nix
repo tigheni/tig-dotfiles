@@ -94,11 +94,10 @@
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
     #  thunderbird
-
         google-chrome
         vscode
         brave
-        #spotify
+        spotify
         protonvpn-gui
         vlc
         fzf
@@ -122,7 +121,8 @@
         comma
         nurl
         epiphany
-         spicetify-cli
+        spicetify-cli
+        pavucontrol
     ];
   };
 
