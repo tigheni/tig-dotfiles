@@ -33,6 +33,10 @@
     fi
   '';
 
+  services.ddccontrol.enable = true;
+  hardware.i2c.enable = true;
+  users.users.abdennour.extraGroups = ["i2c"];
+
   home-manager.users.abdennour = {config, ...}: {
     imports = [../waybar];
     xdg.configFile."hypr/hyprland.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hyprland.conf";
