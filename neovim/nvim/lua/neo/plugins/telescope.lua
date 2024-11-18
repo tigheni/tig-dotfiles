@@ -20,7 +20,7 @@ return {
     telescope.setup({
       pickers = {
         oldfiles = { cwd_only = true, previewer = false },
-        find_files = { previewer = false },
+        find_files = { previewer = false, hidden = true },
         buffers = { sort_mru = true, ignore_current_buffer = true },
         lsp_references = {
           include_declaration = false,
@@ -28,6 +28,7 @@ return {
         },
       },
       defaults = {
+        file_ignore_patterns = { ".git/" },
         vimgrep_arguments = {
           -- required
           "rg",
