@@ -54,7 +54,6 @@
       zoxide
       fzf
       delta
-      hubstaff
       zip
       unzip
       tldr
