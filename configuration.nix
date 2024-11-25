@@ -121,8 +121,8 @@
         comma
         nurl
         epiphany
+        spicetify-cli
         pavucontrol
-
     ];
   };
 
@@ -143,6 +143,7 @@ services.udev.extraRules = ''
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
 '';
+
   fonts.packages = with pkgs; [
     (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka" ];})
   ];
@@ -187,8 +188,6 @@ services.udev.extraRules = ''
 networking.firewall.allowedUDPPortRanges = [
   { from = 1714; to = 1764; }
 ];
-networking.firewall.allowedTCPPorts = [ 59010 ];
-networking.firewall.allowedUDPPorts = [ 59010 ];
   # Or disable the firewall altogether.
   networking.firewall.enable = true;
 
