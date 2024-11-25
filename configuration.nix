@@ -140,12 +140,8 @@
     silent = true;
   };
 services.udev.extraRules = ''
-<<<<<<< HEAD
-SUBSYSTEM=="input", ATTRS{name}=="SZH usb keyboard", ATTR{power/wakeup}="disabled"
-=======
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
->>>>>>> fc8ada8 (chore: Update NixOS configuration( fix power/wakeup problem, including firewall rules and allowed ports (gsconnect clipboard))
 '';
   fonts.packages = with pkgs; [
     (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka" ];})
