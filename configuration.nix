@@ -69,6 +69,7 @@
       epiphany
       htop
       bluetuith
+      ddcutil
     ];
   };
 
