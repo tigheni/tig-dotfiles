@@ -68,6 +68,7 @@
       nurl
       epiphany
       htop
+      bluetuith
     ];
   };
 
