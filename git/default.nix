@@ -7,6 +7,7 @@
         email = "zfnori@gmail.com";
       };
       pull.rebase = true;
+      push.autoSetupRemote = true;
     };
     ignores = [".direnv/"];
   };
