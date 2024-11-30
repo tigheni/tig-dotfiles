@@ -11,14 +11,20 @@
   ];
   nixpkgs.config.allowUnfree = true;
 
-  hardware.graphics.extraPackages = with pkgs; [
-    intel-media-driver
-  ];
+  hardware.graphics.enable = true;
+  services.xserver.videoDrivers = ["nvidia"];
+  hardware.nvidia.open = false;
+  hardware.nvidia.prime = {
+    offload.enable = true;
+    offload.enableOffloadCmd = true;
+    intelBusId = "PCI:0:2:0";
+    nvidiaBusId = "PCI:2:0:0";
+  };
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_6_11;
 
   networking.hostName = "nixos"; # Define your hostname.
 
@@ -65,8 +71,8 @@
     ];
   };
 
+  programs.steam.enable = true;
   services.mullvad-vpn.enable = true;
-
   services.playerctld.enable = true;
 
   programs.nh = {
