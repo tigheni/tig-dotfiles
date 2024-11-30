@@ -3,6 +3,7 @@
   "position": "top",
   "margin": "0",
   "mod": "dock",
+  "start_hidden": true,
   "exclusive": true,
   "passthrough": false,
   "gtk-layer-shell": true,
