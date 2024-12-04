@@ -22,14 +22,32 @@
     useOSProber = true;  # Detect other OSes (Windows)
 
   };
-
-
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # bluetooth
+ hardware.bluetooth.package = pkgs.bluez;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings = {
+      General = {
+        Name = "Hello";
+        ControllerMode = "dual";
+        FastConnectable = "true";
+        Experimental = "true";
+
+      };
+      Policy = {
+        AutoEnable = "true";
+      };
+    };
+  };
+  services.blueman.enable = true;
+
 
 
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
@@ -54,11 +72,6 @@
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
-
-  # Enable the GNOME Desktop Environment.
-
-
-
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
@@ -93,7 +106,6 @@
     description = "tig";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
-    #  thunderbird
         google-chrome
         vscode
         brave
@@ -121,12 +133,11 @@
         comma
         nurl
         epiphany
-        spicetify-cli
         pavucontrol
+        pulseaudio
+        linux-firmware
     ];
   };
-
-
 
   programs.nh = {
     enable = true;
@@ -177,6 +188,7 @@ services.udev.extraRules = ''
   # };
 
   # List services that you want to enable:
+
 
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
