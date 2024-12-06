@@ -25,22 +25,10 @@
   boot.loader.efi.canTouchEfiVariables = true;
 
   # bluetooth
- hardware.bluetooth.package = pkgs.bluez;
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
-    settings = {
-      General = {
-        Name = "Hello";
-        ControllerMode = "dual";
-        FastConnectable = "true";
-        Experimental = "true";
-
-      };
-      Policy = {
-        AutoEnable = "true";
-      };
-    };
+    settings.General.Experimental = true;
   };
   services.blueman.enable = true;
 
@@ -99,7 +87,6 @@
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tig = {
     isNormalUser = true;
@@ -128,6 +115,7 @@
         protonvpn-gui
         zip
         unzip
+        gnumake
         tldr
         glab
         comma
@@ -135,9 +123,16 @@
         epiphany
         pavucontrol
         pulseaudio
-        linux-firmware
     ];
   };
+systemd.services.bluetooth-modprobe = {
+  description = "Reload btusb module at boot";
+  wantedBy = [ "multi-user.target" ];
+  serviceConfig = {
+    ExecStartPre = "/run/current-system/sw/bin/bash -c '/run/current-system/sw/bin/modprobe -r btusb'";  # Correct path to modprobe
+    ExecStart = "/run/current-system/sw/bin/bash -c '/run/current-system/sw/bin/modprobe -v btusb'";  # Correct path to modprobe
+  };
+};
 
   programs.nh = {
     enable = true;

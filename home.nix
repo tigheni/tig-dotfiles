@@ -35,7 +35,16 @@
       command = "systemctl poweroff";
       binding = "<Control><super>d";
     }
-
+    {
+      name="audio output switch";
+      command ="tig-dotfiles/scripts/audio_Output_changer.sh";
+      binding="<Control><Alt>p";
+    }
+    {
+      name="headphones connect";
+      command ="bluetoothctl connect 04:58:84:15:EE:9E";
+      binding="<Control><super>b";
+    }
   ];
 
   customPrefix = "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings";
@@ -63,8 +72,6 @@ in {
     ./starship
     ./wezterm
     ];
-
-
 
   dconf.settings =
     {
