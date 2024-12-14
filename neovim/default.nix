@@ -12,6 +12,7 @@
     withNodeJs = true;
     extraPackages = with pkgs; [
       gcc
+      gnumake
       pyright
       lua-language-server
       vscode-langservers-extracted
@@ -23,6 +24,7 @@
       emmet-language-server
       prettierd
       taplo
+      vtsls
       gopls
       golangci-lint
       typos-lsp
