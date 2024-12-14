@@ -71,6 +71,7 @@
       htop
       bluetuith
       ddcutil
+      batsignal
     ];
   };
 
