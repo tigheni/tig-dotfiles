@@ -3,7 +3,7 @@ local on_attach = function(client, bufnr)
     vim.lsp.inlay_hint.enable(true)
   end
 
-  vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = bufnr, desc = "Jump to definition" })
+  vim.keymap.set("n", "gi", vim.lsp.buf.definition, { buffer = bufnr, desc = "Jump to definition" })
   vim.keymap.set("n", "gr", function()
     vim.lsp.buf.references({ includeDeclaration = false })
   end, { buffer = bufnr, desc = "Show LSP references" })

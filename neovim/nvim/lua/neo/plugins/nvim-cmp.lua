@@ -72,7 +72,10 @@ return {
     })
 
     cmp.setup.cmdline({ "/", "?" }, {
-      mapping = cmp.mapping.preset.cmdline(),
+      mapping = cmp.mapping.preset.cmdline({
+        ["<Up>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
+        ["<Down>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
+      }),
       sources = {
         { name = "buffer" },
       },
