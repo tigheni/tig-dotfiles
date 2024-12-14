@@ -73,7 +73,6 @@
     ];
   };
 
-  programs.steam.enable = true;
   services.mullvad-vpn.enable = true;
   services.playerctld.enable = true;
 
