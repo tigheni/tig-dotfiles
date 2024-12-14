@@ -9,7 +9,7 @@
   "gtk-layer-shell": true,
   "height": 32,
   "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["clock"],
+  "modules-center": ["clock#2", "clock"],
   "modules-right": [
     "tray",
     "custom/vpn",
@@ -34,7 +34,7 @@
     "spacing": 10,
   },
   "clock": {
-    "format": "{:%H:%M}",
+    "format": "{:%H:%M %d/%m/%Y}",
     "tooltip-format": "{calendar}",
     "calendar": {
       "format": {
@@ -43,6 +43,10 @@
         "today": "<span color='#ffcc66'><b><u>{}</u></b></span>",
       },
     },
+  },
+  "clock#2": {
+    "format": "{:%H:%M}",
+    "timezone": "America/Ensenada",
   },
   "backlight": {
     "device": "intel_backlight",
