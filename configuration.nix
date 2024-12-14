@@ -11,20 +11,10 @@
   ];
   nixpkgs.config.allowUnfree = true;
 
-  hardware.graphics.enable = true;
-  services.xserver.videoDrivers = ["nvidia"];
-  hardware.nvidia.open = false;
-  hardware.nvidia.prime = {
-    offload.enable = true;
-    offload.enableOffloadCmd = true;
-    intelBusId = "PCI:0:2:0";
-    nvidiaBusId = "PCI:2:0:0";
-  };
-
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelPackages = pkgs.linuxPackages_6_11;
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
 
   networking.hostName = "nixos"; # Define your hostname.
 
