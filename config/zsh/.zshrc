@@ -117,7 +117,6 @@ gpid() { git push -u origin HEAD && xdg-open "$(gh pr create --draft --fill-firs
 
 npg() { nurl "$1" 2>/dev/null | sed -n 2,5p | wl-copy; }
 
-EDITOR="nvim"
 export MANPAGER="nvim +Man!"
 export MANWIDTH=999
 

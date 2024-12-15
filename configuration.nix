@@ -8,6 +8,8 @@
     ./hardware-configuration.nix
     ./zsh
     ./hyprland
+    ./neovim
+    ./tmux
   ];
   nixpkgs.config.allowUnfree = true;
 
@@ -72,7 +74,25 @@
       bluetuith
       ddcutil
       batsignal
+      kanshi
+      kitty
+      flameshot
     ];
+  };
+
+  programs.starship.enable = true;
+  programs.waybar.enable = true;
+
+  programs.git = {
+    enable = true;
+    config = {
+      user = {
+        name = "Abdennour Zahaf";
+        email = "zfnori@gmail.com";
+      };
+      pull.rebase = true;
+      push.autoSetupRemote = true;
+    };
   };
 
   services.mullvad-vpn.enable = true;
@@ -97,6 +117,8 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = [];
+
+  system.userActivationScripts.dotfiles = builtins.readFile ./scripts/symlink-config.sh;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions

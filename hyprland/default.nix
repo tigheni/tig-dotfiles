@@ -24,26 +24,11 @@
       grim
       hyprpicker
       nautilus
+      bibata-cursors
     ];
   };
 
   services.ddccontrol.enable = true;
   hardware.i2c.enable = true;
   users.users.abdennour.extraGroups = ["i2c"];
-
-  home-manager.users.abdennour = {config, ...}: {
-    imports = [../waybar];
-    xdg.configFile."hypr/hyprland.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hyprland.conf";
-    xdg.configFile."hypr/hyprlock.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hyprlock.conf";
-    xdg.configFile."hypr/hypridle.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/Projects/dotfiles/hyprland/hypridle.conf";
-
-    home.pointerCursor = {
-      gtk.enable = true;
-      package = pkgs.bibata-cursors;
-      name = "Bibata-Modern-Classic";
-      size = 24;
-    };
-
-    gtk.enable = true;
-  };
 }

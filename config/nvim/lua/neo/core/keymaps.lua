@@ -1,8 +1,9 @@
 -- set leader key to space
 vim.g.mapleader = " "
 
--- close all open buffers
+-- close buffers
 vim.keymap.set("n", "<leader>b", "<cmd>%bd<cr>", { desc = "Close all open buffers" })
+vim.keymap.set("n", "<leader>B", "<cmd>bd!<cr>", { desc = "Force close buffer" })
 
 -- navigation
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
