@@ -27,12 +27,6 @@
     ];
   };
 
-  programs.zsh.loginShellInit = ''
-    if [ -z $DISPLAY ] && [ "$(tty)" = "/dev/tty1" ]; then
-      exec Hyprland
-    fi
-  '';
-
   services.ddccontrol.enable = true;
   hardware.i2c.enable = true;
   users.users.abdennour.extraGroups = ["i2c"];
