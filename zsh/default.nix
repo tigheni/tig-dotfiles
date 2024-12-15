@@ -86,6 +86,8 @@
       npg() { nurl "$1" 2>/dev/null | sed -n 2,5p | wl-copy; }
 
       EDITOR="nvim"
+      export MANPAGER="nvim +Man!"
+      export MANWIDTH=999
 
       eval "$(zoxide init zsh)"
       source <(fzf --zsh)
