@@ -75,13 +75,31 @@
         git add --all && git commit -m "$1"
       fi
       }
-      goi() { git fetch origin master:master --update-head-ok && git checkout -b task#"$1" master; }
-      gci() { git branch -d task#"$1"; }
-      gopi() { git fetch origin production:production --update-head-ok && git checkout -b task#"$1" production; }
+      gci() { git branch -D task#"$1"; }
       gcoi() { git checkout task#"$1"; }
       gacp() { git add --all && git commit -m "$1" && git push; }
       gacpi() { git add --all && git commit -m "$1" && gpi; }
-      gpi() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first --body "Fixes $(git rev-parse --abbrev-ref HEAD | cut -c 7-)")/files" 1>/dev/null; }
+      gpii() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first)/files" 1>/dev/null; }
+      open_issue() {
+        BASE_BRANCH=$2
+        BRANCH_NAME=task#"$1"
+        git fetch origin $BASE_BRANCH:$BASE_BRANCH --update-head-ok && git checkout -b $BRANCH_NAME $BASE_BRANCH;
+        git config branch.$BRANCH_NAME.description $BASE_BRANCH
+      }
+      goi() { open_issue $1 master; }
+      gopi() { open_issue $1 production; }
+      release_branch() {
+        gh release view --json "targetCommitish" | jq .targetCommitish  | tr -d '"'
+      }
+      gcor() {
+        git checkout $(release_branch)
+      }
+      gori() {
+        open_issue $1 $(release_branch)
+      }
+      gpi() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first --base "$(git config branch.$(git rev-parse --abbrev-ref HEAD).description)" --body "Task ID [$(git rev-parse --abbrev-ref HEAD | cut -c 6-)]")/files" 1>/dev/null; }
+      gpid() { git push -u origin HEAD && xdg-open "$(gh pr create --draft --fill-first --base "$(git config branch.$(git rev-parse --abbrev-ref HEAD).description)" --body "Task ID [$(git rev-parse --abbrev-ref HEAD | cut -c 6-)]")/files" 1>/dev/null; }
+      gmp() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first)/files" 1>/dev/null; }
 
       npg() { nurl "$1" 2>/dev/null | sed -n 2,5p | wl-copy; }
 
@@ -134,6 +152,7 @@
       gma = "git merge --abort";
       gpmm = "git fetch origin master:master --update-head-ok && gmm";
       gpmp = "git fetch origin production:production --update-head-ok && gmp";
+      gmpr = "gh pr review --comment -b 'SR' && gh pr merge --squash --delete-branch";
       # clean-nix = "nix-env --delete-generations old ; nix-store --gc ; nix-collect-garbage -d ; nix-store --optimise";
       ns = "nix search nixpkgs";
     };
