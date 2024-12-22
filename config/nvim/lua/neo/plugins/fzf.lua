@@ -1,27 +1,68 @@
 return {
   "ibhagwan/fzf-lua",
-  enabled = false,
   dependencies = { "nvim-tree/nvim-web-devicons" },
   config = function()
     local fzf = require("fzf-lua")
 
-    -- vim.keymap.set("n", "<leader>sw", builtin.grep_string, { desc = "Word under cursor" })
-    -- vim.keymap.set("n", "<leader>sg", function()
-    --   builtin.live_grep({ additional_args = { "--smart-case" } })
-    -- end, { desc = "Telescope: Grep (smart case)" })
-    -- vim.keymap.set("n", "<leader>sG", builtin.live_grep, { desc = "Telescope: Grep (case sensitive)" })
-    -- vim.keymap.set("n", "<leader><space>", fzf.files, { desc = "Telescope: Git Files" })
-    -- vim.keymap.set("n", "<leader>ss", builtin.lsp_document_symbols, { desc = "Telescope: Document Symbols" })
-    -- vim.keymap.set("n", "<leader>sb", builtin.current_buffer_fuzzy_find, { desc = "Telescope: Search Buffer" })
-    -- vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "Telescope: Resume" })
-    -- vim.keymap.set("n", "<leader>r", builtin.oldfiles, { desc = "Telescope: Recent Files" })
-    -- vim.keymap.set("n", "<leader>o", builtin.buffers, { desc = "Telescope: Buffers" })
-    -- vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "Telescope: Key Maps" })
-    -- vim.keymap.set("n", "<leader>sc", builtin.commands, { desc = "Telescope: Commands" })
-    -- vim.keymap.set("n", "gr", builtin.lsp_references, { desc = "Show LSP references" })
-    -- vim.keymap.set("n", "<leader>sd", function()
-    --   builtin.diagnostics({ bufnr = 0 })
-    -- end, { desc = "Show buffer diagnostics" })
-    -- vim.keymap.set("n", "<leader>sD", builtin.diagnostics, { desc = "Show workspace diagnostics" })
+    fzf.setup({
+      defaults = { formatter = "path.filename_first" },
+      oldfiles = { cwd_only = true, include_current_session = true },
+      keymap = {
+        fzf = {
+          ["ctrl-q"] = "select-all+accept",
+          ["ctrl-d"] = "half-page-down",
+          ["ctrl-u"] = "half-page-up",
+        },
+      },
+      lsp = { includeDeclaration = false, jump_to_single_result = true },
+      winopts = { preview = { delay = 0 } },
+      grep = {
+        rg_opts = "--column --line-number --no-heading --color=always --smart-case --max-columns=4096 -e",
+        actions = {
+          ["ctrl-space"] = { fzf.actions.grep_lgrep },
+          ["ctrl-s"] = {
+            fn = function(_, opts)
+              fzf.actions.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = "--smart-case" }))
+            end,
+          },
+          ["ctrl-t"] = {
+            fn = function(_, opts)
+              fzf.actions.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = "-g '!*.test.*'" }))
+            end,
+          },
+          ["ctrl-g"] = {
+            fn = function(_, opts)
+              fzf.actions.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = "-g '!*generated*'" }))
+            end,
+          },
+        },
+      },
+    })
+
+    vim.keymap.set("n", "<leader>sc", fzf.commands, { desc = "Commands" })
+    vim.keymap.set("n", "<leader>sd", fzf.diagnostics_document, { desc = "Buffer diagnostics" })
+    vim.keymap.set("n", "<leader>sD", fzf.diagnostics_workspace, { desc = "Workspace diagnostics" })
+    vim.keymap.set("n", "<leader>sg", fzf.live_grep, { desc = "Live Grep" })
+    vim.keymap.set("n", "<leader>sh", fzf.helptags, { desc = "Help Tags" })
+    vim.keymap.set("n", "<leader>sj", fzf.git_commits, { desc = "Commits" })
+    vim.keymap.set("n", "<leader>sk", fzf.keymaps, { desc = "Key Maps" })
+    vim.keymap.set("n", "<leader>sr", fzf.resume, { desc = "Resume" })
+    vim.keymap.set("n", "<leader>ss", fzf.lsp_document_symbols, { desc = "Document Symbols" })
+    vim.keymap.set("n", "<leader>sw", fzf.grep_cword, { desc = "Grep cword" })
+    vim.keymap.set("x", "<leader>sw", fzf.grep_visual, { desc = "Grep visual" })
+
+    vim.keymap.set("n", "<leader><space>", fzf.files, { desc = "Files" })
+    vim.keymap.set("n", "<leader>r", fzf.oldfiles, { desc = "Recent Files" })
+
+    vim.keymap.set("n", "gr", function()
+      fzf.lsp_references({
+        regex_filter = function(value)
+          return not vim.startswith(value.text, "import")
+            and not vim.startswith(string.sub(value.text, value.col - 2, value.col - 1), "</")
+            and string.sub(value.text, 0, value.col - 1) ~= "export default "
+        end,
+      })
+    end, { desc = "Show LSP references" })
+    vim.keymap.set("n", "gt", fzf.lsp_typedefs, { desc = "Show LSP type definitions" })
   end,
 }

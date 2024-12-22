@@ -24,12 +24,6 @@ local function definitionPredicate(value)
     )
 end
 
-local function referencePredicate(value)
-  return not vim.startswith(value.text, "import")
-    and not vim.startswith(string.sub(value.text, value.col - 2, value.col - 1), "</")
-    and string.sub(value.text, 0, value.col - 1) ~= "export default "
-end
-
 return {
   "vtsls",
   {
@@ -73,29 +67,6 @@ return {
         end
 
         vim.lsp.handlers["textDocument/definition"](err, locations, method, ...)
-      end,
-      ["textDocument/references"] = function(_, locations, ctx)
-        local client = vim.lsp.get_client_by_id(ctx.client_id)
-        ---@cast client -nil
-
-        local filtered_items =
-          filter(vim.lsp.util.locations_to_items(locations, client.offset_encoding), referencePredicate)
-
-        if #filtered_items == 1 then
-          vim.lsp.util.jump_to_location(filtered_items[1].user_data, client.offset_encoding)
-        else
-          local opts = {}
-          require("telescope.pickers")
-            .new(opts, {
-              prompt_title = "LSP References",
-              finder = require("telescope.finders").new_table({
-                results = filtered_items,
-                entry_maker = require("telescope.make_entry").gen_from_quickfix(opts),
-              }),
-              previewer = require("telescope.config").values.qflist_previewer(opts),
-            })
-            :find()
-        end
       end,
     },
     on_attach = function()

@@ -4,9 +4,6 @@ local on_attach = function(client, bufnr)
   end
 
   vim.keymap.set("n", "gi", vim.lsp.buf.definition, { buffer = bufnr, desc = "Jump to definition" })
-  vim.keymap.set("n", "gr", function()
-    vim.lsp.buf.references({ includeDeclaration = false })
-  end, { buffer = bufnr, desc = "Show LSP references" })
   vim.keymap.set("n", "<leader>n", vim.lsp.buf.rename, { buffer = bufnr, desc = "Smart rename" })
   vim.keymap.set({ "n", "x" }, "<leader>al", vim.lsp.buf.code_action, { buffer = bufnr, desc = "Show code actions" })
   vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { buffer = bufnr, desc = "Show line diagnostics" })
