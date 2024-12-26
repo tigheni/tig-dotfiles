@@ -17,7 +17,7 @@ return {
       lsp = { includeDeclaration = false, jump_to_single_result = true },
       winopts = { preview = { delay = 0 } },
       grep = {
-        rg_opts = "--column --line-number --no-heading --color=always --smart-case --max-columns=4096 -e",
+        rg_opts = "--column --line-number --no-heading --color=always --fixed-strings --smart-case --max-columns=4096 -e",
         actions = {
           ["ctrl-space"] = { fzf.actions.grep_lgrep },
           ["ctrl-s"] = {
