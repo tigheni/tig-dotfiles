@@ -29,7 +29,7 @@ return {
   "neovim/nvim-lspconfig",
   event = { "BufReadPre", "BufNewFile" },
   dependencies = {
-    "hrsh7th/cmp-nvim-lsp",
+    "saghen/blink.cmp",
     "b0o/schemastore.nvim",
   },
   config = function()
@@ -107,7 +107,7 @@ return {
     }
 
     local lspconfig = require("lspconfig")
-    local capabilities = require("cmp_nvim_lsp").default_capabilities()
+    local capabilities = require("blink.cmp").get_lsp_capabilities()
 
     for _, lsp in ipairs(language_servers) do
       if type(lsp) == "table" then
