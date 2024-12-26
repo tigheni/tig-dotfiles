@@ -10,6 +10,7 @@
     ./hyprland
     ./neovim
     ./tmux
+    ./whitelist
   ];
   nixpkgs.config.allowUnfree = true;
 
