@@ -5,14 +5,14 @@
   services.xserver.desktopManager.gnome.enable = true;
   services.xserver.displayManager.gdm.wayland = false;
   services.xserver.xkb.options = "terminate:ctrl_alt_bksp, lv3:ralt_switch, caps:escape_shifted_capslock";
-  services.udev.packages = with pkgs; [gnome.gnome-settings-daemon];
+  services.udev.packages = with pkgs; [gnome-settings-daemon];
   programs.dconf.enable = true;
 
   users.users.tig = {
     packages = with pkgs; [
-      gnome.gnome-tweaks
+      gnome-tweaks
       gnomeExtensions.gsconnect
-      gnome.dconf-editor
+      dconf-editor
       gnomeExtensions.vitals
       gnomeExtensions.notification-timeout
       gnomeExtensions.clipboard-indicator
@@ -26,7 +26,6 @@
 
   environment.gnome.excludePackages = (with pkgs; [
   gnome-tour
-]) ++ (with pkgs.gnome; [
   epiphany # web browser
   geary # email reader
   tali # poker game
