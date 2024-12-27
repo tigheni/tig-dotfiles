@@ -123,6 +123,7 @@
         epiphany
         pavucontrol
         pulseaudio
+        joplin-desktop
     ];
   };
 systemd.services.bluetooth-modprobe = {
@@ -150,9 +151,7 @@ services.udev.extraRules = ''
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
 '';
 
-  fonts.packages = with pkgs; [
-    (nerdfonts.override {fonts = ["JetBrainsMono" "Iosevka" ];})
-  ];
+
   # Enable automatic login for the user.
   #services.xserver.displayManager.autoLogin.enable = true;
   #services.displayManager.autoLogin ="tig";
