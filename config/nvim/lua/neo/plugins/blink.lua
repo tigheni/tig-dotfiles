@@ -1,5 +1,6 @@
 return {
   "saghen/blink.cmp",
+  version = "*",
   dependencies = {
     "rafamadriz/friendly-snippets",
     {
@@ -11,10 +12,9 @@ return {
       end,
     },
   },
-  version = "*",
   opts = {
     keymap = {
-      preset = "super-tab",
+      preset = "enter",
       ["<CR>"] = {
         function(cmp)
           return cmp.accept({
@@ -27,21 +27,17 @@ return {
         end,
         "fallback",
       },
+      ["<Tab>"] = {
+        function(cmp)
+          if vim.fn.getcmdtype() ~= "" then
+            return cmp.accept()
+          else
+            return cmp.snippet_forward()
+          end
+        end,
+        "fallback",
+      },
     },
-    snippets = {
-      expand = function(snippet)
-        require("luasnip").lsp_expand(snippet)
-      end,
-      active = function(filter)
-        if filter and filter.direction then
-          return require("luasnip").jumpable(filter.direction)
-        end
-        return require("luasnip").in_snippet()
-      end,
-      jump = function(direction)
-        require("luasnip").jump(direction)
-      end,
-    },
-    sources = { default = { "lsp", "path", "luasnip", "buffer" } },
+    snippets = { preset = "luasnip" },
   },
 }
