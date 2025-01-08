@@ -131,13 +131,4 @@
     "format": "{}% ",
     "max-length": 10,
   },
-  "custom/vpn": {
-    "format": "🔑 {}",
-    "interval": 3,
-    "exec": "status=$(mullvad status | head -n 1); echo \"$status\" | awk '{if ($0 ~ /Disconnected/) print \"None\"; else print $3}'",
-    "exec-if": "(( $(date -d \"$(mullvad account get | tail -2 | head -n 1 | awk '{print $3}')\" +%s) > $(date +%s) ))",
-    "on-click": "mullvad connect",
-    "on-double-click": "mullvad reconnect",
-    "on-click-right": "mullvad disconnect",
-  },
 }

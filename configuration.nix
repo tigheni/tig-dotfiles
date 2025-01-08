@@ -96,7 +96,10 @@
     };
   };
 
-  services.mullvad-vpn.enable = true;
+  services.mullvad-vpn = {
+    enable = true;
+    package = pkgs.mullvad-vpn;
+  };
   services.playerctld.enable = true;
 
   programs.nh = {
