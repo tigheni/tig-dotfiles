@@ -90,3 +90,8 @@ end, { desc = "Open filepath or URI under cursor" })
 -- Simple mark and jump
 vim.keymap.set("n", "<leader>;", "mA", { desc = "Set a global mark" })
 vim.keymap.set("n", "<leader>'", "`A", { desc = "Jump to a global mark" })
+
+-- Edit path in clipboard
+vim.keymap.set("n", "<leader>E", function()
+  vim.cmd("edit " .. vim.fn.getreg("+"))
+end, { desc = "Edit path in clipboard" })
