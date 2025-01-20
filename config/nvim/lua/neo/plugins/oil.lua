@@ -26,6 +26,7 @@ return {
         ["<C-s>"] = false,
         ["q"] = "actions.close",
       },
+      float = { max_width = 0.8 },
     })
     vim.keymap.set("n", "<leader>e", oil.toggle_float, { desc = "Toggle oil float" })
   end,
