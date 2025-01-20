@@ -27,10 +27,9 @@ return {
     },
     build = "make tiktoken",
     config = function()
-      require("CopilotChat").setup()
-      vim.keymap.set({ "n", "x" }, "<leader>C", function()
-        require("CopilotChat.integrations.telescope").pick(require("CopilotChat.actions").prompt_actions())
-      end)
+      local chat = require("CopilotChat")
+
+      vim.keymap.set({ "n", "x" }, "<leader>ac", chat.open, { desc = "AI: Chat" })
     end,
   },
 }
