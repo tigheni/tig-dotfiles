@@ -10,7 +10,7 @@
   services.pipewire.enable = true;
 
   services.gvfs.enable = true;
-  services.devmon.enable = false;
+  services.devmon.enable = true;
   services.udisks2.enable = true;
 
   users.users.abdennour = {
