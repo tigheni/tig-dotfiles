@@ -36,7 +36,6 @@ return {
     local schema_store = require("schemastore")
     local language_servers = {
       "html",
-      "cssls",
       require("neo.plugins.lsp.eslint"),
       "emmet_language_server",
       require("neo.plugins.lsp.vtsls"),
