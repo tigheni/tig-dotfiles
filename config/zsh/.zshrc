@@ -54,6 +54,7 @@ bindkey '^[h' forward-word
 bindkey "^E" history-beginning-search-backward-end
 bindkey "^N" history-beginning-search-forward-end
 bindkey '^Y' autosuggest-accept
+bindkey '^W' backward-kill-word
 
 function zle-keymap-select () {
     case $KEYMAP in
