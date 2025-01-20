@@ -5,6 +5,7 @@ return {
     local fzf = require("fzf-lua")
 
     fzf.setup({
+      fzf_opts = { ["--cycle"] = true },
       defaults = { formatter = "path.filename_first" },
       oldfiles = { cwd_only = true, include_current_session = true },
       keymap = {
@@ -15,6 +16,19 @@ return {
         },
       },
       lsp = { includeDeclaration = false, jump_to_single_result = true },
+      git = {
+        commits = {
+          winopts = { preview = { hidden = "hidden" } },
+          actions = {
+            ["ctrl-o"] = {
+              fn = function(selected)
+                local commit_hash = selected[1]:match("[^ ]+")
+                vim.cmd("DiffviewOpen " .. commit_hash .. "^!")
+              end,
+            },
+          },
+        },
+      },
       winopts = { preview = { delay = 0 } },
       grep = {
         rg_opts = "--column --line-number --no-heading --color=always --fixed-strings --smart-case --max-columns=4096 -e",
@@ -48,8 +62,10 @@ return {
     vim.keymap.set("n", "<leader>sk", fzf.keymaps, { desc = "Key Maps" })
     vim.keymap.set("n", "<leader>sr", fzf.resume, { desc = "Resume" })
     vim.keymap.set("n", "<leader>ss", fzf.lsp_document_symbols, { desc = "Document Symbols" })
-    vim.keymap.set("n", "<leader>sw", fzf.grep_cword, { desc = "Grep cword" })
-    vim.keymap.set("x", "<leader>sw", fzf.grep_visual, { desc = "Grep visual" })
+    vim.keymap.set("n", "<leader>sw", fzf.grep_cword, { desc = "Document Symbols" })
+    vim.keymap.set("n", "<leader>sw", function()
+      fzf.live_grep({ query = vim.fn.expand("<cword>") })
+    end, { desc = "Grep cword" })
 
     vim.keymap.set("n", "<leader><space>", fzf.files, { desc = "Files" })
     vim.keymap.set("n", "<leader>r", fzf.oldfiles, { desc = "Recent Files" })
