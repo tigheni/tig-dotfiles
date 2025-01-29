@@ -85,6 +85,7 @@ inoreabbrev rbm # TODO: remove before merging
 inoreabbrev cbm # TODO: change before merging
 inoreabbrev ubm # TODO: uncomment before merging
 inoreabbrev stp // STOPSHIP
+inoreabbrev todo // TODO:
 ]])
 
 vim.fn.setreg("c", "vaqSBvaqSbiclsx")
