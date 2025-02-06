@@ -18,12 +18,12 @@
     {
       name = "Skip backward";
       command = "playerctl position 5-";
-      binding = "<Control><Alt>]";
+      binding = "<Control><Super>]";
     }
     {
       name = "Skip forward";
       command = "playerctl position 5+";
-      binding = "<Control><Alt>[";
+      binding = "<Control><Super>[";
     }
     {
       name = "suspend ";

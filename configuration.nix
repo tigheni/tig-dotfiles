@@ -59,7 +59,7 @@
   };
 
   # Enable the X11 windowing system.
-  services.xserver.enable = true;
+  # services.xserver.enable = true
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
@@ -98,11 +98,11 @@
         brave
         spotify
         protonvpn-gui
-        vlc
+        # vlc
         fzf
         zoxide
         fd
-        playerctl
+         playerctl
         nodejs_22
         bat
         stremio
@@ -113,17 +113,17 @@
         ffmpeg
         delta
         protonvpn-gui
-        zip
-        unzip
+        # zip
+        # unzip
         gnumake
         tldr
         glab
         comma
         nurl
         epiphany
-        pavucontrol
-        pulseaudio
         joplin-desktop
+        blanket
+        libreoffice
     ];
   };
 systemd.services.bluetooth-modprobe = {
@@ -146,9 +146,11 @@ systemd.services.bluetooth-modprobe = {
     enable = true;
     silent = true;
   };
+ #ACTION=="add" SUBSYSTEM=="usb" ATTR{vendor}=="1d57" ATTR{device}=="2019" ATTR{power/wakeup}="disabled"
+ #ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
 services.udev.extraRules = ''
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
- ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
+
 '';
 
 
