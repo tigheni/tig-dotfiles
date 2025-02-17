@@ -1,5 +1,4 @@
 {pkgs, ...}: {
-  nixpkgs.overlays = map (n: (import ./overlays/${n})) (builtins.attrNames (builtins.readDir ./overlays));
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     warn-dirty = false;
@@ -52,12 +51,10 @@
         '';
       })
       brave
-      spotify
       gh
       ripgrep
       fd
       jq
-      webtorrent_desktop
       ytarchive
       ffmpeg
       zoxide
@@ -77,6 +74,7 @@
       kanshi
       kitty
       (flameshot.override {enableWlrSupport = true;})
+      (import ./packages/spotify.nix {pkgs = pkgs;})
     ];
   };
 

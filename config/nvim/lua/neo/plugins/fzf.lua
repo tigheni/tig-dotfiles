@@ -15,7 +15,7 @@ return {
           ["ctrl-u"] = "half-page-up",
         },
       },
-      lsp = { includeDeclaration = false, jump_to_single_result = true },
+      lsp = { includeDeclaration = false, jump1 = true },
       git = {
         commits = {
           winopts = { preview = { hidden = "hidden" } },

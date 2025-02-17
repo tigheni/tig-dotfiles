@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 tmux start-server
 
 selected="$(fd . "$HOME"/Projects --min-depth 1 --maxdepth 1 --type d --format {/} | fzf --bind=enter:replace-query+print-query)"

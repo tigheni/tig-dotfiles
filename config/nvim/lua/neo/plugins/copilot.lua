@@ -29,6 +29,8 @@ return {
     config = function()
       local chat = require("CopilotChat")
 
+      chat.setup()
+
       vim.keymap.set({ "n", "x" }, "<leader>ac", chat.open, { desc = "AI: Chat" })
     end,
   },
