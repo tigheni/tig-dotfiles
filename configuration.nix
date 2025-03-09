@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  whitelist,
+  ...
+}: {
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     warn-dirty = false;
@@ -9,7 +13,6 @@
     ./hyprland
     ./neovim
     ./tmux
-    ./whitelist
   ];
   nixpkgs.config.allowUnfree = true;
 
@@ -75,6 +78,7 @@
       kitty
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
+      whitelist
     ];
   };
 
