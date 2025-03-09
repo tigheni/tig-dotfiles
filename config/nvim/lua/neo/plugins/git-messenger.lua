@@ -13,5 +13,9 @@ return {
     vim.keymap.set("n", "<leader>gj", function()
       vim.cmd("!git checkout " .. git_blame.get_current_blame_text() .. "~1")
     end, { desc = "Checkout blame commit" })
+
+    vim.keymap.set("n", "<leader>D", function()
+      vim.cmd("DiffviewOpen " .. git_blame.get_current_blame_text() .. "^!")
+    end, { desc = "Diff blame commit" })
   end,
 }

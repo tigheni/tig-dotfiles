@@ -61,5 +61,6 @@ return {
         vim.cmd("DiffviewClose")
       end
     end, { desc = "Toggle Diffview" })
+    vim.keymap.set("n", "<leader>H", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })
   end,
 }
