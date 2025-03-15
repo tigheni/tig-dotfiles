@@ -45,7 +45,7 @@
 #qt-recentplay-filter=
 
 # Continue playback? (integer)
-#qt-continue=1
+qt-continue=2
 
 # Embed the file browser in open dialog (boolean)
 #qt-embedded-open=0
@@ -4012,13 +4012,13 @@ qt-privacy-ask=0
 #global-key-faster=
 
 # Faster (string)
-#key-faster=+
+key-faster=Shift++
 
 # Slower (string)
 #global-key-slower=
 
 # Slower (string)
-#key-slower=-
+key-slower=Shift+_
 
 # Normal rate (string)
 #global-key-rate-normal=
@@ -4030,13 +4030,13 @@ qt-privacy-ask=0
 #global-key-rate-faster-fine=
 
 # Faster (fine) (string)
-#key-rate-faster-fine=]
+key-rate-faster-fine=+
 
 # Slower (fine) (string)
 #global-key-rate-slower-fine=
 
 # Slower (fine) (string)
-#key-rate-slower-fine=[
+key-rate-slower-fine=-
 
 # Next (string)
 #global-key-next=
