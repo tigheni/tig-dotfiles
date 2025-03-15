@@ -99,7 +99,7 @@ gpii() { git push -u origin HEAD && xdg-open "$(gh pr create --fill-first)/files
 open_issue() {
   BASE_BRANCH=$2
   BRANCH_NAME=task#"$1"
-  git fetch origin $BASE_BRANCH:$BASE_BRANCH --update-head-ok && git checkout -b $BRANCH_NAME $BASE_BRANCH;
+  git pull origin $BASE_BRANCH:$BASE_BRANCH && git checkout -b $BRANCH_NAME $BASE_BRANCH;
   git config branch.$BRANCH_NAME.description $BASE_BRANCH
 }
 goi() { open_issue $1 master; }
