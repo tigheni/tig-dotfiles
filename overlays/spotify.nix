@@ -7,13 +7,11 @@ final: prev: let
   };
 in {
   spotify = prev.spotify.overrideAttrs (prev: {
-    buildInputs = [final.perl final.unzip final.zip];
+    buildInputs = [final.perl final.unzip final.zip final.util-linux final.curl];
     postInstall =
       (prev.postInstall or "")
       + ''
-        cp ${spotx}/spotx.sh spotx.sh
-        chmod +x spotx.sh
-        bash spotx.sh -P $out/share/spotify/ -c
+        bash ${spotx}/spotx.sh -P $out/share/spotify/ -c
       '';
   });
 }

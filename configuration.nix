@@ -94,8 +94,6 @@
         ffmpeg
         delta
         protonvpn-gui
-        # zip
-        # unzip
         gnumake
         tldr
         glab
@@ -130,9 +128,8 @@ systemd.services.bluetooth-modprobe = {
 
 services.udev.extraRules = ''
  ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
+ ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
 '';
-
-
   nixpkgs.config.allowUnfree = true;
 
   environment.systemPackages = with pkgs; [

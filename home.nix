@@ -81,6 +81,13 @@ in {
         show-battery-percentage = true;
         text-scaling-factor = 1.0;
       };
+      "org/gnome/desktop/background" = {
+        picture-uri = "file:///home/tig/Pictures/45.jpg";
+        picture-uri-dark = "file:///home/tig/Pictures/45.jpg";
+      };
+      "org/gnome/desktop/screensaver" = {
+        picture-uri = "file:///home/tig/Pictures/45.jpg";
+      };
       "org/gnome/desktop/input-sources" = {
         xkb-options = ["terminate:ctrl_alt_bksp" "lv3:ralt_switch" "caps:escape_shifted_capslock"];
       };
@@ -130,7 +137,7 @@ in {
           "notification-timeout@chlumskyvaclav.gmail.com"
           "blur-my-shell@aunetx"
           "clipboard-indicator@tudmotu.com"
-          "dash-to-dock@micxgx.gmail.com"
+          /* "dash-to-dock@micxgx.gmail.com" */
           "gsconnect@andyholmes.github.io"
           "hide-keyboard-layout@sitnik.ru"
           "openweather-extension@penguin-teal.github.io"
