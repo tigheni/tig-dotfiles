@@ -70,7 +70,7 @@ return {
     vim.keymap.set("n", "<leader><space>", fzf.files, { desc = "Files" })
     vim.keymap.set("n", "<leader>r", fzf.oldfiles, { desc = "Recent Files" })
 
-    vim.keymap.set("n", "gr", function()
+    vim.keymap.set("n", "gre", function()
       fzf.lsp_references({
         regex_filter = function(value)
           return not vim.startswith(value.text, "import")
