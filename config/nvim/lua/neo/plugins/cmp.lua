@@ -14,12 +14,32 @@ return {
   -- use a release tag to download pre-built binaries
   version = "*",
   opts = {
+    enabled = function()
+      return not vim.list_contains({ "DressingInput" }, vim.bo.filetype)
+        and vim.bo.buftype ~= "prompt"
+        and vim.b.completion ~= false
+    end,
     snippets = { preset = "luasnip" },
     keymap = { preset = "enter" },
-    completion = { keyword = { range = "full" } },
+    completion = {
+      keyword = { range = "full" },
+      documentation = { auto_show = true, auto_show_delay_ms = 500 },
+    },
     cmdline = {
-      keymap = { preset = "inherit", ["<CR>"] = { "accept_and_enter", "fallback" } },
-      completion = { menu = { auto_show = true } },
+      keymap = {
+        preset = "inherit",
+        ["<CR>"] = { "accept_and_enter", "fallback" },
+      },
+      completion = {
+        menu = { auto_show = true },
+        list = {
+          selection = {
+            preselect = function()
+              return vim.fn.getcmdtype() == ":"
+            end,
+          },
+        },
+      },
     },
   },
 }
