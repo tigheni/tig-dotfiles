@@ -8,6 +8,8 @@ vim.keymap.set("n", "<leader>B", "<cmd>bd!<cr>", { desc = "Force close buffer" }
 -- navigation
 vim.keymap.set("n", "<up>", "gk")
 vim.keymap.set("n", "<down>", "gj")
+vim.keymap.set("n", "n", "nzz")
+vim.keymap.set("n", "N", "Nzz")
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "<M-l>", "30lzszH")
