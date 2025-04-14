@@ -1,38 +1,30 @@
-local on_attach = function(client, bufnr)
-  if client.server_capabilities.inlayHintProvider then
-    vim.lsp.inlay_hint.enable(true)
-  end
-
-  vim.diagnostic.config({
-    virtual_text = true,
-    virtual_lines = { current_line = true },
-  })
-
-  vim.keymap.set("n", "gi", vim.lsp.buf.definition, { buffer = bufnr, desc = "Jump to definition" })
-  vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { buffer = bufnr, desc = "Show line diagnostics" })
-  vim.keymap.set("i", "<C-l>", vim.lsp.buf.signature_help, { buffer = bufnr, desc = "Show signature help" })
-
-  vim.keymap.set("n", "<leader>aq", function()
-    vim.lsp.buf.code_action({
-      context = { only = { "quickfix" } }, ---@diagnostic disable-line: assign-type-mismatch,missing-fields
-      apply = true,
-    })
-  end, { desc = "Apply quickfix" })
-end
+vim.lsp.inlay_hint.enable(true)
+vim.diagnostic.config({
+  virtual_text = true,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = " ",
+      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.INFO] = "󰠠 ",
+      [vim.diagnostic.severity.HINT] = " ",
+    },
+  },
+})
 
 vim.keymap.set("n", "<leader>i", "<cmd>LspInfo<CR>", { desc = "Restart LSP" })
-
-local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
-for type, icon in pairs(signs) do
-  local hl = "DiagnosticSign" .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-end
+vim.keymap.set("n", "gi", vim.lsp.buf.definition, { desc = "Jump to definition" })
+vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
+vim.keymap.set("n", "<leader>aq", function()
+  vim.lsp.buf.code_action({
+    context = { only = { "quickfix" } }, ---@diagnostic disable-line: assign-type-mismatch,missing-fields
+    apply = true,
+  })
+end, { desc = "Apply quickfix" })
 
 return {
   "neovim/nvim-lspconfig",
   event = { "BufReadPre", "BufNewFile" },
   dependencies = {
-    "hrsh7th/cmp-nvim-lsp",
     "saghen/blink.cmp",
     "b0o/schemastore.nvim",
   },
@@ -111,22 +103,13 @@ return {
     }
 
     local lspconfig = require("lspconfig")
-    local capabilities = require("cmp_nvim_lsp").default_capabilities()
     local capabilities = require("blink.cmp").get_lsp_capabilities()
 
     for _, lsp in ipairs(language_servers) do
       if type(lsp) == "table" then
-        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], {
-          on_attach = function(client, bufnr)
-            on_attach(client, bufnr)
-            if lsp[2].on_attach then
-              lsp[2].on_attach(client, bufnr)
-            end
-          end,
-          capabilities = capabilities,
-        }))
+        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], { capabilities = capabilities }))
       else
-        lspconfig[lsp].setup({ on_attach = on_attach, capabilities = capabilities })
+        lspconfig[lsp].setup({ capabilities = capabilities })
       end
     end
   end,
