@@ -105,7 +105,7 @@ open_issue() {
 goi() { open_issue $1 master; }
 gopi() { open_issue $1 production; }
 release_branch() {
-  gh release view --json "targetCommitish" | jq .targetCommitish  | tr -d '"'
+  gh pr list --search Release --json headRefName | jq '.[0].headRefName' | tr -d '"'
 }
 gcor() {
   git checkout $(release_branch)
