@@ -67,10 +67,6 @@ vim.keymap.set("x", "P", "p")
 vim.keymap.set({ "n", "x" }, "H", "^")
 vim.keymap.set({ "n", "x" }, "L", "$")
 
--- Insert a comment below or above the current line
-vim.keymap.set("n", "gco", "ox<esc><cmd>norm gcc<cr>wC", { desc = "Add comment below" })
-vim.keymap.set("n", "gcO", "Ox<esc><cmd>norm gcc<cr>wC", { desc = "Add comment above" })
-
 -- quickfix list
 vim.keymap.set("n", "<c-p>", "<cmd>cprevious<cr>zz", { desc = "Previous quickfix" })
 vim.keymap.set("n", "<c-n>", "<cmd>cnext<cr>zz", { desc = "Next quickfix" })
