@@ -75,7 +75,7 @@ return {
         regex_filter = function(value)
           return not vim.startswith(value.text, "import")
             and not vim.startswith(string.sub(value.text, value.col - 2, value.col - 1), "</")
-            and string.sub(value.text, 0, value.col - 1) ~= "export default "
+            and not vim.startswith(value.text, "export default ")
         end,
       })
     end, { desc = "Show LSP references" })
