@@ -68,6 +68,9 @@
       (import ./packages/spotify.nix {pkgs = pkgs;})
       whitelist
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
+      stremio
+      slack
+      code-cursor
     ];
   };
 
