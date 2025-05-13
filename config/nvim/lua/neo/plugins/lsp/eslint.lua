@@ -4,7 +4,7 @@ return {
   "eslint",
   {
     on_attach = function()
-      map_action("<leader>at", { "for this line" }, "Disable ESLint rule for this line")
+      map_action("<leader>as", { "for this line" }, "Disable ESLint rule for this line")
     end,
   },
 }
