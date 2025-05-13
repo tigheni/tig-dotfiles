@@ -30,8 +30,8 @@ return {
             ["io"] = "@loop.inner",
             ["ac"] = "@call.outer",
             ["ic"] = "@call.inner",
-            ["aa"] = "@parameter.outer",
-            ["ia"] = "@parameter.inner",
+            ["aa"] = "@attribute.outer",
+            ["ia"] = "@attribute.inner",
 
             --     const arr = [1, 2, 3, 4, 5];
             ["ae"] = "@assignment.outer", -- arr = [1, 2, 3, 4, 5]
