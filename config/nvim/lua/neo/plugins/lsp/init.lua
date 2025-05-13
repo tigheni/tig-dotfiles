@@ -12,7 +12,6 @@ vim.diagnostic.config({
 })
 
 vim.keymap.set("n", "<leader>i", "<cmd>LspInfo<CR>", { desc = "Restart LSP" })
-vim.keymap.set("n", "gi", vim.lsp.buf.definition, { desc = "Jump to definition" })
 vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
 vim.keymap.set("n", "<leader>aq", function()
   vim.lsp.buf.code_action({

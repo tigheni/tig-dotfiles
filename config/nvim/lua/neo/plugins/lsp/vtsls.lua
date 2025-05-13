@@ -1,29 +1,5 @@
 local map_action = require("neo.plugins.lsp.utils").map_action
 
-local function filter(arr, fn)
-  if type(arr) ~= "table" then
-    return arr
-  end
-
-  local filtered = {}
-  for k, v in pairs(arr) do
-    if fn(v, k, arr) then
-      table.insert(filtered, v)
-    end
-  end
-
-  return filtered
-end
-
--- https://github.com/microsoft/TypeScript/pull/57969
-local function definitionPredicate(value)
-  return string.match(value.targetUri, "%.d.ts") == nil
-    and (
-      value.originSelectionRange.start.line ~= value.targetRange.start.line
-      or value.targetUri ~= vim.uri_from_bufnr(0)
-    )
-end
-
 return {
   "vtsls",
   {
@@ -59,15 +35,6 @@ return {
           enabled = "always",
         },
       },
-    },
-    handlers = {
-      ["textDocument/definition"] = function(err, locations, method, ...)
-        if vim.islist(locations) and #locations > 1 then
-          locations = filter(locations, definitionPredicate)
-        end
-
-        vim.lsp.handlers["textDocument/definition"](err, locations, method, ...)
-      end,
     },
     on_attach = function()
       map_action(

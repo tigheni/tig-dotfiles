@@ -70,6 +70,14 @@ return {
     vim.keymap.set("n", "<leader><space>", fzf.files, { desc = "Files" })
     vim.keymap.set("n", "<leader>r", fzf.oldfiles, { desc = "Recent Files" })
 
+    vim.keymap.set("n", "gi", function()
+      fzf.lsp_definitions({
+        regex_filter = function(value)
+          return string.match(value.filename, "%.d.ts") == nil
+        end,
+      })
+    end, { desc = "Jump to definition" })
+
     vim.keymap.set("n", "gre", function()
       fzf.lsp_references({
         regex_filter = function(value)
