@@ -37,6 +37,7 @@ alias gma="git merge --abort"
 alias gpmm="git fetch origin master:master --update-head-ok && gmm"
 alias gpmp="git fetch origin production:production --update-head-ok && gmp"
 alias gmpr="gh pr review --comment -b 'SR' && gh pr merge --squash --delete-branch"
+alias rm="rm -I"
 
 bindkey -v
 bindkey "^H" backward-delete-char
