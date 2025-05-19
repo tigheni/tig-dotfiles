@@ -6,7 +6,6 @@ return {
 
     fzf.setup({
       fzf_opts = { ["--cycle"] = true },
-      defaults = { formatter = "path.filename_first" },
       oldfiles = { cwd_only = true, include_current_session = true },
       keymap = {
         fzf = {
