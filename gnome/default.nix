@@ -32,17 +32,6 @@
       gnomeExtensions.no-titlebar-when-maximized
     ];
   };
-
-  environment.gnome.excludePackages = (with pkgs; [
-  gnome-tour
-  epiphany # web browser
-  geary # email reader
-  tali # poker game
-  iagno # go game
-  hitori # sudoku game
-  atomix # puzzle game
-  totem # video player
-  ]);
   system.userActivationScripts.linktosharedfolder.text = ''
     if [[ ! -h "$HOME/Pictures/Screenshots" ]]; then
       ln -s /dev/null  "$HOME/Pictures/Screenshots"

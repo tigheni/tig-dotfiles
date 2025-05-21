@@ -89,6 +89,7 @@
         stremio
         discord
         gh
+        python39
         ripgrep
         jq
         ffmpeg
