@@ -36,14 +36,14 @@
       binding = "<Control><super>d";
     }
     {
-      name="audio output switch";
-      command ="tig-dotfiles/scripts/audio_Output_changer.sh";
-      binding="<Control><Alt>p";
+      name = "audio output switch";
+      command = "tig-dotfiles/scripts/audio_Output_changer.sh";
+      binding = "<Control><Alt>p";
     }
     {
-      name="headphones connect";
-      command ="bluetoothctl connect 04:58:84:15:EE:9E";
-      binding="<Control><super>b";
+      name = "headphones connect";
+      command = "bluetoothctl connect 04:58:84:15:EE:9E";
+      binding = "<Control><super>b";
     }
   ];
 
@@ -71,7 +71,7 @@ in {
     ./tmux
     ./starship
     ./wezterm
-    ];
+  ];
 
   dconf.settings =
     {
@@ -137,7 +137,9 @@ in {
           "notification-timeout@chlumskyvaclav.gmail.com"
           "blur-my-shell@aunetx"
           "clipboard-indicator@tudmotu.com"
-          /* "dash-to-dock@micxgx.gmail.com" */
+          /*
+          "dash-to-dock@micxgx.gmail.com"
+          */
           "gsconnect@andyholmes.github.io"
           "hide-keyboard-layout@sitnik.ru"
           "openweather-extension@penguin-teal.github.io"
@@ -170,3 +172,4 @@ in {
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 }
+
