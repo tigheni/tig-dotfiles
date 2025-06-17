@@ -47,8 +47,8 @@ return {
       map_action("<leader>aE", { "Extract to constant in module scope" })
       map_action("<leader>af", { "Extract to function in module scope" })
       map_action("<leader>am", { "Convert to named function" })
-      map_action("<leader>an", { "Move to a new file" })
-      map_action("<leader>aN", { "Move to file" })
+      map_action("<leader>an", { "Move to file" })
+      map_action("<leader>aN", { "Move to a new file" })
       map_action("<leader>ad", { "Convert named export to default export" })
 
       vim.keymap.set("n", "<leader>ai", "<cmd>VtsExec add_missing_imports<CR>", { desc = "Add missing imports" })
