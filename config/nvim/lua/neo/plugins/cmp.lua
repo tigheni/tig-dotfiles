@@ -23,6 +23,8 @@ return {
     keymap = { preset = "enter" },
     completion = {
       keyword = { range = "full" },
+      -- https://github.com/Saghen/blink.cmp/issues/1847
+      accept = { dot_repeat = false },
       documentation = { auto_show = true, auto_show_delay_ms = 500 },
     },
     cmdline = {
