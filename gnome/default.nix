@@ -12,7 +12,7 @@
     displayManager = {
       gdm = {
         enable = true;
-        wayland = false;
+        wayland = true;
       };
    };
   };
@@ -26,7 +26,7 @@
       gnomeExtensions.notification-timeout
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.blur-my-shell
-      /* gnomeExtensions.dash-to-dock */
+      gnomeExtensions.dash-to-dock
       gnomeExtensions.hide-keyboard-layout
       gnome46Extensions."openweather-extension@penguin-teal.github.io"
       gnomeExtensions.no-titlebar-when-maximized

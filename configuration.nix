@@ -11,10 +11,20 @@
 
 
     # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
-
+boot.loader = {
+  grub = {
+    enable = true;
+    efiSupport = true;           # Enable UEFI support
+    efiInstallAsRemovable = false;
+    device = "nodev";            # Don't specify a device for UEFI
+    useOSProber = true;          # This will detect Windows
+    #configurationLimit = 10;     # Keep last 10 NixOS generations in menu
+  };
+  efi = {
+    canTouchEfiVariables = true;
+    efiSysMountPoint = "/boot";   # Make sure this matches where your EFI partition is mounted
+  };
+};
   # bluetooth
   hardware.bluetooth = {
     enable = true;
@@ -41,7 +51,7 @@
   services.printing.enable = true;
 
   # Enable sound with pipewire.
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -60,9 +70,7 @@
         google-chrome
         vscode
         brave
-        spotify
         protonvpn-gui
-        # vlc
         fzf
         zoxide
         fd
@@ -84,10 +92,18 @@
         nurl
         epiphany
         joplin-desktop
+        os-prober
         blanket
         libreoffice
+        spotify
     ];
   };
+
+  services.mullvad-vpn = {
+    enable = true;
+    package = pkgs.mullvad-vpn;
+  };
+
 systemd.services.bluetooth-modprobe = {
   description = "Reload btusb module at boot";
   wantedBy = [ "multi-user.target" ];
@@ -115,10 +131,7 @@ services.udev.extraRules = ''
 '';
   nixpkgs.config.allowUnfree = true;
 
-  environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
-  ];
+  environment.systemPackages = with pkgs; [];
 
   # Open ports in the firewall.
     networking.firewall.allowedTCPPortRanges = [
@@ -136,5 +149,5 @@ networking.firewall.allowedUDPPortRanges = [
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "24.05"; # Did you read the comment?
+  system.stateVersion = "25.05"; # Did you read the comment?
 }
