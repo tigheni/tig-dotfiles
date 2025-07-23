@@ -1,10 +1,9 @@
 final: prev: let
-  spotx = prev.fetchFromGitHub {
+spotx = prev.fetchFromGitHub {
     owner = "SpotX-Official";
     repo = "SpotX-Bash";
-    rev = "49409482bcfc558208f992e3c86047c89532a5e8";
-    hash = "sha256-aplhsn7nMwjpsXTiTDn5lEHkJIL1WzkXajeKu3qXcTk=";
-  };
+    rev = "d5a23bfc64d75979373c5fddc81641dabff051aa";
+    hash = "sha256-gYr2b9oSOB/kuK6Em3T+gAALgzpRQxvSBJNWoaJ7yvg=";  };
 in {
   spotify = prev.spotify.overrideAttrs (prev: {
     buildInputs = [final.perl final.unzip final.zip final.util-linux final.curl];
