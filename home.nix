@@ -42,7 +42,7 @@
     }
     {
       name = "headphones connect";
-      command = "bluetoothctl connect 04:58:84:15:EE:9E";
+      command = "bluetoothctl connect 30:53:C1:9C:3B:3C";
       binding = "<super>b";
     }
   ];
@@ -66,12 +66,13 @@ in {
 
   imports = [
     ./lazygit
-    ./git
     ./neovim
     ./tmux
     ./starship
     ./wezterm
+    ./waybar
   ];
+
 
   dconf.settings =
     {
@@ -158,7 +159,7 @@ in {
   # You can update Home Manager without changing this value. See
   # the Home Manager release notes for a list of state version
   # changes in each release.
-  home.stateVersion = "24.05";
+  home.stateVersion = "25.05";
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;

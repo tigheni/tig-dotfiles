@@ -130,7 +130,7 @@
       gma = "git merge --abort";
       gpmm = "git fetch origin master:master --update-head-ok && gmm";
       gpmp = "git fetch origin production:production --update-head-ok && gmp";
-      # clean-nix = "nix-env --delete-generations old ; nix-store --gc ; nix-collect-garbage -d ; nix-store --optimise";
+      clean-nix = "nix-env --delete-generations old ; nix-store --gc ; nix-collect-garbage -d ; nix-store --optimise";
       ns = "nix search nixpkgs";
     };
   };
