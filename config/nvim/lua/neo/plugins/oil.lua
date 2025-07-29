@@ -13,7 +13,7 @@ return {
       },
       git = {
         add = function(path)
-          return vim.startswith(path, "/home/abdennour/Projects/dotfiles")
+          return vim.startswith(path, "/home/tig/tig-dotfiles")
         end,
       },
       view_options = {

@@ -1,5 +1,5 @@
-source_dir=/home/abdennour/Projects/dotfiles/config
-destination_dir=/home/abdennour/.config
+source_dir=/home/tig/tig-dotfiles/config
+destination_dir=/home/tig/.config
 
 for file in "$source_dir"/*; do
     filename=$(basename "$file")

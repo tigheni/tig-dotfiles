@@ -7,7 +7,7 @@
     withNodeJs = true;
   };
 
-  users.users.abdennour.packages = with pkgs; [
+  users.users.tig.packages = with pkgs; [
     gcc
     gnumake
     pyright

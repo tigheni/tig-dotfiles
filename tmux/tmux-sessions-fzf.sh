@@ -1,12 +1,12 @@
 tmux start-server
 
-selected="$(fd . "$HOME"/Projects --min-depth 1 --maxdepth 1 --type d --format {/} | fzf --bind=enter:replace-query+print-query)"
+selected="$(fd . "$HOME"/tig-dotfiles --min-depth 1 --maxdepth 1 --type d --format {/} | fzf --bind=enter:replace-query+print-query)"
 
 if [[ -z $selected ]]; then
     exit 0
 fi
 
-selected="$HOME/Projects/$selected"
+selected="$HOME/tig-dotfiles/$selected"
 
 if [ ! -d $selected ]; then
     mkdir $selected

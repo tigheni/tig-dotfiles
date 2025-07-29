@@ -13,13 +13,14 @@
   services.devmon.enable = true;
   services.udisks2.enable = true;
 
-  users.users.abdennour = {
+  users.users.tig = {
     packages = with pkgs; [
       dunst
       brightnessctl
       wl-clipboard
       wl-gammarelay-rs
-      wofi
+      rofi-wayland
+
       clipse
       grim
       hyprpicker
@@ -30,5 +31,5 @@
 
   services.ddccontrol.enable = true;
   hardware.i2c.enable = true;
-  users.users.abdennour.extraGroups = ["i2c"];
+  users.users.tig.extraGroups = ["i2c"];
 }

@@ -1,5 +1,5 @@
 {pkgs, ...}: {
-  users.users.abdennour.shell = pkgs.zsh;
+  users.users.tig.shell = pkgs.zsh;
 
   programs.zsh = {
     enable = true;

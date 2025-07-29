@@ -5,7 +5,7 @@
 in {
   programs.tmux.enable = true;
 
-  users.users.abdennour.packages = [
+  users.users.tig.packages = [
     tmux-sessions-fzf
     tmux-output-nvim
     init-project

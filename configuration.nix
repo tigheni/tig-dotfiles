@@ -1,6 +1,6 @@
 {
   pkgs,
-  whitelist,
+
   ...
 }: {
   nix.settings = {
@@ -38,7 +38,7 @@
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.abdennour = {
+  users.users.tig = {
     isNormalUser = true;
     extraGroups = ["networkmanager" "wheel"];
     packages = with pkgs; [
@@ -61,13 +61,13 @@
       epiphany
       htop
       bluetuith
+      vscode
       ddcutil
       batsignal
       kanshi
       kitty
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
-      whitelist
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
       stremio
       slack
@@ -82,8 +82,8 @@
     enable = true;
     config = {
       user = {
-        name = "Abdennour Zahaf";
-        email = "zfnori@gmail.com";
+        name = "tigheni";
+        email = "oussama.adame12@gmail.com";
       };
       pull.rebase = true;
       push.autoSetupRemote = true;
@@ -100,7 +100,7 @@
     enable = true;
     clean.enable = true;
     clean.extraArgs = "--keep-since 7d --keep 3";
-    flake = "/home/abdennour/Projects/dotfiles";
+    flake = "/home/tig/tig-dotfiles";
   };
 
   programs.direnv = {
@@ -116,7 +116,7 @@
   # $ nix search wget
   environment.systemPackages = [];
 
-  system.userActivationScripts.dotfiles = builtins.readFile ./scripts/symlink-config.sh;
+  system.userActivationScripts.tig-dotfiles = builtins.readFile ./scripts/symlink-config.sh;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
