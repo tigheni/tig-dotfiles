@@ -1,42 +1,55 @@
 * {
-  font-family: "JetBrainsMono Nerd Font";
-  font-weight: bold;
-  font-size: 1rem;
+  font-family: 'JetBrainsMono Nerd Font';
+  font-weight: 500;
+  font-size: 12px;
+  border: none;
+  border-radius: 0;
 }
 
 window#waybar {
-  background: #010409;
+  background: rgba(17, 17, 27, 0.95);
   color: #cdd6f4;
+  border-radius: 8px;
+  margin: 4px 4px 0px 4px;
 }
 
 tooltip {
-  background: #010409;
+  background: rgba(30, 30, 46, 0.95);
+  border: 1px solid rgba(137, 180, 250, 0.3);
   border-radius: 10px;
+  color: #cdd6f4;
 }
 
 #workspaces button {
-  padding: 5px;
-  color: #313244;
-  margin-right: 5px;
+  padding: 4px 8px;
+  margin: 2px 1px;
+  background: rgba(45, 45, 59, 0.7);
+  color: #6c7086;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  min-width: 16px;
 }
 
 #workspaces button.active {
-  color: #a6adc8;
+  background: #89b4fa;
+  color: #11111b;
+  font-weight: bold;
 }
 
 #workspaces button.focused {
-  color: #a6adc8;
-  background: #010409;
+  background: rgba(137, 180, 250, 0.2);
+  color: #89b4fa;
+  border: 1px solid rgba(137, 180, 250, 0.5);
 }
 
 #workspaces button.urgent {
+  background: #f38ba8;
   color: #11111b;
-  background: #010409;
 }
 
 #workspaces button:hover {
-  background: #010409;
-  color: #cdd6f4;
+  background: rgba(137, 180, 250, 0.15);
+  color: #89b4fa;
 }
 
 #window,
@@ -48,32 +61,41 @@ tooltip {
 #temperature,
 #workspaces,
 #tray,
-#backlight {
-  padding: 0px 14px;
-}
-
-#temperature.critical {
-  color: #eba0ac;
+#backlight,
+#memory,
+#cpu,
+#custom-vpn {
+  padding: 4px 8px;
+  margin: 2px 1px;
+  background: rgba(30, 30, 46, 0.9);
+  border-radius: 6px;
+  border: 1px solid rgba(116, 199, 236, 0.1);
+  transition: all 0.3s ease;
 }
 
 #tray {
-  margin-right: 10px;
+  margin-right: 2px;
+  padding: 4px 6px;
 }
 
 #workspaces {
-  margin-left: 10px;
-  padding-right: 0px;
-  padding-left: 5px;
+  margin-left: 2px;
+  padding: 2px 4px;
+  background: rgba(30, 30, 46, 0.9);
+  border-radius: 8px;
 }
 
 #window {
-  margin-left: 60px;
-  margin-right: 60px;
+  margin: 2px 4px;
+  font-weight: 600;
+  color: #89b4fa;
 }
 
 #clock {
-  color: #fab387;
-  margin-right: 14px;
+  background: #fab387;
+  color: #11111b;
+  font-weight: bold;
+  margin: 4px 2px;
 }
 
 #network {
@@ -88,10 +110,18 @@ tooltip {
   color: #89b4fa;
 }
 
-#pulseaudio.microphone {
-  color: #89b4fa;
-}
-
 #battery {
   color: #a6e3a1;
+}
+
+#memory {
+  color: #cba6f7;
+}
+
+#cpu {
+  color: #f5c2e7;
+}
+
+#backlight {
+  color: #f9e2af;
 }

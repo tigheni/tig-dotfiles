@@ -12,21 +12,19 @@
     "bluetooth",
     "memory",
     "cpu",
-    "battery",
-    "backlight",
     "pulseaudio",
-    "pulseaudio#microphone",
+    "pulseaudio#microphone"
   ],
   "hyprland/workspaces": {
     "all-outputs": true,
     "on-click": "activate",
     "persistent-workspaces": {
-      "*": 3,
-    },
+      "*": 3
+    }
   },
   "tray": {
     "icon-size": 12,
-    "spacing": 10,
+    "spacing": 10
   },
   "clock": {
     "format": "{:%H:%M %d/%m/%Y}",
@@ -35,33 +33,30 @@
       "format": {
         "months": "<span color='#ffead3'><b>{}</b></span>",
         "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
-        "today": "<span color='#ffcc66'><b><u>{}</u></b></span>",
-      },
-    },
+        "today": "<span color='#ffcc66'><b><u>{}</u></b></span>"
+      }
+    }
   },
-  "clock#2": {
-    "format": "{:%H:%M}",
-    "timezone": "America/Ensenada",
-  },
+
   "backlight": {
     "device": "intel_backlight",
     "format": "{icon} {percent}%",
     "format-icons": ["󰃞", "󰃟", "󰃠"],
     "on-scroll-up": "brightnessctl set 10%+",
     "on-scroll-down": "brightnessctl set 10%-",
-    "min-length": 6,
+    "min,ength": 6
   },
   "battery": {
     "states": {
       "good": 95,
       "warning": 30,
-      "critical": 20,
+      "critical": 20
     },
     "format": "{icon} {capacity}%",
     "format-charging": " {capacity}%",
     "format-plugged": " {capacity}%",
     "format-alt": "{time} {icon}",
-    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
   },
   "pulseaudio": {
     "format": "{icon} {volume}%",
@@ -79,8 +74,8 @@
       "phone": "",
       "portable": "",
       "car": "",
-      "default": ["", "", ""],
-    },
+      "default": ["", "", ""]
+    }
   },
   "pulseaudio#microphone": {
     "format": "{format_source}",
@@ -90,13 +85,13 @@
     "on-click-right": "pavucontrol",
     "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_SOURCE@ 5%+",
     "on-scroll-down": "wpctl set-volume -l 1 @DEFAULT_SOURCE@ 5%-",
-    "scroll-step": 5,
+    "scroll-step": 5
   },
   "temperature": {
     "thermal-zone": 1,
     "format": " {temperatureC}°C",
     "critical-threshold": 80,
-    "format-critical": "{temperatureC}°C ",
+    "format-critical": "{temperatureC}°C "
   },
   "network": {
     "format-wifi": "  {signalStrength}%",
@@ -104,7 +99,7 @@
     "tooltip-format": "{essid} - {ifname} via {gwaddr}",
     "format-linked": "{ifname} (No IP)",
     "format-disconnected": "Disconnected ⚠",
-    "format-alt": "{ifname}:{essid} {ipaddr}/{cidr}",
+    "format-alt": "{ifname}:{essid} {ipaddr}/{cidr}"
   },
 
   "bluetooth": {
@@ -114,16 +109,16 @@
     "tooltip-format": "{device_alias}",
     "tooltip-format-connected": " {device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}",
-    "on-click": "bluetooth toggle",
+    "on-click": "bluetooth toggle"
   },
   "cpu": {
     "interval": 10,
     "format": " {}%",
-    "max-length": 10,
+    "max-length": 10
   },
   "memory": {
     "interval": 3,
     "format": "{}% ",
-    "max-length": 10,
-  },
+    "max-length": 10
+  }
 }

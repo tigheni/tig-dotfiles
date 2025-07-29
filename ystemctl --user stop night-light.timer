@@ -1,0 +1,8 @@
+[0;1;32m●[0m night-light.timer - Run Night Light every 30 minutes
+     Loaded: loaded (]8;;file://nixos/home/tig/.config/systemd/user/night-light.timer\/home/tig/.config/systemd/user/night-light.timer]8;;\; [0;1;32menabled[0m; preset: ignored)
+     Active: [0;1;32mactive (waiting)[0m since Tue 2025-07-29 04:39:41 CET; 22s ago
+ Invocation: 279a6a5cceb04cc0a4aa2ee137837c68
+    Trigger: Tue 2025-07-29 05:09:55 CET; 29min left
+   Triggers: ● night-light.service
+
+Jul 29 04:39:41 nixos systemd[1236]: Started Run Night Light every 30 minutes.

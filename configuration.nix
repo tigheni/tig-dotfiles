@@ -17,9 +17,36 @@
   nixpkgs.config.allowUnfree = true;
 
   # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.timeout = 1;
+  boot.loader = {
+    grub = {
+      enable = true;
+      efiSupport = true;
+      efiInstallAsRemovable = false;
+      device = "nodev";
+      useOSProber = true;
+    };
+    efi = {
+      canTouchEfiVariables = true;
+      efiSysMountPoint = "/boot";
+    };
+  };
+
+  # bluetooth
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings.General.Experimental = true;
+  };
+  services.blueman.enable = true;
+
+  systemd.services.bluetooth-modprobe = {
+  description = "Reload btusb module at boot";
+  wantedBy = ["multi-user.target"];
+  serviceConfig = {
+      ExecStartPre = "/run/current-system/sw/bin/bash -c '/run/current-system/sw/bin/modprobe -r btusb'"; # Correct path to modprobe
+      ExecStart = "/run/current-system/sw/bin/bash -c '/run/current-system/sw/bin/modprobe -v btusb'"; # Correct path to modprobe
+    };
+  };
 
   networking.hostName = "nixos"; # Define your hostname.
 
@@ -64,8 +91,7 @@
       vscode
       ddcutil
       batsignal
-      kanshi
-      kitty
+      wezterm
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
@@ -74,7 +100,6 @@
       code-cursor
     ];
   };
-
   programs.starship.enable = true;
   programs.waybar.enable = true;
 
@@ -108,6 +133,11 @@
     silent = true;
   };
 
+
+/*   services.udev.extraRules = ''
+    ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
+    ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
+  ''; */
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
   ];
@@ -124,5 +154,5 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "23.11"; # Did you read the comment?
+  system.stateVersion = "25.05"; # Did you read the comment?
 }
