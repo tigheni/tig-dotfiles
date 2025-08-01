@@ -17,6 +17,17 @@
     pulse.enable = true;
     jack.enable = true;
   };
+  # Enable Bluetooth
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings = {
+      General = {
+        Enable = "Source,Sink,Media,Socket";
+      };
+    };
+  };
+  services.blueman.enable = true;
 
   # Disable PulseAudio since we're using PipeWire
   services.pulseaudio.enable = false;
@@ -28,7 +39,6 @@
   users.users.tig = {
     packages = with pkgs; [
       dunst
-      brightnessctl
       wl-clipboard
       wl-gammarelay-rs
       rofi-wayland
@@ -40,10 +50,10 @@
       bibata-cursors
       networkmanagerapplet
       pavucontrol
+      bluez-tools
+      obexftp
     ];
   };
 
   services.ddccontrol.enable = true;
-  hardware.i2c.enable = true;
-  users.users.tig.extraGroups = ["i2c"];
 }

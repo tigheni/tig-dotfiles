@@ -4,7 +4,7 @@
   "exclusive": false,
   "reload_style_on_change": true,
   "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["clock#2", "clock"],
+  "modules-center": ["clock"],
   "modules-right": [
     "tray",
     "custom/vpn",
@@ -44,7 +44,7 @@
     "format-icons": ["󰃞", "󰃟", "󰃠"],
     "on-scroll-up": "brightnessctl set 10%+",
     "on-scroll-down": "brightnessctl set 10%-",
-    "min,ength": 6
+    "min-length": 6
   },
   "battery": {
     "states": {
@@ -109,8 +109,10 @@
     "tooltip-format": "{device_alias}",
     "tooltip-format-connected": " {device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}",
+
     "on-click": "bluetooth toggle"
   },
+
   "cpu": {
     "interval": 10,
     "format": " {}%",
