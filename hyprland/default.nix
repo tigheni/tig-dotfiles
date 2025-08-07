@@ -38,7 +38,7 @@
 
   users.users.tig = {
     packages = with pkgs; [
-      dunst
+      mako
       wl-clipboard
       wl-gammarelay-rs
       rofi-wayland
@@ -52,8 +52,7 @@
       pavucontrol
       bluez-tools
       obexftp
+      kdePackages.kdeconnect-kde
     ];
   };
-
-  services.ddccontrol.enable = true;
 }

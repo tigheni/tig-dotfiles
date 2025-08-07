@@ -31,25 +31,6 @@
     };
   };
 
-  # bluetooth
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = true;
-    settings.General.Experimental = true;
-  };
-  services.blueman.enable = true;
-
-  systemd.services.bluetooth-modprobe = {
-  description = "Reload btusb module at boot";
-  wantedBy = ["multi-user.target"];
-  serviceConfig = {
-      ExecStartPre = "/run/current-system/sw/bin/bash -c '/run/current-system/sw/bin/modprobe -r btusb'"; # Correct path to modprobe
-      ExecStart = "/run/current-system/sw/bin/bash -c '/run/current-system/sw/bin/modprobe -v btusb'"; # Correct path to modprobe
-    };
-  };
-
-  networking.hostName = "nixos"; # Define your hostname.
-
   time.timeZone = "Africa/Algiers";
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
@@ -134,10 +115,10 @@
   };
 
 
-/*   services.udev.extraRules = ''
+   services.udev.extraRules = ''
     ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
     ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
-  ''; */
+  '';
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
   ];
@@ -147,7 +128,16 @@
   environment.systemPackages = [];
 
   system.userActivationScripts.tig-dotfiles = builtins.readFile ./scripts/symlink-config.sh;
-
+  networking.firewall = {
+    enable = true;
+    allowedUDPPorts = [ 5353 ]; # mDNS
+    allowedTCPPortRanges = [
+      { from = 1714; to = 1764; } # KDE Connect
+    ];
+    allowedUDPPortRanges = [
+      { from = 1714; to = 1764; } # KDE Connect
+    ];
+  };
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave

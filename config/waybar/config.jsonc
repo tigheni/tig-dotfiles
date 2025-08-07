@@ -24,7 +24,37 @@
     }
   },
   "tray": {
-    "icon-size": 12,
+    "icon-size": 20,
+    "spacing": 10,
+    "max-items": 10,
+    "tooltip": true
+  },
+  "custom/vpn": {
+    "exec": "nmcli -t -f active,device,type con show --active | grep -E '^yes:.*vpn:' | cut -d':' -f2",
+    "exec-if": "command -v nmcli",
+    "interval": 10,
+    "format": "{icon} {name}",
+    "format-icons": {
+      "wireguard": "󰒞",
+      "openvpn": "󰒟",
+      "default": "󰒠"
+    },
+    "tooltip": true,
+    "on-click-right": "nm-connection-editor"
+  },
+
+  "custom/kdeconnect": {
+    "exec": "kdeconnect-cli --list-devices --name-only",
+    "exec-if": "command -v kdeconnect-cli",
+    "interval": 15,
+    "format": " {icon} {name} ",
+    "tooltip": "KDE Connect devices",
+    "on-click": "QT_QPA_PLATFORM=wayland kdeconnect-app",
+    "on-click-right": "kdeconnect-cli --refresh"
+  },
+
+  "tray": {
+    "icon-size": 20,
     "spacing": 10
   },
   "clock": {
@@ -39,18 +69,6 @@
     }
   },
 
-  "battery": {
-    "states": {
-      "good": 95,
-      "warning": 30,
-      "critical": 20
-    },
-    "format": "{icon} {capacity}%",
-    "format-charging": " {capacity}%",
-    "format-plugged": " {capacity}%",
-    "format-alt": "{time} {icon}",
-    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
-  },
   "pulseaudio": {
     "format": "{icon} {volume}%",
     "tooltip": false,
@@ -81,10 +99,18 @@
     "scroll-step": 5
   },
   "temperature": {
-    "hwmon-path": "/sys/class/hwmon/hwmon1/temp1_input",
-    "format": " {temperatureC}°C",
-    "critical-threshold": 80,
-    "format-critical": "{temperatureC}°C "
+    "interval": 10,
+    "tooltip": true,
+    "hwmon-path": [
+      "/sys/class/hwmon/hwmon1/temp1_input",
+      "/sys/class/thermal/thermal_zone0/temp"
+    ],
+    //"thermal-zone": 0,
+    "critical-threshold": 82,
+    "format-critical": "{temperatureC}°C {icon}",
+    "format": "{temperatureC}°C {icon}",
+    "format-icons": ["󰈸"],
+    "on-click-right": "wezterm --title nvtop sh -c 'nvtop'"
   },
 
   "network": {
@@ -97,24 +123,32 @@
   },
 
   "bluetooth": {
-    "format": " {status}",
-    "format-disabled": " off",
-    "format-connected": " {num_connections}",
-    "tooltip-format": "{device_alias}",
-    "tooltip-format-connected": " {device_enumerate}",
-    "tooltip-format-enumerate-connected": "{device_alias}",
-
-    "on-click": "bluetooth toggle"
+    "format": " ",
+    "format-disabled": "󰂳",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": " {device_alias}",
+    "tooltip-format-connected": "{device_enumerate}",
+    "tooltip-format-enumerate-connected": " {device_alias} 󰂄{device_battery_percentage}%",
+    "tooltip": true,
+    "on-click": "blueman-manager"
   },
 
   "cpu": {
-    "interval": 10,
-    "format": " {}%",
-    "max-length": 10
+    "format": "{usage}% 󰍛",
+    "interval": 1,
+    "min-length": 5,
+    "format-alt-click": "click",
+    "format-alt": "{icon0}{icon1}{icon2}{icon3} {usage:>2}% 󰍛",
+    "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"],
+    "on-click-right": "gnome-system-monitor"
   },
   "memory": {
-    "interval": 3,
-    "format": "{}% ",
-    "max-length": 10
+    "interval": 10,
+    "format": "{used:0.1f}G 󰾆",
+    "format-alt": "{percentage}% 󰾆",
+    "format-alt-click": "click",
+    "tooltip": true,
+    "tooltip-format": "{used:0.1f}GB/{total:0.1f}G",
+    "on-click-right": "kitty --title btop sh -c 'btop'"
   }
 }
