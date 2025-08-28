@@ -77,8 +77,8 @@
       (import ./packages/spotify.nix {pkgs = pkgs;})
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
       stremio
-      slack
-      code-cursor
+      blanket
+      nodejs_24
     ];
   };
   programs.starship.enable = true;
