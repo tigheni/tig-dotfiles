@@ -76,7 +76,6 @@
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
-      stremio
       blanket
       nodejs_24
     ];
