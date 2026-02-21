@@ -1,9 +1,13 @@
 #!/run/current-system/sw/bin/bash
 WALLPAPER_DIR="$HOME/.config/hypr/wallpaper"
+<<<<<<< HEAD
 HYPR_DIR="$HOME/.config/hypr"
 HYPRPAPER_CONF="$HYPR_DIR/hyprpaper.conf"
 HYPRLOCK_CONF="$HYPR_DIR/hyprlock.conf"
 HYPRLAND_CONF="$HYPR_DIR/hyprland.conf"
+=======
+HYPRPAPER_CONF="$HOME/.config/hypr/hyprpaper.conf"
+>>>>>>> 075174e (fix: correct wallpaper directory path and enhance hyprpaper configuration)
 mkdir -p "$WALLPAPER_DIR"
 
 # Find the first wallpaper file in the directory (any image format)
@@ -13,6 +17,7 @@ if [ -z "$WALLPAPER_FILE" ]; then
     exit 1
 fi
 
+<<<<<<< HEAD
 # Detect monitors with fallbacks:
 # 1) hyprctl runtime outputs
 # 2) monitor entries in hyprland.conf
@@ -37,6 +42,24 @@ fi
     echo "$MONITORS" | awk '!seen[$0]++' | while IFS= read -r MONITOR; do
         [ -n "$MONITOR" ] && echo "wallpaper = $MONITOR,$WALLPAPER_FILE"
     done
+=======
+# Update hyprpaper.conf - replace any existing preload and wallpaper lines
+sed -i "s|^preload = .*|preload = $WALLPAPER_FILE|g" "$HOME/.config/hypr/hyprpaper.conf"
+sed -i "s|^wallpaper = ,.*|wallpaper = ,$WALLPAPER_FILE|g" "$HOME/.config/hypr/hyprpaper.conf"
+# Build hyprpaper.conf with currently connected monitor names.
+# Fallback to monitor-agnostic syntax when monitor detection is unavailable.
+{
+    echo "preload = $WALLPAPER_FILE"
+
+    MONITORS=$(hyprctl monitors 2>/dev/null | awk '/^Monitor / {print $2}')
+    if [ -n "$MONITORS" ]; then
+        while IFS= read -r MONITOR; do
+            [ -n "$MONITOR" ] && echo "wallpaper = $MONITOR,$WALLPAPER_FILE"
+        done <<< "$MONITORS"
+    else
+        echo "wallpaper = ,$WALLPAPER_FILE"
+    fi
+>>>>>>> 075174e (fix: correct wallpaper directory path and enhance hyprpaper configuration)
 
     echo "splash = false"
     echo "ipc = on"
