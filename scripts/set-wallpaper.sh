@@ -14,24 +14,3 @@ if [ -z "$WALLPAPER_FILE" ]; then
     exit 1
 fi
 
-# Keep config files in sync for restart/reboot cases.
-sed -i "s|^preload = .*|preload = $WALLPAPER_FILE|g" "$HYPRPAPER_CONF"
-sed -i "s|^wallpaper = .*|wallpaper = ,$WALLPAPER_FILE|g" "$HYPRPAPER_CONF"
-sed -i "s|^.*path = .*|    path = $WALLPAPER_FILE|g" "$HYPRLOCK_CONF"
-
-# Ensure hyprpaper is running before sending IPC commands.
-if ! pgrep -x hyprpaper >/dev/null; then
-    hyprpaper &
-    sleep 0.8
-fi
-
-# Apply wallpaper to every currently connected monitor via IPC.
-hyprctl hyprpaper unload all >/dev/null 2>&1 || true
-hyprctl hyprpaper preload "$WALLPAPER_FILE" >/dev/null
-
-while read -r monitor; do
-    [ -n "$monitor" ] || continue
-    hyprctl hyprpaper wallpaper "$monitor,$WALLPAPER_FILE" >/dev/null
-done < <(hyprctl monitors | awk '/^Monitor / {print $2}')
-
-echo "desktop and lock screen now use: $(basename "$WALLPAPER_FILE")"
