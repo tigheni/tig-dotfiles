@@ -1,7 +1,7 @@
 {pkgs, ...}: {
   programs.hyprland = {
     enable = true;
-    portalPackage = pkgs.xdg-desktop-portal-wlr;
+    portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
   programs.hyprlock.enable = true;
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
