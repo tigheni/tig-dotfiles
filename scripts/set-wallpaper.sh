@@ -1,4 +1,4 @@
-#!/run/current-system/sw/bin/bash
+#!/usr/bin/env bash
 WALLPAPER_DIR="$HOME/.config/hypr/wallpaper"
 HYPR_DIR="$HOME/.config/hypr"
 HYPRPAPER_CONF="$HYPR_DIR/hyprpaper.conf"

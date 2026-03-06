@@ -2,7 +2,7 @@ echo "use flake" > .envrc
 
 cat <<EOL > flake.nix
 {
-  inputs = {nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";};
+  inputs = {nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";};
 
   outputs = {nixpkgs, ...}: let
     pkgs = import nixpkgs {

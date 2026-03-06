@@ -41,7 +41,7 @@
       mako
       wl-clipboard
       wl-gammarelay-rs
-      rofi-wayland
+      rofi
       clipse
       grim
       hyprpicker
