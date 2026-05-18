@@ -1,0 +1,85 @@
+@import 'colors.css';
+
+/*======= MODULE INDEPENDENT =======*/
+#distro-group {
+    margin: 2px 2px;
+    background-color: #1b2023;
+    border-radius: 12px;
+    color: #88d1ec;
+}
+
+#custom-distro {
+    color: #88d1ec;
+    padding: 4px 10px 4px 8px;
+}
+
+#custom-terminal,
+#custom-code,
+#custom-office,
+#custom-obsidian,
+#custom-files,
+#custom-spotify,
+#custom-browser {
+    padding: 0px 6px;
+}
+
+#power-profiles-daemon,
+#idle_inhibitor {
+    margin: 2px 2px;
+    padding: 4px 10px 4px 8px;
+    background-color: #1b2023;
+    border-radius: 12px;
+    color: #b3cad4;
+}
+
+/*======= MODULE CAPSUL =======*/
+#audio,
+#connections,
+#system,
+#storage {
+    margin: 2px 2px;
+    padding: 4px 4px;
+    background-color: #1b2023;
+    border-radius: 12px;
+    color: #b3cad4;
+}
+
+#disk,
+#memory,
+#cpu,
+#temperature,
+#bluetooth {
+    margin-right: 2px;
+    padding: 0 8px;
+}
+
+#network {
+    padding: 0px 10px 0px 4px;
+}
+
+#pulseaudio {
+    margin-right: 12px;
+    margin-left: 8px;
+}
+
+/*======= TRAY =======*/
+#tray-group {
+    margin: 2px 2px;
+    background-color: #1b2023;
+    border-radius: 12px;
+}
+
+#custom-tray-arrow {
+    padding: 4px 10px 4px 8px;
+    color: #88d1ec;
+}
+
+#tray {
+    padding: 4px 6px;
+}
+
+#tray > .passive,
+#tray > .active,
+#tray > .needs-attention {
+    -gtk-icon-effect: none;
+}

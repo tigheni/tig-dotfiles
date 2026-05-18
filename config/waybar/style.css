@@ -1,143 +1,19 @@
+@import "tokens/colors.css";
+@import "tokens/state.css";
+@import "tokens/workspace.css";
+@import "tokens/widget.css";
+@import "tokens/batt-clock.css";
+@import "tokens/slider.css";
+
 * {
-  font-family: 'JetBrainsMono Nerd Font';
-  font-weight: 500;
-  font-size: 12px;
+  margin: 0;
+  padding: 0;
+  min-height: 0px;
   border: none;
-  min-height: 30px;
   border-radius: 0;
+  font-family: "Inter", "JetBrainsMono Nerd Font";
 }
 
 window#waybar {
-  background: rgba(17, 17, 27, 0.95);
-  color: #cdd6f4;
-  border-radius: 8px;
-  margin: 4px 4px 0 4px;
-  padding: 2px;
-}
-
-tooltip {
-  background: rgba(30, 30, 46, 0.95);
-  border: 1px solid rgba(137, 180, 250, 0.3);
-  border-radius: 8px;
-  color: #cdd6f4;
-  padding: 6px 10px;
-}
-
-#workspaces {
-  margin-left: 4px;
-  padding: 2px 4px;
-  background: rgba(30, 30, 46, 0.9);
-  border-radius: 8px;
-}
-
-#workspaces button {
-  padding: 4px 8px;
-  margin: 2px 2px;
-  background: rgba(45, 45, 59, 0.6);
-  color: #6c7086;
-  border-radius: 6px;
-  transition: all 0.25s ease;
-  min-width: 20px;
-}
-
-#workspaces button.active {
-  background: #89b4fa;
-  color: #1e1e2e;
-  font-weight: bold;
-}
-
-#workspaces button.focused {
-  background: rgba(137, 180, 250, 0.25);
-  color: #89b4fa;
-  border: 1px solid rgba(137, 180, 250, 0.5);
-}
-
-#workspaces button.urgent {
-  background: #f38ba8;
-  color: #11111b;
-}
-
-#workspaces button:hover {
-  background: rgba(137, 180, 250, 0.2);
-  color: #89b4fa;
-}
-
-#window,
-#clock,
-#battery,
-#pulseaudio,
-#network,
-#bluetooth,
-#temperature,
-#tray,
-#backlight,
-#memory,
-#cpu,
-#custom-vpn,
-#custom-kdeconnect {
-  padding: 4px 8px;
-  margin: 2px 3px;
-  background: rgba(30, 30, 46, 0.9);
-  border-radius: 6px;
-  border: 1px solid rgba(116, 199, 236, 0.1);
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
-/* Custom spacing for tray */
-#tray {
-  margin-right: 6px;
-  padding: 4px 6px;
-}
-
-/* Specific Modules */
-#window {
-  margin: 2px 6px;
-  font-weight: 600;
-  color: #89b4fa;
-}
-
-#clock {
-  background: #fab387;
-  color: #11111b;
-  font-weight: bold;
-  margin: 4px 4px;
-  border-radius: 6px;
-}
-
-#network {
-  color: #f9e2af;
-}
-
-#bluetooth {
-  color: #89b4fa;
-}
-
-#pulseaudio {
-  color: #89b4fa;
-}
-
-#battery {
-  color: #a6e3a1;
-}
-
-#memory {
-  color: #cba6f7;
-}
-
-#cpu {
-  color: #f5c2e7;
-}
-
-#backlight {
-  color: #f9e2af;
-}
-
-#custom-kdeconnect.connected {
-  background-color: rgba(166, 227, 161, 0.2);
-  color: #a6e3a1;
-}
-
-#custom-kdeconnect.warning {
-  background-color: rgba(243, 139, 168, 0.2);
-  color: #f38ba8;
+  background: transparent;
 }

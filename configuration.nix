@@ -71,13 +71,15 @@
       bluetuith
       vscode
       ddcutil
+      wpsoffice
       batsignal
       wezterm
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
-      blanket
       nodejs_24
+      code-cursor
+      image-roll
     ];
   };
   programs.starship.enable = true;
@@ -95,10 +97,10 @@
     };
   };
 
-/*   services.mullvad-vpn = {
+  services.mullvad-vpn = {
     enable = true;
     package = pkgs.mullvad-vpn;
-  }; */
+  };
   services.playerctld.enable = true;
 
   programs.nh = {
@@ -137,6 +139,10 @@
       { from = 1714; to = 1764; } # KDE Connect
     ];
   };
+  networking.nameservers = [
+  "1.1.1.1"
+  "8.8.8.8"
+];
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave

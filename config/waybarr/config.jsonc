@@ -1,0 +1,154 @@
+{
+  "layer": "top",
+  "start_hidden": true,
+  "exclusive": false,
+  "reload_style_on_change": true,
+  "modules-left": ["hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": [
+    "tray",
+    "custom/vpn",
+    "network",
+    "bluetooth",
+    "memory",
+    "cpu",
+    "temperature",
+    "pulseaudio",
+    "pulseaudio#microphone"
+  ],
+  "hyprland/workspaces": {
+    "all-outputs": true,
+    "on-click": "activate",
+    "persistent-workspaces": {
+      "*": 3
+    }
+  },
+  "tray": {
+    "icon-size": 20,
+    "spacing": 10,
+    "max-items": 10,
+    "tooltip": true
+  },
+  "custom/vpn": {
+    "exec": "nmcli -t -f active,device,type con show --active | grep -E '^yes:.*vpn:' | cut -d':' -f2",
+    "exec-if": "command -v nmcli",
+    "interval": 10,
+    "format": "{icon} {name}",
+    "format-icons": {
+      "wireguard": "󰒞",
+      "openvpn": "󰒟",
+      "default": "󰒠"
+    },
+    "tooltip": true,
+    "on-click-right": "nm-connection-editor"
+  },
+
+  "custom/kdeconnect": {
+    "exec": "kdeconnect-cli --list-devices --name-only",
+    "exec-if": "command -v kdeconnect-cli",
+    "interval": 15,
+    "format": " {icon} {name} ",
+    "tooltip": "KDE Connect devices",
+    "on-click": "QT_QPA_PLATFORM=wayland kdeconnect-app",
+    "on-click-right": "kdeconnect-cli --refresh"
+  },
+
+  "tray": {
+    "icon-size": 20,
+    "spacing": 10
+  },
+  "clock": {
+    "format": "{:%H:%M %d/%m/%Y}",
+    "tooltip-format": "{calendar}",
+    "calendar": {
+      "format": {
+        "months": "<span color='#ffead3'><b>{}</b></span>",
+        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+        "today": "<span color='#ffcc66'><b><u>{}</u></b></span>"
+      }
+    }
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "tooltip": false,
+    "format-muted": " Muted",
+    "on-click": "wpctl set-mute @DEFAULT_SINK@ toggle",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_SINK@ 5%-",
+    "scroll-step": 5,
+    "format-icons": {
+      "headphone": "",
+      "hands-free": "",
+      "headset": "",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": ["", "", ""]
+    }
+  },
+  "pulseaudio#microphone": {
+    "format": "{format_source}",
+    "format-source": " {volume}%",
+    "format-source-muted": " Muted",
+    "on-click": "wpctl set-mute @DEFAULT_SOURCE@ toggle",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_SOURCE@ 5%+",
+    "on-scroll-down": "wpctl set-volume -l 1 @DEFAULT_SOURCE@ 5%-",
+    "scroll-step": 5
+  },
+  "temperature": {
+    "interval": 10,
+    "tooltip": true,
+    "hwmon-path": [
+      "/sys/class/hwmon/hwmon1/temp1_input",
+      "/sys/class/thermal/thermal_zone0/temp"
+    ],
+    //"thermal-zone": 0,
+    "critical-threshold": 82,
+    "format-critical": "{temperatureC}°C {icon}",
+    "format": "{temperatureC}°C {icon}",
+    "format-icons": ["󰈸"],
+    "on-click-right": "wezterm --title nvtop sh -c 'nvtop'"
+  },
+
+  "network": {
+    "format-wifi": "  {signalStrength}%",
+    "format-ethernet": "{ipaddr}/{cidr}",
+    "tooltip-format": "{essid} - {ifname} via {gwaddr}",
+    "format-linked": "{ifname} (No IP)",
+    "format-disconnected": "Disconnected ⚠",
+    "format-alt": "{ifname}:{essid} {ipaddr}/{cidr}"
+  },
+
+  "bluetooth": {
+    "format": " ",
+    "format-disabled": "󰂳",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": " {device_alias}",
+    "tooltip-format-connected": "{device_enumerate}",
+    "tooltip-format-enumerate-connected": " {device_alias} 󰂄{device_battery_percentage}%",
+    "tooltip": true,
+    "on-click": "blueman-manager"
+  },
+
+  "cpu": {
+    "format": "{usage}% 󰍛",
+    "interval": 1,
+    "min-length": 5,
+    "format-alt-click": "click",
+    "format-alt": "{icon0}{icon1}{icon2}{icon3} {usage:>2}% 󰍛",
+    "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"],
+    "on-click-right": "gnome-system-monitor"
+  },
+  "memory": {
+    "interval": 10,
+    "format": "{used:0.1f}G 󰾆",
+    "format-alt": "{percentage}% 󰾆",
+    "format-alt-click": "click",
+    "tooltip": true,
+    "tooltip-format": "{used:0.1f}GB/{total:0.1f}G",
+    "on-click-right": "kitty --title btop sh -c 'btop'"
+  }
+}

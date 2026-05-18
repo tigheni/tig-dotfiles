@@ -2,8 +2,8 @@
   spotx = pkgs.fetchFromGitHub {
     owner = "SpotX-Official";
     repo = "SpotX-Bash";
-    rev = "d5a23bfc64d75979373c5fddc81641dabff051aa";
-    hash = "sha256-gYr2b9oSOB/kuK6Em3T+gAALgzpRQxvSBJNWoaJ7yvg=";
+    rev = "c9b506c7749f853c827b6d4bd1d57818f953f68d";
+    hash = "sha256-zPWsENobV+THZr0XgaEQgcFUKMwXvCsa+wlW7NZ1w/g=";
   };
 in
   pkgs.spotify.overrideAttrs (prev: {

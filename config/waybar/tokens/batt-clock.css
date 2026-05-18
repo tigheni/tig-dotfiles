@@ -1,0 +1,17 @@
+@import 'colors.css';
+
+#battery {
+    margin: 2px 2px;
+    padding: 4px 10px;
+    background-color: #1b2023;
+    border-radius: 12px;
+    color: #b3cad4;
+}
+
+#clock {
+    margin: 2px 2px;
+    padding: 4px 8px 4px 10px;
+    background-color: #1b2023;
+    border-radius: 12px;
+    color: #b3cad4;
+}
