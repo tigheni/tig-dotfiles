@@ -1,8 +1,8 @@
 {
-  pkgs,
-
+  pkgs,pkgs-unstable,
   ...
 }: {
+
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     warn-dirty = false;
@@ -49,6 +49,7 @@
   users.users.tig = {
     isNormalUser = true;
     extraGroups = ["networkmanager" "wheel"];
+
     packages = with pkgs; [
       brave
       gh
@@ -70,18 +71,22 @@
       htop
       bluetuith
       vscode
+
       ddcutil
       wpsoffice
       batsignal
       wezterm
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
-      (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet memo];})
+      (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet-ng memo];})
       nodejs_24
-      code-cursor
+      pkgs-unstable.code-cursor
       image-roll
+
     ];
+
   };
+
   programs.starship.enable = true;
   programs.waybar.enable = true;
 
