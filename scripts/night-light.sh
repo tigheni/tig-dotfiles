@@ -5,8 +5,9 @@
 # Normal temperature (6500K) from 7am to 8pm
 
 CURRENT_HOUR=$(date +%H)
-WARM_TEMP=2800
+WARM_TEMP=2700
 NORMAL_TEMP=6500
+
 
 # Check if current time is between 8pm (20:00) and 7am (07:00)
 if [ "$CURRENT_HOUR" -ge 20 ] || [ "$CURRENT_HOUR" -lt 7 ]; then
