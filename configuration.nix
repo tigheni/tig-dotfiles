@@ -56,7 +56,6 @@
       ripgrep
       fd
       jq
-      ytarchive
       ffmpeg
       zoxide
       fzf
@@ -64,25 +63,23 @@
       zip
       unzip
       tldr
-      glab
       comma
       nurl
-      epiphany
+      google-chrome
+      zotero
       htop
       bluetuith
       vscode
-
-      ddcutil
       wpsoffice
-      batsignal
       wezterm
       (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {pkgs = pkgs;})
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet-ng memo];})
       nodejs_24
       pkgs-unstable.code-cursor
-      image-roll
-
+      kdePackages.okular
+      kdePackages.ghostwriter
+      stirling-pdf
     ];
 
   };
