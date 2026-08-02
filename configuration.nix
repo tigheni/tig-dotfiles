@@ -48,7 +48,7 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tig = {
     isNormalUser = true;
-    extraGroups = ["networkmanager" "wheel"];
+    extraGroups = ["networkmanager" "wheel" "input"];
 
     packages = with pkgs; [
       brave
