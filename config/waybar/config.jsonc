@@ -16,8 +16,14 @@
     "./modules/battery.jsonc",
     "./modules/clock.jsonc",
     "./modules/tray.jsonc",
+    "./modules/temperture.json  ",
   ],
-  "modules-left": ["group/distro-group", "group/storage", "group/system"],
+  "modules-left": [
+    "group/distro-group",
+    "group/storage",
+    "group/system",
+    "temperture",
+  ],
   "modules-center": [
     "power-profiles-daemon",
     "hyprland/workspaces",

@@ -65,6 +65,8 @@
       tldr
       comma
       nurl
+      bun
+      qutebrowser
       google-chrome
       zotero
       htop
