@@ -1,3 +1,8 @@
 .zcompdump
 config/mpv/memo-history.log
 config/hypr/monitor.conf
+
+# Local backups and generated assets
+*.bak
+*.bak.*
+config/hypr/wallpaper/wallpaper.bak/

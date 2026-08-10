@@ -1,20 +1,34 @@
-source_dir=/home/tig/tig-dotfiles/config
-destination_dir=/home/tig/.config
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+source_dir="@DOTFILES_DIR@/config"
+destination_dir="@CONFIG_DIR@"
+mkdir -p "$destination_dir"
 
 # List of configs that are managed by NixOS built-in modules and should be skipped
-nix_managed_configs=("nvim" "starship.toml")
+readonly nix_managed_configs=("nvim" "starship.toml")
+shopt -s nullglob
 
 for file in "$source_dir"/*; do
     filename=$(basename "$file")
     destination_file="$destination_dir/$filename"
 
     # Skip NixOS-managed configs
-    if [[ " ${nix_managed_configs[@]} " =~ " ${filename} " ]]; then
+    managed=false
+    for managed_config in "${nix_managed_configs[@]}"; do
+        if [[ "$filename" == "$managed_config" ]]; then
+            managed=true
+            break
+        fi
+    done
+
+    if "$managed"; then
         echo "⏭️  Skipping $filename (managed by NixOS built-in modules)"
         continue
     fi
 
-    if [ -e "$destination_file" ]; then
+    if [ -e "$destination_file" ] || [ -L "$destination_file" ]; then
         if [ -L "$destination_file" ]; then
             current_link=$(readlink "$destination_file")
             if [ "$current_link" = "$file" ]; then
@@ -24,12 +38,14 @@ for file in "$source_dir"/*; do
                 echo "⚠️  $filename exists but points to different location:"
                 echo "   Current: $current_link"
                 echo "   Target:  $file"
-                echo "   Backing up and creating new symlink..."
-                mv "$destination_file" "$destination_file.bak"
+                backup="$destination_file.bak.$(date +%Y%m%d-%H%M%S)"
+                echo "   Backing up to $backup and creating new symlink..."
+                mv "$destination_file" "$backup"
             fi
         else
-            echo "⚠️  $filename exists as regular file/directory, backing up..."
-            mv "$destination_file" "$destination_file.bak"
+            backup="$destination_file.bak.$(date +%Y%m%d-%H%M%S)"
+            echo "⚠️  $filename exists as regular file/directory, backing up to $backup..."
+            mv "$destination_file" "$backup"
         fi
     fi
 

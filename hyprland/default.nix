@@ -7,16 +7,23 @@
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
   networking.networkmanager.enable = true;
 
-
   # Enable PipeWire for audio
   security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = true;
+  services = {
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+      jack.enable = true;
+    };
+    blueman.enable = true;
+    pulseaudio.enable = false;
+    gvfs.enable = true;
+    devmon.enable = true;
+    udisks2.enable = true;
   };
+
   # Enable Bluetooth
   hardware.bluetooth = {
     enable = true;
@@ -26,33 +33,5 @@
         Enable = "Source,Sink,Media,Socket";
       };
     };
-  };
-  services.blueman.enable = true;
-
-  # Disable PulseAudio since we're using PipeWire
-  services.pulseaudio.enable = false;
-
-  services.gvfs.enable = true;
-  services.devmon.enable = true;
-  services.udisks2.enable = true;
-
-  users.users.tig = {
-    packages = with pkgs; [
-      mako
-      wl-clipboard
-      wl-gammarelay-rs
-      rofi
-      clipse
-      grim
-      hyprpicker
-      hyprpaper
-      nautilus
-      bibata-cursors
-      networkmanagerapplet
-      pavucontrol
-      bluez-tools
-      obexftp
-      kdePackages.kdeconnect-kde
-    ];
   };
 }

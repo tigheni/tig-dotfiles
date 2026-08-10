@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
+
+set -euo pipefail
+
 WALLPAPER_DIR="$HOME/.config/hypr/wallpaper"
-HYPR_DIR="$HOME/.config/hypr"
-HYPRPAPER_CONF="$HYPR_DIR/hyprpaper.conf"
-HYPRLOCK_CONF="$HYPR_DIR/hyprlock.conf"
-HYPRLAND_CONF="$HYPR_DIR/hyprland.conf"
 LOGFILE="${XDG_CACHE_HOME:-$HOME/.cache}/set-wallpaper.log"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+RUNTIME_CONFIG="$RUNTIME_DIR/hyprpaper.conf"
 mkdir -p "$WALLPAPER_DIR"
 mkdir -p "$(dirname "$LOGFILE")"
+mkdir -p "$RUNTIME_DIR"
 
 log() {
     printf '%s %s\n' "$(date +'%Y-%m-%dT%H:%M:%S%z')" "$*" >> "$LOGFILE"
@@ -23,47 +25,24 @@ if [ -z "$WALLPAPER_FILE" ]; then
 fi
 log "found wallpaper: $WALLPAPER_FILE"
 
-# Detect monitors from config as an initial fallback.
-CONFIG_MONITORS=""
-if [ -f "$HYPRLAND_CONF" ]; then
-    CONFIG_MONITORS=$(awk -F',' '/^\s*monitor\s*=/{gsub(/^\s*monitor\s*=\s*/, "", $1); gsub(/\s+$/, "", $1); if ($1 != "") print $1}' "$HYPRLAND_CONF")
-    log "configured monitors from hyprland.conf: $CONFIG_MONITORS"
-fi
-
-# Build a baseline hyprpaper.conf.
-# We keep only preload/runtime options here and apply final monitor mappings via hyprctl
-# after hyprpaper starts and real outputs are available.
+# Build a runtime-only hyprpaper.conf. Never rewrite the tracked Hyprland files.
 {
     echo "preload = $WALLPAPER_FILE"
     echo "splash = false"
     echo "ipc = on"
-} > "$HYPRPAPER_CONF"
-
-# Update hyprlock.conf - replace any existing path line or add one
-if [ -f "$HYPRLOCK_CONF" ]; then
-    if grep -q "path =" "$HYPRLOCK_CONF"; then
-        sed -i "s|^.*path = .*|    path = $WALLPAPER_FILE|g" "$HYPRLOCK_CONF"
-        log "updated existing hyprlock.conf path"
-    else
-        printf "    path = %s\n" "$WALLPAPER_FILE" >> "$HYPRLOCK_CONF"
-        log "appended path to hyprlock.conf"
-    fi
-else
-    printf "# hyprlock wallpaper path\n    path = %s\n" "$WALLPAPER_FILE" > "$HYPRLOCK_CONF"
-    log "created hyprlock.conf with path"
-fi
+} > "$RUNTIME_CONFIG"
 
 if command -v hyprpaper >/dev/null 2>&1; then
     if pgrep -x hyprpaper >/dev/null 2>&1; then
         log "hyprpaper already running; will reuse existing instance"
     else
-        nohup hyprpaper >>"$LOGFILE" 2>&1 &
+        nohup hyprpaper -c "$RUNTIME_CONFIG" >>"$LOGFILE" 2>&1 &
         log "started hyprpaper (nohup)"
     fi
     # wait for hyprpaper socket to appear (hypr creates per-instance dirs)
     HP_DIR=""
     for _ in $(seq 1 20); do
-        HP_DIR=$(ls -1d /run/user/$(id -u)/hypr/* 2>/dev/null | head -1 || true)
+        HP_DIR=$(find "/run/user/$(id -u)/hypr" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null || true)
         if [ -n "$HP_DIR" ] && [ -e "$HP_DIR/.hyprpaper.sock" ]; then
             log "found hyprpaper socket in $HP_DIR"
             break

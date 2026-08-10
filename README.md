@@ -29,22 +29,6 @@ sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
 
 The activation step symlinks entries from `config/` into `~/.config`. Existing files are preserved with timestamped `.bak` backups. Nix-managed Neovim and Starship files are intentionally skipped.
 
-## Voxtype
-
-Voxtype is installed from nixpkgs and runs as a user service. The Hyprland binding is push-to-talk:
-
-- `Super+V` — hold to record, release to transcribe
-- `Super+Shift+V` — open clipboard manager
-
-After the first rebuild, download the model and verify the daemon:
-
-```bash
-voxtype setup --download
-voxtype setup check
-systemctl --user restart voxtype
-voxtype status
-```
-
 ## Checks
 
 Format Nix files and run repository checks with:
