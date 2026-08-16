@@ -33,6 +33,8 @@ in {
       efiSysMountPoint = "/boot";
     };
   };
+virtualisation.docker.enable = true;
+
 
   time.timeZone = "Africa/Algiers";
   environment.sessionVariables.DOTFILES_DIR = dotfilesDir;
@@ -52,7 +54,7 @@ in {
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tig = {
     isNormalUser = true;
-    extraGroups = ["networkmanager" "wheel" "input"];
+    extraGroups = ["networkmanager" "wheel" "input" "docker"];
   };
 
   programs = {
