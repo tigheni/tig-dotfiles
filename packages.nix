@@ -61,6 +61,7 @@ in {
     voxtype
     wtype
     libnotify
+    discord
 
     # Neovim language servers and formatters
     gcc

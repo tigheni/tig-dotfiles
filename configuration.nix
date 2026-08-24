@@ -33,8 +33,7 @@ in {
       efiSysMountPoint = "/boot";
     };
   };
-virtualisation.docker.enable = true;
-
+  virtualisation.docker.enable = true;
 
   time.timeZone = "Africa/Algiers";
   environment.sessionVariables.DOTFILES_DIR = dotfilesDir;
@@ -99,10 +98,13 @@ virtualisation.docker.enable = true;
   # push-to-talk start/stop events, so the evdev hotkey is disabled.
   systemd.user.services.voxtype = {
     description = "Voxtype voice-to-text daemon";
-    wantedBy = ["default.target"];
-    after = ["pipewire.service"];
+    wantedBy = ["graphical-session.target"];
+    after = ["graphical-session.target" "pipewire.service"];
+    partOf = ["graphical-session.target"];
+    unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
     serviceConfig = {
       ExecStart = "${pkgs.voxtype}/bin/voxtype daemon";
+      Environment = ["XDG_RUNTIME_DIR=/run/user/%U"];
       Restart = "on-failure";
       RestartSec = 3;
     };
