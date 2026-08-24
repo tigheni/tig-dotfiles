@@ -94,21 +94,7 @@ in {
     '';
   };
 
-  # Voxtype voice-to-text daemon. Hyprland keybindings below provide the
-  # push-to-talk start/stop events, so the evdev hotkey is disabled.
-  systemd.user.services.voxtype = {
-    description = "Voxtype voice-to-text daemon";
-    wantedBy = ["graphical-session.target"];
-    after = ["graphical-session.target" "pipewire.service"];
-    partOf = ["graphical-session.target"];
-    unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
-    serviceConfig = {
-      ExecStart = "${pkgs.voxtype}/bin/voxtype daemon";
-      Environment = ["XDG_RUNTIME_DIR=/run/user/%U"];
-      Restart = "on-failure";
-      RestartSec = 3;
-    };
-  };
+
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono

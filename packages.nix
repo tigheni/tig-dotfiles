@@ -57,9 +57,8 @@ in {
     obexftp
     kdePackages.kdeconnect-kde
 
-    # Voxtype and its Wayland output/notification backends
-    voxtype
-    wtype
+
+
     libnotify
     discord
 
