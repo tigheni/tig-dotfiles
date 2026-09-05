@@ -1,12 +1,14 @@
 tmux start-server
 
-selected="$(fd . "$HOME"/tig-dotfiles --min-depth 1 --maxdepth 1 --type d --format {/} | fzf --bind=enter:replace-query+print-query)"
+dotfiles_dir="${DOTFILES_DIR:?DOTFILES_DIR is not set}"
+
+selected="$(fd . "$dotfiles_dir" --min-depth 1 --maxdepth 1 --type d --format {/} | fzf --bind=enter:replace-query+print-query)"
 
 if [[ -z $selected ]]; then
     exit 0
 fi
 
-selected="$HOME/tig-dotfiles/$selected"
+selected="$dotfiles_dir/$selected"
 
 if [ ! -d $selected ]; then
     mkdir $selected

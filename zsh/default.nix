@@ -1,5 +1,5 @@
-{pkgs, ...}: {
-  users.users.tig.shell = pkgs.zsh;
+{pkgs, username, ...}: {
+  users.users.${username}.shell = pkgs.zsh;
 
   programs.zsh = {
     enable = true;

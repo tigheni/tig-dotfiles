@@ -1,13 +1,14 @@
 {
   pkgs,
   pkgs-unstable,
+  username,
   ...
 }: let
   tmux-sessions-fzf = pkgs.writeShellScriptBin "s" (builtins.readFile ./tmux/tmux-sessions-fzf.sh);
   tmux-output-nvim = pkgs.writeShellScriptBin "tmux-output-nvim" (builtins.readFile ./tmux/tmux-output-nvim.sh);
   init-project = pkgs.writeShellScriptBin "init-project" (builtins.readFile ./tmux/init-project.sh);
 in {
-  users.users.tig.packages = with pkgs; [
+  users.users.${username}.packages = with pkgs; [
     brave
     gh
     ripgrep
@@ -58,7 +59,7 @@ in {
     kdePackages.kdeconnect-kde
 
 
-
+    codex
     libnotify
     discord
 

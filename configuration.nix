@@ -1,10 +1,10 @@
 {
   config,
   pkgs,
+  username,
+  dotfilesDir,
   ...
-}: let
-  dotfilesDir = "/home/tig/tig-dotfiles";
-in {
+}: {
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     warn-dirty = false;
@@ -51,7 +51,7 @@ in {
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.tig = {
+  users.users.${username} = {
     isNormalUser = true;
     extraGroups = ["networkmanager" "wheel" "input" "docker"];
   };
@@ -105,7 +105,7 @@ in {
   system.userActivationScripts.tig-dotfiles =
     builtins.replaceStrings
     ["@DOTFILES_DIR@" "@CONFIG_DIR@"]
-    [dotfilesDir "${config.users.users.tig.home}/.config"]
+    [dotfilesDir "${config.users.users.${username}.home}/.config"]
     (builtins.readFile ./scripts/symlink-config.sh);
   networking.firewall = {
     enable = true;

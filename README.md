@@ -42,7 +42,7 @@ Or enter the development shell, which provides `alejandra`, `shellcheck`, `stati
 
 ```bash
 nix develop
-shellcheck scripts/*.sh
+shellcheck scripts/*.sh tmux/*.sh
 statix check -i hardware-configuration.nix
 deadnix --fail --exclude hardware-configuration.nix
 ```

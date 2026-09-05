@@ -10,6 +10,8 @@
     ...
   }: let
     system = "x86_64-linux";
+    username = "tig";
+    dotfilesDir = "/home/${username}/tig-dotfiles";
     pkgs = import nixpkgs {
       inherit system;
       config.allowUnfree = true;
@@ -19,6 +21,7 @@
       inherit system;
 
       specialArgs = {
+        inherit username dotfilesDir;
         pkgs-unstable = import nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
@@ -41,7 +44,11 @@
         shellcheck ${./scripts/night-light.sh} \
           ${./scripts/set-wallpaper.sh} \
           ${./scripts/switch-audio-output-simple.sh} \
-          ${./scripts/symlink-config.sh}
+          ${./scripts/symlink-config.sh} \
+          ${./tmux/init-project.sh} \
+          ${./tmux/tmux-new-repo.sh} \
+          ${./tmux/tmux-output-nvim.sh} \
+          ${./tmux/tmux-sessions-fzf.sh}
         touch $out
       '';
   };

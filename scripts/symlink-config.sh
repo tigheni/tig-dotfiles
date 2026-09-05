@@ -6,9 +6,30 @@ source_dir="@DOTFILES_DIR@/config"
 destination_dir="@CONFIG_DIR@"
 mkdir -p "$destination_dir"
 
+if [ ! -d "$source_dir" ]; then
+    printf 'ERROR: config directory does not exist: %s\n' "$source_dir" >&2
+    exit 1
+fi
+
 # List of configs that are managed by NixOS built-in modules and should be skipped
 readonly nix_managed_configs=("nvim" "starship.toml")
 shopt -s nullglob
+
+for destination_file in "$destination_dir"/*; do
+    if [ ! -L "$destination_file" ]; then
+        continue
+    fi
+
+    current_link=$(readlink "$destination_file")
+    case "$current_link" in
+        "$source_dir"/*)
+            if [ ! -e "$current_link" ]; then
+                echo "🗑️  Removing stale config symlink $(basename "$destination_file")"
+                rm "$destination_file"
+            fi
+            ;;
+    esac
+done
 
 for file in "$source_dir"/*; do
     filename=$(basename "$file")
