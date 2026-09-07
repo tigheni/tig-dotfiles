@@ -3,6 +3,10 @@
     enable = true;
     portalPackage = pkgs.xdg-desktop-portal-wlr;
   };
+  xdg.portal = {
+    enable = true;
+    extraPortals = [pkgs.xdg-desktop-portal-gtk];
+  };
   programs.hyprlock.enable = true;
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
   networking.networkmanager.enable = true;
