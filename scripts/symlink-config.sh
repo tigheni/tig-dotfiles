@@ -11,8 +11,6 @@ if [ ! -d "$source_dir" ]; then
     exit 1
 fi
 
-# List of configs that are managed by NixOS built-in modules and should be skipped
-readonly nix_managed_configs=("nvim" "starship.toml")
 shopt -s nullglob
 
 for destination_file in "$destination_dir"/*; do
@@ -34,20 +32,6 @@ done
 for file in "$source_dir"/*; do
     filename=$(basename "$file")
     destination_file="$destination_dir/$filename"
-
-    # Skip NixOS-managed configs
-    managed=false
-    for managed_config in "${nix_managed_configs[@]}"; do
-        if [[ "$filename" == "$managed_config" ]]; then
-            managed=true
-            break
-        fi
-    done
-
-    if "$managed"; then
-        echo "⏭️  Skipping $filename (managed by NixOS built-in modules)"
-        continue
-    fi
 
     if [ -e "$destination_file" ] || [ -L "$destination_file" ]; then
         if [ -L "$destination_file" ]; then

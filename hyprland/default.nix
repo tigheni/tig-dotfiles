@@ -1,41 +1,12 @@
-{pkgs, ...}: {
-  programs.hyprland = {
-    enable = true;
-    portalPackage = pkgs.xdg-desktop-portal-wlr;
-  };
-  xdg.portal = {
-    enable = true;
-    extraPortals = [pkgs.xdg-desktop-portal-gtk];
-  };
+_: {
+  # Nothing else belongs here. The Hyprland module already sets
+  # xdg.portal.enable, defaults portalPackage to xdg-desktop-portal-hyprland,
+  # and adds the GTK portal via wayland-session.nix. Overriding portalPackage
+  # with xdg-desktop-portal-wlr is what left the wlr portal running with no
+  # config file, since xdg.portal.wlr (which generates it) stays disabled for
+  # Hyprland.
+  programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
+
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
-  networking.networkmanager.enable = true;
-
-  # Enable PipeWire for audio
-  security.rtkit.enable = true;
-  services = {
-    pipewire = {
-      enable = true;
-      alsa.enable = true;
-      alsa.support32Bit = true;
-      pulse.enable = true;
-      jack.enable = true;
-    };
-    blueman.enable = true;
-    pulseaudio.enable = false;
-    gvfs.enable = true;
-    devmon.enable = true;
-    udisks2.enable = true;
-  };
-
-  # Enable Bluetooth
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = true;
-    settings = {
-      General = {
-        Enable = "Source,Sink,Media,Socket";
-      };
-    };
-  };
 }

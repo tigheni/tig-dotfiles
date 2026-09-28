@@ -10,7 +10,7 @@
     "./modules/system.jsonc",
     "./modules/power-profiles-daemon.jsonc",
     "./modules/workspace.jsonc",
-    "./modules/idle-ihibitor.jsonc",
+    "./modules/idle-inhibitor.jsonc",
     "./modules/audio.jsonc",
     "./modules/connections.jsonc",
     "./modules/battery.jsonc",

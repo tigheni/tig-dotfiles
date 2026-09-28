@@ -1,12 +1,15 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
-    nixpkgs-unstable.url = "github:nixOS/nixpkgs/nixos-unstable";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs = {
+    self,
     nixpkgs,
     nixpkgs-unstable,
+    llm-agents,
     ...
   }: let
     system = "x86_64-linux";
@@ -16,6 +19,14 @@
       inherit system;
       config.allowUnfree = true;
     };
+    # Lint checks run over the whole flake source, so new scripts and modules
+    # are covered without being listed here.
+    lint = name: tool: script:
+      pkgs.runCommand "dotfiles-${name}" {nativeBuildInputs = [tool pkgs.findutils];} ''
+        cd ${self}
+        ${script}
+        touch $out
+      '';
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       inherit system;
@@ -26,6 +37,7 @@
           inherit system;
           config.allowUnfree = true;
         };
+        llm-agents = llm-agents.packages.${system};
       };
 
       modules = [./configuration.nix];
@@ -37,19 +49,12 @@
       packages = with pkgs; [alejandra deadnix shellcheck statix];
     };
 
-    checks.${system}.shellcheck =
-      pkgs.runCommand "dotfiles-shellcheck" {
-        nativeBuildInputs = [pkgs.shellcheck];
-      } ''
-        shellcheck ${./scripts/night-light.sh} \
-          ${./scripts/set-wallpaper.sh} \
-          ${./scripts/switch-audio-output-simple.sh} \
-          ${./scripts/symlink-config.sh} \
-          ${./tmux/init-project.sh} \
-          ${./tmux/tmux-new-repo.sh} \
-          ${./tmux/tmux-output-nvim.sh} \
-          ${./tmux/tmux-sessions-fzf.sh}
-        touch $out
+    checks.${system} = {
+      shellcheck = lint "shellcheck" pkgs.shellcheck ''
+        find . -name '*.sh' -print0 | xargs -0 shellcheck
       '';
+      statix = lint "statix" pkgs.statix "statix check --ignore hardware-configuration.nix -- .";
+      deadnix = lint "deadnix" pkgs.deadnix "deadnix --fail --exclude ./hardware-configuration.nix .";
+    };
   };
 }

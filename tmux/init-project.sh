@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "use flake" > .envrc
 
 cat <<EOL > flake.nix

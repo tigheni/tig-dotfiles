@@ -5,35 +5,63 @@
   dotfilesDir,
   ...
 }: {
-  nix.settings = {
-    experimental-features = ["nix-command" "flakes"];
-    warn-dirty = false;
-  };
   imports = [
     ./hardware-configuration.nix
     ./packages.nix
+    ./modules/audio.nix
+    ./modules/bluetooth.nix
+    ./modules/desktop.nix
+    ./modules/networking.nix
     ./zsh
     ./hyprland
     ./neovim
     ./tmux
   ];
+
+  nix.settings = {
+    experimental-features = ["nix-command" "flakes"];
+    warn-dirty = false;
+
+    # llm-agents.nix (claude-code, codex) is not in cache.nixos.org, and its own
+    # nixConfig does not propagate to us as an input — without this, every
+    # flake.lock bump recompiles codex from source.
+    extra-substituters = ["https://cache.numtide.com"];
+    extra-trusted-public-keys = [
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    ];
+    auto-optimise-store = true;
+  };
+
   nixpkgs.config.allowUnfree = true;
 
-  # Bootloader.
-  boot.loader = {
-    grub = {
-      enable = true;
-      efiSupport = true;
-      efiInstallAsRemovable = false;
-      device = "nodev";
-      useOSProber = true;
+  boot = {
+    loader = {
+      grub = {
+        enable = true;
+        efiSupport = true;
+        efiInstallAsRemovable = false;
+        device = "nodev";
+        useOSProber = true;
+      };
+      efi = {
+        canTouchEfiVariables = true;
+        efiSysMountPoint = "/boot";
+      };
     };
-    efi = {
-      canTouchEfiVariables = true;
-      efiSysMountPoint = "/boot";
+    tmp.cleanOnBoot = true;
+  };
+
+  zramSwap.enable = true;
+
+  # Rootless only. The rootful daemon is dead weight once DOCKER_HOST points at
+  # the per-user socket, and the `docker` group it requires is root-equivalent.
+  virtualisation.docker = {
+    enable = false;
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
     };
   };
-  virtualisation.docker.enable = true;
 
   time.timeZone = "Africa/Algiers";
   environment.sessionVariables.DOTFILES_DIR = dotfilesDir;
@@ -53,7 +81,7 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${username} = {
     isNormalUser = true;
-    extraGroups = ["networkmanager" "wheel" "input" "docker"];
+    extraGroups = ["networkmanager" "wheel" "input"];
   };
 
   programs = {
@@ -87,46 +115,37 @@
       enable = true;
       package = pkgs.mullvad-vpn;
     };
-    playerctld.enable = true;
+    # udev requires comma-separated key/value tokens; without them `udevadm
+    # verify` rejects the rule.
     udev.extraRules = ''
-      ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x1639" ATTR{power/wakeup}="disabled"
-      ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x1022" ATTR{device}=="0x43d5" ATTR{power/wakeup}="disabled"
+      ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1022", ATTR{device}=="0x1639", ATTR{power/wakeup}="disabled"
+      ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1022", ATTR{device}=="0x43d5", ATTR{power/wakeup}="disabled"
     '';
+    postgresql = {
+      enable = true;
+      package = pkgs.postgresql_17;
+      # Peer authentication: `psql` as ${username} works without a password.
+      # ensureDBOwnership asserts a same-named database exists.
+      ensureDatabases = [username];
+      ensureUsers = [
+        {
+          name = username;
+          ensureDBOwnership = true;
+        }
+      ];
+    };
   };
-
-
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
   ];
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
   system.userActivationScripts.tig-dotfiles =
     builtins.replaceStrings
     ["@DOTFILES_DIR@" "@CONFIG_DIR@"]
     [dotfilesDir "${config.users.users.${username}.home}/.config"]
     (builtins.readFile ./scripts/symlink-config.sh);
-  networking.firewall = {
-    enable = true;
-    allowedUDPPorts = [5353]; # mDNS
-    allowedTCPPortRanges = [
-      {
-        from = 1714;
-        to = 1764;
-      } # KDE Connect
-    ];
-    allowedUDPPortRanges = [
-      {
-        from = 1714;
-        to = 1764;
-      } # KDE Connect
-    ];
-  };
-  networking.nameservers = [
-    "1.1.1.1"
-    "8.8.8.8"
-  ];
+
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave

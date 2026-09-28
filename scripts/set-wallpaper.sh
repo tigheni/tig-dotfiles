@@ -25,6 +25,15 @@ if [ -z "$WALLPAPER_FILE" ]; then
 fi
 log "found wallpaper: $WALLPAPER_FILE"
 
+# Regenerate the waybar colour tokens from the wallpaper. config/matugen/config.toml
+# holds the template and reloads waybar through its post_hook.
+if command -v matugen >/dev/null 2>&1; then
+    matugen image "$WALLPAPER_FILE" >>"$LOGFILE" 2>&1 || log "matugen failed"
+    log "regenerated colours with matugen"
+else
+    log "matugen not in PATH; keeping existing colours"
+fi
+
 # Build a runtime-only hyprpaper.conf. Never rewrite the tracked Hyprland files.
 {
     echo "preload = $WALLPAPER_FILE"
@@ -64,11 +73,7 @@ if command -v hyprctl >/dev/null 2>&1; then
         sleep 0.2
     done
 
-    # Fallback to configured monitors, then DP-1 if runtime list is still empty.
-    if [ -z "$MONITORS" ]; then
-        MONITORS="$CONFIG_MONITORS"
-        log "hyprctl returned no monitors, falling back to config: $MONITORS"
-    fi
+    # Fall back to DP-1 if the runtime list is still empty.
     if [ -z "$MONITORS" ]; then
         MONITORS="DP-1"
         log "no monitors found; using fallback: $MONITORS"

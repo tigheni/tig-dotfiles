@@ -27,7 +27,7 @@ sudo nixos-rebuild switch --rollback
 sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
 ```
 
-The activation step symlinks entries from `config/` into `~/.config`. Existing files are preserved with timestamped `.bak` backups. Nix-managed Neovim and Starship files are intentionally skipped.
+The activation step symlinks entries from `config/` into `~/.config`. Existing files are preserved with timestamped `.bak` backups.
 
 ## Checks
 
