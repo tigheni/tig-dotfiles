@@ -96,13 +96,13 @@ button:hover {
 #memory,
 #cpu,
 #clock,
-#network,
-#bluetooth,
 #pulseaudio,
-#power-profiles-daemon,
 #custom-expand-icon,
 #custom-weather,
 #custom-gpu-usage,
+#temperature,
+#systemd-failed-units,
+#custom-flake-age,
 #custom-voxtype,
 #custom-nixos {
   min-width: 12px;
@@ -134,14 +134,6 @@ button:hover {
 
 #tray {
   margin-top: 1px;
-}
-
-#power-profiles-daemon.performance {
-  color: @accent;
-}
-
-#power-profiles-daemon.power-saver {
-  color: @warn;
 }
 
 /* Voxtype: idle is dimmed, recording pulses, transcribing uses the accent. */
@@ -189,10 +181,6 @@ button:hover {
   }
 }
 
-#network.disconnected {
-  color: @critical;
-}
-
 #memory.warning,
 #cpu.warning {
   color: @warn;
@@ -227,4 +215,24 @@ tooltip {
 tooltip label {
   color: @fg;
   font-weight: normal;
+}
+
+/* Temperature sits right after the cpu reading: "cpu 02% 45°". */
+#cpu {
+  padding-right: 0;
+  margin-right: 0;
+}
+
+#temperature {
+  padding-left: 3px;
+  margin-left: 0;
+}
+
+#temperature.critical,
+#systemd-failed-units {
+  color: @critical;
+}
+
+#custom-flake-age {
+  color: @warn;
 }
