@@ -53,6 +53,8 @@ in {
       lynx
 
       # Hyprland and desktop tools
+      # Waybar is started by scripts/waybar-launch.sh, not a systemd unit.
+      waybar
       mako
       wl-clipboard
       wl-gammarelay-rs
@@ -65,6 +67,7 @@ in {
       bibata-cursors
       networkmanagerapplet
       pavucontrol
+      wttrbar
       bluez-tools
       obexftp
       kdePackages.kdeconnect-kde

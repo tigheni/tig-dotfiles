@@ -6,6 +6,7 @@ config/hypr/monitor.conf
 *.bak
 *.bak.*
 config/hypr/wallpaper/wallpaper.bak/
+config/waybar/tokens/colors.css
 *.log
 .direnv/
 result

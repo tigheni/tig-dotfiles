@@ -86,7 +86,6 @@
 
   programs = {
     starship.enable = true;
-    waybar.enable = true;
     git = {
       enable = true;
       config = {

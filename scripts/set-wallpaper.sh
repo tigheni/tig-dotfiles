@@ -28,7 +28,7 @@ log "found wallpaper: $WALLPAPER_FILE"
 # Regenerate the waybar colour tokens from the wallpaper. config/matugen/config.toml
 # holds the template and reloads waybar through its post_hook.
 if command -v matugen >/dev/null 2>&1; then
-    matugen image "$WALLPAPER_FILE" >>"$LOGFILE" 2>&1 || log "matugen failed"
+    matugen image --source-color-index 0 "$WALLPAPER_FILE" >>"$LOGFILE" 2>&1 || log "matugen failed"
     log "regenerated colours with matugen"
 else
     log "matugen not in PATH; keeping existing colours"

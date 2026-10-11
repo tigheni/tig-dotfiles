@@ -1,19 +1,230 @@
 @import "tokens/colors.css";
-@import "tokens/state.css";
-@import "tokens/workspace.css";
-@import "tokens/widget.css";
-@import "tokens/batt-clock.css";
-@import "tokens/slider.css";
+/* Theme aliases over the matugen palette in tokens/colors.css. */
+@define-color bg @surface;
+@define-color fg @on_surface;
+@define-color accent @primary;
+@define-color warn @tertiary;
+@define-color critical @error;
 
 * {
-  margin: 0;
-  padding: 0;
-  min-height: 0px;
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 12px;
+  font-weight: 700;
   border: none;
-  border-radius: 0;
-  font-family: "Inter", "JetBrainsMono Nerd Font";
+  border-radius: 0px;
+  margin: 0;
 }
 
 window#waybar {
+  background-color: transparent;
+}
+
+#waybar > box {
+  margin: -2px 10px 5px 10px;
+  padding: 0;
+  min-height: 28px;
+  border-radius: 0 0 5px 5px;
+  background-color: @bg;
+  box-shadow:
+    0px 1px 2px rgba(0, 0, 0, 0.4),
+    0px 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid alpha(@fg, 0.2);
+}
+
+.modules-center {
+  margin: 0;
+  padding: 0;
+}
+
+.modules-left,
+.modules-right {
+  border-radius: 2px;
+  padding: 0 4px;
+}
+
+button {
+  box-shadow: inset 0 -3px transparent;
+  border: none;
+  border-radius: 0;
+  transition: 0.3s ease-in-out;
+}
+
+button:hover {
+  background: inherit;
+}
+
+/* Workspaces */
+
+#workspaces {
+  border-radius: 2px;
+  padding: 0;
+  margin: 0;
+}
+
+#workspaces button {
+  padding: 0 4px;
+  padding-top: 2px;
+  color: @fg;
+  opacity: 0.75;
+  border-bottom: 2px solid transparent;
+}
+
+#workspaces button.active {
+  opacity: 1;
+  color: @accent;
+  border-bottom: 1px solid @accent;
+  border-radius: 1px;
   background: transparent;
+  transition: 0.1s;
+  margin-bottom: 1px;
+}
+
+#mpris:hover,
+#workspaces button:hover {
+  opacity: 1;
+  color: @accent;
+  border-bottom: 1px solid @accent;
+  background: transparent;
+  transition: 0.1s;
+  margin-bottom: 1px;
+}
+
+/* Modules */
+
+#tray,
+#idle_inhibitor,
+#memory,
+#cpu,
+#clock,
+#network,
+#bluetooth,
+#pulseaudio,
+#power-profiles-daemon,
+#custom-expand-icon,
+#custom-weather,
+#custom-gpu-usage,
+#custom-voxtype,
+#custom-nixos {
+  min-width: 12px;
+  color: @fg;
+  padding: 0 4px;
+  margin: 0 2px;
+}
+
+#custom-nixos {
+  color: @accent;
+  font-size: 14px;
+  padding: 0 4px 0 0;
+  margin: 0 4px;
+}
+
+#idle_inhibitor.deactivated {
+  color: alpha(@fg, 0.4);
+}
+
+#idle_inhibitor.activated {
+  color: @accent;
+}
+
+#custom-expand-icon {
+  color: alpha(@fg, 0.4);
+  padding: 2px 0 0 0;
+  margin: 0 4px;
+}
+
+#tray {
+  margin-top: 1px;
+}
+
+#power-profiles-daemon.performance {
+  color: @accent;
+}
+
+#power-profiles-daemon.power-saver {
+  color: @warn;
+}
+
+/* Voxtype: idle is dimmed, recording pulses, transcribing uses the accent. */
+
+#custom-voxtype.idle {
+  color: alpha(@fg, 0.4);
+}
+
+#custom-voxtype.stopped {
+  color: alpha(@fg, 0.2);
+}
+
+#custom-voxtype.recording {
+  color: @critical;
+  animation: voxtype-pulse 1s ease-in-out infinite alternate;
+}
+
+#custom-voxtype.transcribing {
+  color: @accent;
+}
+
+@keyframes voxtype-pulse {
+  to {
+    color: alpha(@critical, 0.4);
+  }
+}
+
+#mpris {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  color: @fg;
+}
+
+#mpris.playing {
+  animation: text-glow 2s linear infinite alternate;
+}
+
+@keyframes text-glow {
+  from {
+    color: @fg;
+  }
+  to {
+    color: @accent;
+  }
+}
+
+#network.disconnected {
+  color: @critical;
+}
+
+#memory.warning,
+#cpu.warning {
+  color: @warn;
+}
+
+#memory.critical,
+#cpu.critical {
+  color: @critical;
+}
+
+/* Separators */
+
+#custom-separator {
+  opacity: 0.2;
+  padding: 2px 3px 0 3px;
+  color: @fg;
+}
+
+#custom-separator3 {
+  color: alpha(@fg, 0.4);
+  padding: 0 1px;
+}
+
+tooltip {
+  padding: 4px;
+  background: @bg;
+  font-size: 10px;
+  border: 1px solid alpha(@fg, 0.2);
+  border-radius: 6px;
+}
+
+tooltip label {
+  color: @fg;
+  font-weight: normal;
 }
