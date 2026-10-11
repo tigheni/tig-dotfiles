@@ -45,7 +45,6 @@ in {
       nodejs_24
       pnpm
       pkgs-unstable.code-cursor
-      kdePackages.okular
       kdePackages.ghostwriter
       matugen
       libnotify

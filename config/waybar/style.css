@@ -79,7 +79,7 @@ button:hover {
   margin-bottom: 1px;
 }
 
-#mpris:hover,
+#custom-media:hover,
 #workspaces button:hover {
   opacity: 1;
   color: @accent;
@@ -161,14 +161,18 @@ button:hover {
   }
 }
 
-#mpris {
+#custom-media {
   margin: 0;
   padding: 0;
   background-color: transparent;
   color: @fg;
 }
 
-#mpris.playing {
+#custom-media.idle {
+  color: alpha(@fg, 0.55);
+}
+
+#custom-media.playing {
   animation: text-glow 2s linear infinite alternate;
 }
 
