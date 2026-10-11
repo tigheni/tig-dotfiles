@@ -24,13 +24,17 @@ in {
       zip
       unzip
       tldr
+      eza
+      dust
+      lazydocker
+      pgcli
       comma
       nurl
       bun
       qutebrowser
       google-chrome
       zotero
-      htop
+      btop
       bluetuith
       vscode
       wpsoffice
