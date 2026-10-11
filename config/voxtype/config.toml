@@ -1,0 +1,36 @@
+# Voxtype is controlled by Hyprland's press/release bindings.
+state_file = "auto"
+
+[hotkey]
+enabled = false
+
+[audio]
+device = "default"
+sample_rate = 16000
+max_duration_secs = 60
+# Pause MPRIS players (Spotify, mpv) while recording and resume afterwards.
+pause_media = true
+
+[whisper]
+model = "small.en"
+
+[output]
+mode = "type"
+fallback_to_clipboard = true
+
+[output.notification]
+on_recording_start = false
+on_recording_stop = false
+on_transcription = false
+
+[text]
+# Drop "um", "uh" and similar from transcriptions.
+filter_filler_words = true
+
+[vad]
+# Skip silent recordings instead of letting Whisper hallucinate ("you").
+enabled = true
+
+[osd]
+# The voxtype-osd frontend is not packaged; the Waybar module shows status.
+enabled = false

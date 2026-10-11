@@ -68,6 +68,11 @@ in {
       networkmanagerapplet
       pavucontrol
       wttrbar
+
+      # Voxtype voice-to-text and its Wayland typing backend
+      voxtype-vulkan
+      wtype
+
       bluez-tools
       obexftp
       kdePackages.kdeconnect-kde
