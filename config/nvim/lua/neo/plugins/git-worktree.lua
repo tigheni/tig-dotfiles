@@ -1,5 +1,6 @@
 return {
   "ThePrimeagen/git-worktree.nvim",
+  event = "VeryLazy",
   config = function()
     local worktree = require("git-worktree")
     vim.keymap.set("n", "<leader>gts", function()

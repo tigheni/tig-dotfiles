@@ -1,5 +1,6 @@
 return {
   "sindrets/diffview.nvim",
+  event = "VeryLazy",
   config = function()
     local diffview = require("diffview")
     local actions = require("diffview.actions")

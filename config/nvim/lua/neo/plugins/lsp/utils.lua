@@ -1,6 +1,6 @@
 local M = {}
 
-M.map_action = function(keymap, actions, desc)
+M.map_action = function(bufnr, keymap, actions, desc)
   desc = desc or actions[1]
   vim.keymap.set({ "n", "v" }, keymap, function()
     vim.lsp.buf.code_action({
@@ -14,7 +14,7 @@ M.map_action = function(keymap, actions, desc)
       end,
       apply = true,
     })
-  end, { desc = desc })
+  end, { buffer = bufnr, desc = desc })
 end
 
 return M

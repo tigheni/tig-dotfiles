@@ -1,5 +1,6 @@
 return {
   "ibhagwan/fzf-lua",
+  event = "VeryLazy",
   dependencies = { "nvim-tree/nvim-web-devicons" },
   config = function()
     local fzf = require("fzf-lua")
@@ -51,6 +52,7 @@ return {
         },
       },
     })
+    fzf.register_ui_select()
 
     vim.keymap.set("n", "<leader>sc", fzf.commands, { desc = "Commands" })
     vim.keymap.set("n", "<leader>sd", fzf.diagnostics_document, { desc = "Buffer diagnostics" })
@@ -61,7 +63,6 @@ return {
     vim.keymap.set("n", "<leader>sk", fzf.keymaps, { desc = "Key Maps" })
     vim.keymap.set("n", "<leader>sr", fzf.resume, { desc = "Resume" })
     vim.keymap.set("n", "<leader>ss", fzf.lsp_document_symbols, { desc = "Document Symbols" })
-    vim.keymap.set("n", "<leader>sw", fzf.grep_cword, { desc = "Document Symbols" })
     vim.keymap.set("n", "<leader>sw", function()
       fzf.live_grep({ query = vim.fn.expand("<cword>") })
     end, { desc = "Grep cword" })

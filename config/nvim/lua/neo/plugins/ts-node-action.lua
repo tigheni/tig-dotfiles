@@ -1,5 +1,6 @@
 return {
   "ckolkey/ts-node-action",
+  event = "VeryLazy",
   dependencies = { "nvim-treesitter" },
   config = function()
     local tsna = require("ts-node-action")

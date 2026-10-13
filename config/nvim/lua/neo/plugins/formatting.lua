@@ -40,6 +40,7 @@ return {
           nix = { "alejandra" },
           toml = { "taplo" },
           go = { "gofmt" },
+          python = { "ruff_organize_imports", "ruff_format" },
         },
         format_on_save = function()
           if vim.g.disable_autoformat then

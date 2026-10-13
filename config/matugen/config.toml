@@ -4,4 +4,4 @@ reload_apps = false
 [templates.waybar]
 input_path = "~/.config/matugen/templates/waybar-colors.css"
 output_path = "~/.config/waybar/tokens/colors.css"
-post_hook = "$DOTFILES_DIR/scripts/waybar-launch.sh render && pkill -SIGUSR2 waybar; $DOTFILES_DIR/scripts/mako-launch.sh render"
+post_hook = "$DOTFILES_DIR/scripts/waybar-launch.sh render && pkill -SIGUSR2 -x 'waybar|\\.waybar-wrapped'; $DOTFILES_DIR/scripts/mako-launch.sh render"

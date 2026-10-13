@@ -3,15 +3,15 @@ vim.diagnostic.config({
   virtual_text = true,
   signs = {
     text = {
-      [vim.diagnostic.severity.ERROR] = " ",
-      [vim.diagnostic.severity.WARN] = " ",
+      [vim.diagnostic.severity.ERROR] = " ",
+      [vim.diagnostic.severity.WARN] = " ",
       [vim.diagnostic.severity.INFO] = "󰠠 ",
-      [vim.diagnostic.severity.HINT] = " ",
+      [vim.diagnostic.severity.HINT] = " ",
     },
   },
 })
 
-vim.keymap.set("n", "<leader>i", "<cmd>LspInfo<CR>", { desc = "Restart LSP" })
+vim.keymap.set("n", "<leader>i", "<cmd>checkhealth vim.lsp<CR>", { desc = "LSP info" })
 vim.keymap.set("n", "<leader>c", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
 vim.keymap.set("n", "<leader>aq", function()
   vim.lsp.buf.code_action({
@@ -29,15 +29,18 @@ return {
   },
   config = function()
     local schema_store = require("schemastore")
+    -- Each entry is a server name, or { name, config?, keymaps = function(bufnr) }.
+    -- config is merged into nvim-lspconfig's defaults via vim.lsp.config.
     local language_servers = {
       "html",
       "cssls",
       require("neo.plugins.lsp.eslint"),
       "emmet_language_server",
       require("neo.plugins.lsp.vtsls"),
-      "nixd",
+      require("neo.plugins.lsp.nixd"),
       "hyprls",
       "pyright",
+      "ruff",
       require("neo.plugins.lsp.gopls"),
       {
         "tailwindcss",
@@ -98,18 +101,36 @@ return {
           },
         },
       },
-      { "typos_lsp", { init_options = { diagnosticSeverity = "Info" }, filetypes = { "*" } } },
+      -- no filetypes: attaches to every buffer
+      { "typos_lsp", { init_options = { diagnosticSeverity = "Info" } } },
     }
 
-    local lspconfig = require("lspconfig")
-    local capabilities = require("blink.cmp").get_lsp_capabilities()
+    vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() })
 
+    local keymaps = {}
     for _, lsp in ipairs(language_servers) do
-      if type(lsp) == "table" then
-        lspconfig[lsp[1]].setup(vim.tbl_extend("force", lsp[2], { capabilities = capabilities }))
-      else
-        lspconfig[lsp].setup({ capabilities = capabilities })
+      if type(lsp) == "string" then
+        lsp = { lsp }
       end
+      local name = lsp[1]
+      if lsp[2] then
+        vim.lsp.config(name, lsp[2])
+      end
+      keymaps[name] = lsp.keymaps
+      vim.lsp.enable(name)
     end
+
+    -- Server keymaps go through LspAttach instead of on_attach so they stay
+    -- buffer-local and don't replace nvim-lspconfig's own on_attach handlers.
+    vim.api.nvim_create_autocmd("LspAttach", {
+      group = vim.api.nvim_create_augroup("lsp_server_keymaps", { clear = true }),
+      callback = function(event)
+        local client = vim.lsp.get_client_by_id(event.data.client_id)
+        local set_keymaps = client and keymaps[client.name]
+        if set_keymaps then
+          set_keymaps(event.buf)
+        end
+      end,
+    })
   end,
 }

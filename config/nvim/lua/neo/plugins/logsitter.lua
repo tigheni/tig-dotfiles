@@ -1,5 +1,6 @@
 return {
   "gaelph/logsitter.nvim",
+  event = "VeryLazy",
   dependencies = { "nvim-treesitter/nvim-treesitter" },
   config = function()
     local logsitter = require("logsitter")

@@ -1,5 +1,6 @@
 return {
   "backdround/global-note.nvim",
+  event = "VeryLazy",
   config = function()
     local global_note = require("global-note")
     global_note.setup({

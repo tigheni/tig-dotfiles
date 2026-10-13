@@ -15,9 +15,7 @@ return {
   version = "*",
   opts = {
     enabled = function()
-      return not vim.list_contains({ "DressingInput" }, vim.bo.filetype)
-        and vim.bo.buftype ~= "prompt"
-        and vim.b.completion ~= false
+      return vim.bo.buftype ~= "prompt" and vim.b.completion ~= false
     end,
     snippets = { preset = "luasnip" },
     keymap = { preset = "enter" },

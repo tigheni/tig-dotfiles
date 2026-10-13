@@ -36,24 +36,28 @@ return {
         },
       },
     },
-    on_attach = function()
-      map_action(
-        "<leader>aa",
-        { "Remove braces from arrow function", "Add braces to arrow function" },
-        "Toggle arrow function braces"
-      )
-      map_action("<leader>ak", { "Inline variable" })
-      map_action("<leader>ae", { "Extract to constant in enclosing scope", "Extract to type alias" })
-      map_action("<leader>aE", { "Extract to constant in module scope" })
-      map_action("<leader>af", { "Extract to function in module scope" })
-      map_action("<leader>am", { "Convert to named function" })
-      map_action("<leader>an", { "Move to file" })
-      map_action("<leader>aN", { "Move to a new file" })
-      map_action("<leader>ad", { "Convert named export to default export" })
-
-      vim.keymap.set("n", "<leader>ai", "<cmd>VtsExec add_missing_imports<CR>", { desc = "Add missing imports" })
-      vim.keymap.set("n", "<leader>ar", "<cmd>VtsExec remove_unused<CR>", { desc = "Remove unused variables" })
-      vim.keymap.set("n", "<leader>ao", "<cmd>VtsExec organize_imports<CR>", { desc = "Organize imports" })
-    end,
   },
+  keymaps = function(bufnr)
+    map_action(
+      bufnr,
+      "<leader>aa",
+      { "Remove braces from arrow function", "Add braces to arrow function" },
+      "Toggle arrow function braces"
+    )
+    map_action(bufnr, "<leader>ak", { "Inline variable" })
+    map_action(bufnr, "<leader>ae", { "Extract to constant in enclosing scope", "Extract to type alias" })
+    map_action(bufnr, "<leader>aE", { "Extract to constant in module scope" })
+    map_action(bufnr, "<leader>af", { "Extract to function in module scope" })
+    map_action(bufnr, "<leader>am", { "Convert to named function" })
+    map_action(bufnr, "<leader>an", { "Move to file" })
+    map_action(bufnr, "<leader>aN", { "Move to a new file" })
+    map_action(bufnr, "<leader>ad", { "Convert named export to default export" })
+
+    local function map(lhs, cmd, desc)
+      vim.keymap.set("n", lhs, "<cmd>VtsExec " .. cmd .. "<CR>", { buffer = bufnr, desc = desc })
+    end
+    map("<leader>ai", "add_missing_imports", "Add missing imports")
+    map("<leader>ar", "remove_unused", "Remove unused variables")
+    map("<leader>ao", "organize_imports", "Organize imports")
+  end,
 }

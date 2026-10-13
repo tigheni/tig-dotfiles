@@ -42,9 +42,9 @@ return {
         c = { bg = colors.bg, fg = colors.fg },
       },
       inactive = {
-        a = { bg = colors.inactive_bg, fg = colors.semilightgray, gui = "bold" },
-        b = { bg = colors.inactive_bg, fg = colors.semilightgray },
-        c = { bg = colors.inactive_bg, fg = colors.semilightgray },
+        a = { bg = colors.inactive_bg, fg = colors.fg, gui = "bold" },
+        b = { bg = colors.inactive_bg, fg = colors.fg },
+        c = { bg = colors.inactive_bg, fg = colors.fg },
       },
     }
 

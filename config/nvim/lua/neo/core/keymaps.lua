@@ -19,7 +19,7 @@ vim.keymap.set("n", "<M-h>", "30hzszH")
 vim.keymap.set("n", "<leader>p", function()
   local path = vim.fn.expand("%:.")
   vim.fn.setreg("+", path)
-end, { expr = true, desc = "Copy relative path" })
+end, { desc = "Copy relative path" })
 
 -- Move Lines
 vim.keymap.set("n", "<A-j>", "<cmd>m .+1<cr>==", { desc = "Move down" })
@@ -41,8 +41,8 @@ vim.keymap.set("n", "<leader>l", "<cmd>Lazy<cr>", { desc = "Lazy" })
 -- quit
 vim.keymap.set("n", "<leader>q", "<cmd>qa<cr>", { desc = "Quit" })
 vim.keymap.set("n", "<leader>Q", "<cmd>qa!<cr>", { desc = "Quit Without saving" })
-vim.keymap.set("n", "<leader>W", "<cmd>wqa<cr>", { desc = "Save all buffers" })
-vim.keymap.set("n", "<leader>w", "<cmd>wa<cr>", { desc = "Save all buffers and quit" })
+vim.keymap.set("n", "<leader>W", "<cmd>wqa<cr>", { desc = "Save all buffers and quit" })
+vim.keymap.set("n", "<leader>w", "<cmd>wa<cr>", { desc = "Save all buffers" })
 
 -- Duplicate visual selection and comment a copy out
 vim.keymap.set(
