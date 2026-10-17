@@ -183,6 +183,7 @@
     "exec": "$DOTFILES_DIR/scripts/waybar-media.sh",
     "return-type": "json",
     "interval": 3,
+    "signal": 13,
     "format": "{icon}{text}",
     "format-icons": {
       "playing": "",

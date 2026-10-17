@@ -1,17 +1,67 @@
 #!/bin/sh
 # Waybar custom/media: show what any MPRIS player (Spotify, browsers, mpv) is
 # playing. A paused player stays shown for $idle_seconds, after which the
-# module falls back to a rotating quote, as it does when no player exists.
+# module falls back to a quote, as it does when no player exists.
+# `waybar-media.sh toggle` hides/shows Waybar; each hide swaps in the next
+# quote from a pool of random zenquotes.io quotes (refilled 50 at a time), so
+# a fresh one is waiting when the bar comes back and none are spent unseen.
 
 idle_seconds=300
 rotate_seconds=300
 stamp="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/waybar-media-paused-since"
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/waybar"
+quote_file="$cache_dir/quote.json"
+quote_pool="$cache_dir/quotes.json"
 
 escape() {
     sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
 }
 
+next_quote() {
+    mkdir -p "$cache_dir"
+    if [ "$(jq length "$quote_pool" 2>/dev/null || echo 0)" -eq 0 ]; then
+        if curl -fsS -m 10 https://zenquotes.io/api/quotes 2>/dev/null |
+            jq -ce '[.[] | select(.q and .a) | {q, a}] | select(length > 0)' >"$quote_pool.tmp" 2>/dev/null; then
+            mv "$quote_pool.tmp" "$quote_pool"
+        fi
+    fi
+    if jq -ce '.[0] // empty' "$quote_pool" >"$quote_file.tmp" 2>/dev/null; then
+        mv "$quote_file.tmp" "$quote_file"
+        jq -c '.[1:]' "$quote_pool" >"$quote_pool.tmp" && mv "$quote_pool.tmp" "$quote_pool"
+    fi
+    rm -f "$quote_file.tmp" "$quote_pool.tmp"
+    pkill -RTMIN+13 -x 'waybar|\.waybar-wrapped'
+}
+
+# waybar-launch.sh removes $hidden_flag, as Waybar always starts visible.
+toggle() {
+    pkill -SIGUSR1 -x 'waybar|\.waybar-wrapped' || exit 0
+    if [ -f "$hidden_flag" ]; then
+        rm -f "$hidden_flag"
+    else
+        touch "$hidden_flag"
+        next_quote
+    fi
+    exit 0
+}
+
+hidden_flag="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/waybar/hidden"
+[ "${1:-}" = toggle ] && toggle
+
+# Print a quote line; the tooltip holds the whole quote, wrapped, for when
+# max-length truncates it on the bar.
+show_quote() {
+    text=$(printf '%s' "$1" | escape)
+    tooltip=$(printf '%s\n' "${1% — *}" | fold -s -w 60 | sed 's/ *$//' | escape)
+    case $1 in *" — "*) tooltip=$(printf '%s\n— %s' "$tooltip" "$(printf '%s' "${1##* — }" | escape)") ;; esac
+    jq -cn --arg t "<i>$text</i>" --arg tt "$tooltip" '{text: $t, alt: "idle", class: "idle", tooltip: $tt}'
+    exit 0
+}
+
 quote() {
+    line=$(jq -r '"\(.q) — \(.a)"' "$quote_file" 2>/dev/null)
+    [ -z "$line" ] || show_quote "$line"
+
     quotes='Simplicity is prerequisite for reliability. — Edsger Dijkstra
 Make it work, make it right, make it fast. — Kent Beck
 Talk is cheap. Show me the code. — Linus Torvalds
@@ -29,9 +79,7 @@ Slow is smooth, smooth is fast.
 Small steps every day.'
     count=$(printf '%s\n' "$quotes" | wc -l)
     index=$(($(date +%s) / rotate_seconds % count + 1))
-    text=$(printf '%s\n' "$quotes" | sed -n "${index}p" | escape)
-    jq -cn --arg t "<i>$text</i>" '{text: $t, alt: "idle", class: "idle", tooltip: "Nothing playing"}'
-    exit 0
+    show_quote "$(printf '%s\n' "$quotes" | sed -n "${index}p")"
 }
 
 players=$(playerctl --all-players metadata --format '{{status}} {{playerInstance}}' 2>/dev/null)

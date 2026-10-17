@@ -39,4 +39,5 @@ if [ "${1:-}" = "render" ]; then
 fi
 
 pkill -x 'waybar|\.waybar-wrapped' || true
+rm -f "$runtime_dir/hidden"
 exec waybar -c "$runtime_config" -s "$config_dir/style.css" >"$runtime_dir/waybar.log" 2>&1
