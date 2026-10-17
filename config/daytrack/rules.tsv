@@ -1,0 +1,21 @@
+# daytrack categories: category<TAB>class regex<TAB>title regex
+# First match wins. Regexes are awk EREs, matched case-insensitively.
+# A title regex of * matches anything. Unmatched windows count as "other".
+#
+# Before these rules run, a browser tab whose title contains one of your
+# recent project names (seen in VS Code or WezTerm) counts as work on
+# that project, e.g. your own app running on localhost.
+
+ai	wezterm|kitty|alacritty|foot	^(✳|◐|◓|◑|◒|⠂|⠐)
+ai	brave|firefox|chromium	claude|chatgpt|gemini|perplexity
+work	^(code|code-url-handler|cursor)$	*
+work	wezterm|kitty|alacritty|foot	*
+fun	brave|firefox|chromium	youtube|netflix|twitch|reddit|instagram|facebook|tiktok|9gag|x\.com|/ x -|anime
+learn	brave|firefox|chromium	github|gitlab|stack ?overflow|nixos|nix |mynixos|wiki|docs|documentation|mdn|tutorial|course|localhost|127\.0\.0\.1|hyprland
+comms	brave|firefox|chromium	gmail|whatsapp|messenger|outlook|mail
+comms	discord|telegram|slack|signal|thunderbird|kdeconnect	*
+fun	stremio|mpv|steam|^steam_app|lutris|heroic	*
+music	spotify	*
+write	ghostwriter|wps|libreoffice|obsidian|org\.kde\.okular	*
+browse	brave|firefox|chromium	*
+system	nautilus|pavucontrol|^float$|blueman|clipse|rofi|mullvad|flameshot|hyprland-share-picker	*

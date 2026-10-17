@@ -17,6 +17,8 @@
     "custom/separator",
     "idle_inhibitor",
     "custom/voxtype",
+    "custom/separator",
+    "custom/daytrack",
   ],
   "modules-center": ["custom/media"],
   "modules-right": [
@@ -58,6 +60,17 @@
     "interval": 3,
     "format": "{}",
     "on-click": "wezterm start --class float btop",
+  },
+  "custom/daytrack": {
+    "exec": "$DOTFILES_DIR/scripts/daytrack.sh waybar",
+    "return-type": "json",
+    "interval": 30,
+    "signal": 14,
+    "format": "{}",
+    "tooltip": true,
+    "on-click": "$DOTFILES_DIR/scripts/daytrack.sh open",
+    "on-click-middle": "wezterm start --class daytrack -- sh -c '$DOTFILES_DIR/scripts/daytrack.sh week; $DOTFILES_DIR/scripts/daytrack.sh projects; read -r _'",
+    "on-click-right": "$DOTFILES_DIR/scripts/daytrack.sh toggle",
   },
   "custom/voxtype": {
     "exec": "voxtype status --follow --format json --icon-theme nerd-font",

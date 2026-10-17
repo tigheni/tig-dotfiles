@@ -104,6 +104,7 @@ button:hover {
 #systemd-failed-units,
 #custom-flake-age,
 #custom-voxtype,
+#custom-daytrack,
 #custom-nixos {
   min-width: 12px;
   color: @fg;
@@ -239,4 +240,23 @@ tooltip label {
 
 #custom-flake-age {
   color: @warn;
+}
+
+/* daytrack: productive time today */
+#custom-daytrack.deep,
+#custom-daytrack.goal {
+  color: @accent;
+}
+
+#custom-daytrack.fun {
+  color: @warn;
+}
+
+#custom-daytrack.away,
+#custom-daytrack.off {
+  color: alpha(@fg, 0.4);
+}
+
+#custom-daytrack.paused {
+  color: alpha(@fg, 0.25);
 }
