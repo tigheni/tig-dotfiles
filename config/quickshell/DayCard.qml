@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
 
 // Today's numbers from daytrack (scripts/daytrack.sh dash).
@@ -35,6 +36,24 @@ Card {
         triggeredOnStart: true
         interval: 10000
         repeat: true
+        onTriggered: fetch.running = true
+    }
+
+    // Refresh "now" right after a focus change instead of on the next
+    // poll; the delay lets daytrack classify the new window first.
+    Connections {
+        target: Hyprland
+        enabled: root.active
+
+        function onRawEvent(event) {
+            if (event.name === "activewindow")
+                focusDelay.restart();
+        }
+    }
+
+    Timer {
+        id: focusDelay
+        interval: 300
         onTriggered: fetch.running = true
     }
 

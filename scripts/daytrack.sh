@@ -314,6 +314,7 @@ switch_to() {
     case $2 in code | code-url-handler | cursor | org.wezfurlong.wezterm) remember_project "$p" ;; esac
     if [ -n "$p" ] && has_word "$PRODUCTIVE" "$c"; then last_proj=$p; fi
     write_live
+    refresh_bar
 }
 
 marker_is_today() { [ "$(cat "$data_dir/.$1" 2>/dev/null)" = "$(today)" ]; }
