@@ -10,7 +10,7 @@ run_dir=${XDG_RUNTIME_DIR:-/tmp}/daytrack
 rules=$conf_dir/rules.tsv
 
 GOAL_MIN=300
-PRODUCTIVE="work ai learn write"
+PRODUCTIVE="work ai learn study write"
 BREAK_AFTER_MIN=90
 BREAK_REPEAT_MIN=30
 DISTRACT_CATS="fun"
@@ -92,10 +92,25 @@ classify() {
         ;;
     esac
     if [ -z "$cat" ] && [ -r "$rules" ]; then
+        # "@name<TAB>regex" defines a word list that later title regexes
+        # use as @name; "a && b" in a title regex requires both to match.
         cat=$(C=$1 T=$2 awk -F'\t' '
+            function expand(r,   k, i) {
+                for (k in def)
+                    while (i = index(r, k)) r = substr(r, 1, i - 1) "(" def[k] ")" substr(r, i + length(k))
+                return r
+            }
+            function title_ok(r,   n, p, i) {
+                if (r == "*") return 1
+                n = split(r, p, / && /)
+                for (i = 1; i <= n; i++) if (t !~ expand(p[i])) return 0
+                return 1
+            }
             BEGIN { c = tolower(ENVIRON["C"]); t = tolower(ENVIRON["T"]) }
-            /^#/ || NF < 3 { next }
-            c ~ tolower($2) && ($3 == "*" || t ~ tolower($3)) { print $1; exit }' "$rules")
+            /^#/ { next }
+            /^@/ && NF >= 2 { def[$1] = tolower($2); next }
+            NF < 3 { next }
+            c ~ tolower($2) && title_ok(tolower($3)) { print $1; exit }' "$rules")
     fi
     printf '%s\t%s\n' "${cat:-other}" "$proj"
 }

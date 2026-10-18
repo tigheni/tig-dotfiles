@@ -1,19 +1,66 @@
 # daytrack categories: category<TAB>class regex<TAB>title regex
-# First match wins. Regexes are awk EREs, matched case-insensitively.
-# A title regex of * matches anything. Unmatched windows count as "other".
+# First match wins. Regexes are gawk EREs (\y is a word boundary), matched
+# case-insensitively. A title regex of * matches anything; "a && b" needs
+# both. Unmatched windows count as "other".
+#
+# "@name<TAB>regex" defines a word list; title regexes use it as @name.
+# Names must not be prefixes of each other.
 #
 # Before these rules run, a browser tab whose title contains one of your
 # recent project names (seen in VS Code or WezTerm) counts as work on
 # that project, e.g. your own app running on localhost.
+#
+# Browser titles are "page title - Site - Brave", so sites are matched as a
+# whole " - "-separated part (@pre site @post): "facebook/react" on GitHub
+# is not Facebook, and a Gmail subject mentioning a course is still mail.
+
+@pre	(^|\| |· |• |— |– |- |\) )
+@post	( - | — | – | \| | · | : |$)
+# Unambiguous programming and tech words.
+@tech	\y(programming|programmer|coding|software|developer|computer|javascript|typescript|golang|c\+\+|c#|haskell|kotlin|swiftui|php|ruby on rails|bash scripting|sql|postgres(ql)?|mysql|sqlite|database|react\.?js|vue\.?js|svelte|angular\.?js|node\.?js|nodejs|express\.js|next\.?js|tanstack|html|css|tailwind|docker|kubernetes|github|gitlab|linux|unix|nixos|hyprland|neovim|vim|web dev(elopment)?|backend|frontend|full ?stack|apis?|graphql|devops|machine learning|deep learning|llms?|neural networks?|cybersecurity|computer networking|tcp|http)\y
+# Tech words that are also everyday words (a snake, coffee, a game, "how
+# fans react"): they only count next to a learning word or as a site name.
+@lang	\y(python|java|rust|ruby|git|react|vue|angular|nix|elixir|swift|go|node)\y
+# Learning words; only study together with @tech.
+@edu	\y(courses?|lectures?|lessons?|tutorials?|tutoriel|cours\y|leçons?|bootcamp|crash course|full course|explained|for beginners|from scratch|deep dive|introduction|intro to|learn|semester|homework|exercises?|cheat ?sheet)
+# CS/SE topics and classics: study on their own.
+@cs	dijkstra|kruskal|bellman.ford|floyd.warshall|knapsack|\ybfs\y|\ydfs\y|quicksort|merge ?sort|heap ?sort|bubble ?sort|algorithms|algorithmique|algorithmic|\y(sorting|searching|search|graph|greedy) algorithm|dynamic programming|data.structures?|\ybig.?o\y|time complexity|system.design|design.patterns?|distributed.systems?|operating.systems?|\ycompilers?\y|software.(architecture|engineering|design)|computer.(science|architecture)|structure and interpretation|\ysicp\y|three.easy.pieces|\yostep\y|introduction.to.algorithms|\yclrs\y|twelve-factor|clean.(code|architecture)|data-intensive|\yb-?trees?\y|hash ?(maps?|tables?)|linked.lists?|binary.(search|trees?)|recursion|concurrency|garbage collect|memory management|what every programmer|\yorms?\y|microservices?|monolith|test-driven|\ytdd\y|unit test|technical debt|code review|refactoring|\yci/cd\y|\yoop\y|object.oriented|functional programming|type systems?|lambda calculus|automata|computability|discrete math
+# Sites and courses that are CS/SE learning whatever the page.
+@studysite	fullstack part|full ?stack open|mooc\.fi|\ycs ?[0-9]{2,3}[a-z]?\y|\y6\.[0-9]{3}\y|opencourseware|\yocw\y|freecodecamp|codecademy|leetcode|neetcode|hackerrank|codewars|exercism|advent of code|geeksforgeeks|roadmap\.sh|openclassrooms|teach ?yourself ?(cs|computer science)|missing semester|nand2tetris|odin project|javascript\.info|refactoring\.guru|martin ?fowler|joel on software|baeldung|real ?python|khan academy|pragmatic engineer|bytebytego|high scalability
 
 ai	wezterm|kitty|alacritty|foot	^(✳|◐|◓|◑|◒|⠂|⠐)
-ai	brave|firefox|chromium	claude|chatgpt|gemini|perplexity
 work	^(code|code-url-handler|cursor)$	*
 work	wezterm|kitty|alacritty|foot	*
-fun	brave|firefox|chromium	youtube|netflix|twitch|reddit|instagram|facebook|tiktok|9gag|x\.com|/ x -|anime
-learn	brave|firefox|chromium	github|gitlab|stack ?overflow|nixos|nix |mynixos|wiki|docs|documentation|mdn|tutorial|course|localhost|127\.0\.0\.1|hyprland
-comms	brave|firefox|chromium	gmail|whatsapp|messenger|outlook|mail
+
+# Chat and mail first: their titles quote subjects and channel names.
+comms	brave|firefox|chromium	@pre(gmail|outlook|mail|whatsapp|messenger|discord|telegram web|telegram|slack|linkedin|signal)@post
+ai	brave|firefox|chromium	@pre(claude|chatgpt|google gemini|gemini|perplexity|deepseek|le chat|copilot)@post
+work	brave|firefox|chromium	localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]
+write	brave|firefox|chromium	@pre(google docs|notion|overleaf|hackmd|obsidian)@post
+music	brave|firefox|chromium	youtube music|soundcloud|deezer|spotify|\y(music|lofi|lo-fi|beats|remix|playlist|soundtrack|\yost|asmr)\y.*@pre(youtube)@post
+
+# CS/SE study: above "fun" so a lecture on YouTube counts as study.
+study	brave|firefox|chromium	@studysite
+study	brave|firefox|chromium	@cs
+study	brave|firefox|chromium	@edu && (@tech|@lang)
+study	brave|firefox|chromium	@edu && \.pdf
+study	brave|firefox|chromium	@pre(medium|dev community|hashnode|substack|udemy|coursera|edx|pluralsight)@post && (@tech|@lang)
+study	brave|firefox|chromium	@pre(youtube)@post && @tech
+
+fun	brave|firefox|chromium	@pre(youtube|netflix|twitch|kick|crunchyroll|reddit|instagram|facebook|tiktok|9gag|pinterest|prime video|disney\+)@post|^x\.com|@pre x@post|/ x@post|\yon x@post|r/programmerhumor|watch anime|anime online|anime-?sama
+learn	brave|firefox|chromium	github|gitlab|stack ?overflow|stackexchange|\ynix(os)?\y|mynixos|wiki|\ydocs?\y|documentation|\ymdn\y|tutorial|hyprland|\ynpm\y|crates\.io|docs\.rs|pypi|pkg\.go\.dev|man page
+# A GitHub repo page: "owner/repo: description", "Issues · owner/repo".
+learn	brave|firefox|chromium	\y[a-z0-9_.-]{2,}/[a-z0-9_.-]+( - |: | · )
+learn	brave|firefox|chromium	@tech
+learn	brave|firefox|chromium	@pre@lang@post
+learn	brave|firefox|chromium	@lang && @pre(google search|duckduckgo|brave search|bing)@post
+learn	brave|firefox|chromium	r/(learnprogramming|programming|cscareerquestions|compsci|computerscience|webdev|[a-z]*dev[a-z]*|rust|python|golang|javascript|typescript|reactjs|node|neovim|vim|linux|unixporn|nixos|hyprland|selfhosted|homelab|devops|experienceddevs|softwareengineering|csmajors|leetcode)\y
+# Reddit post titles end in ": r/sub" and never say "reddit".
+fun	brave|firefox|chromium	(: |^)r/[a-z0-9_]+@post
+
 comms	discord|telegram|slack|signal|thunderbird|kdeconnect	*
+study	okular|zathura|evince|papers|sioyek	@cs|@studysite|@tech|@edu
+study	mpv	@edu
 fun	stremio|mpv|steam|^steam_app|lutris|heroic	*
 music	spotify	*
 write	ghostwriter|wps|libreoffice|obsidian|org\.kde\.okular	*
