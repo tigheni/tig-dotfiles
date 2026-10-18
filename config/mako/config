@@ -24,6 +24,8 @@ max-visible=4
 sort=-time
 layer=overlay
 default-timeout=5000
+# The dashboard lists these (makoctl history).
+max-history=30
 icons=1
 icon-path=/run/current-system/sw/share/icons/hicolor:/etc/profiles/per-user/tig/share/icons/hicolor
 max-icon-size=40
@@ -41,3 +43,8 @@ default-timeout=3000
 [urgency=critical]
 border-color=#f38ba880
 default-timeout=0
+
+# Toggled from the dashboard: notifications are hidden but still land in
+# the history, so the dashboard shows what you missed.
+[mode=do-not-disturb]
+invisible=1

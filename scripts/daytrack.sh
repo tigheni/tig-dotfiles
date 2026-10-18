@@ -521,6 +521,46 @@ Click: report · Middle: week · Right: pause"
         "$icon" "$(fmt "$prod")" "$extra" "$(json_esc "$tip")" "$css" "$pct"
 }
 
+# JSON for the Quickshell dashboard: today's totals, top productive
+# projects and what is happening right now.
+dash_json() {
+    IFS=$TAB read -r prod active deep longest sph deeptot _ <<EOF
+$(day_vals "$(today)")
+EOF
+    away='' streak=''
+    [ -r "$run_dir/state" ] && IFS=$TAB read -r away streak <"$run_dir/state"
+    [ "$away" = - ] && away=''
+    [ "$streak" = - ] && streak=''
+    cat='' proj=''
+    [ -r "$run_dir/current" ] && IFS=$TAB read -r _ _ cat proj _ _ <"$run_dir/current"
+    [ "$proj" = - ] && proj=''
+    daemon_alive || away=off
+    streak_len=0
+    [ -n "$streak" ] && streak_len=$(($(now) - streak))
+    top=$(data_for "$(today)" | awk -F'\t' -v prodlist="$PRODUCTIVE" '
+        BEGIN { n = split(prodlist, t, " "); for (i = 1; i <= n; i++) P[t[i]] = 1 }
+        ($3 in P) && $4 != "" && $2 > $1 { p[$4] += $2 - $1 }
+        END {
+            PROCINFO["sorted_in"] = "@val_num_desc"
+            for (k in p) { if (++c > 3) break; printf "%s{\"name\":\"%s\",\"secs\":%d}", (c > 1 ? "," : ""), k, p[k] }
+        }')
+    # Productive seconds for the last 7 days, oldest first, ending today.
+    week='' i=6
+    while [ "$i" -gt 0 ]; do
+        d=$(date -d "-$i day" +%F)
+        week="$week{\"day\":\"$(date -d "$d" +%a)\",\"secs\":$(day_vals "$d" | cut -f1)},"
+        i=$((i - 1))
+    done
+    week="$week{\"day\":\"$(date +%a)\",\"secs\":$prod}"
+    jq -cn --argjson prod "$prod" --argjson active "$active" --argjson goal $((GOAL_MIN * 60)) \
+        --argjson deep "$deep" --argjson deeptot "$deeptot" --argjson longest "$longest" \
+        --argjson sph "$sph" --argjson streak "$streak_len" --argjson deepmin $((DEEP_MIN * 60)) \
+        --arg away "$away" --arg cat "$cat" --arg proj "$proj" --argjson top "[$top]" --argjson week "[$week]" \
+        '{prod: $prod, active: $active, goal: $goal, deep: $deep, deeptot: $deeptot, longest: $longest,
+          switches: $sph, streak: $streak, deepmin: $deepmin, away: $away, cat: $cat, proj: $proj, top: $top,
+          week: $week}'
+}
+
 # --- commands ---------------------------------------------------------------
 
 week() {
@@ -578,6 +618,7 @@ daytrack: automatic time tracking from Hyprland window focus
   idle SECS | active
                     called by hypridle
   waybar            JSON for the Waybar module
+  dash              JSON for the Quickshell dashboard
 
 Data: ~/.local/share/daytrack/   Config: ~/.config/daytrack/
 EOF
@@ -602,6 +643,7 @@ timeline | log) d=$(resolve_day "$1") && data_for "$d" | analyze timeline "$d" ;
 week) week ;;
 projects) projects "$1" ;;
 waybar) waybar_out ;;
+dash) dash_json ;;
 idle) echo $(($(now) - ${1:-0})) >"$run_dir/idle" ;;
 active) rm -f "$run_dir/idle" ;;
 pause)

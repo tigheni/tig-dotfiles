@@ -67,6 +67,7 @@ in {
       networkmanagerapplet
       pavucontrol
       wttrbar
+      quickshell # Super+D dashboard, config in config/quickshell
 
       # Voxtype voice-to-text and its Wayland typing backend
       voxtype-vulkan
