@@ -5,7 +5,6 @@ config/hypr/monitor.conf
 # Local backups and generated assets
 *.bak
 *.bak.*
-config/hypr/wallpaper/wallpaper.bak/
 config/waybar/tokens/colors.css
 *.log
 .direnv/

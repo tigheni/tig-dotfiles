@@ -1,93 +1,72 @@
-#!/usr/bin/env bash
+#!/bin/sh
+# Set the wallpaper on every monitor and recolour the desktop from it.
+#   set-wallpaper.sh        reuse the remembered wallpaper (login)
+#   set-wallpaper.sh FILE   switch to FILE and remember it (dashboard picker)
+# Without a remembered choice, the first image in ~/.config/hypr/wallpaper
+# is used. Only runtime files are written; tracked configs stay untouched.
 
-set -euo pipefail
+set -eu
 
-WALLPAPER_DIR="$HOME/.config/hypr/wallpaper"
-LOGFILE="${XDG_CACHE_HOME:-$HOME/.cache}/set-wallpaper.log"
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-RUNTIME_CONFIG="$RUNTIME_DIR/hyprpaper.conf"
-mkdir -p "$WALLPAPER_DIR"
-mkdir -p "$(dirname "$LOGFILE")"
-mkdir -p "$RUNTIME_DIR"
+default_dir="$HOME/.config/hypr/wallpaper"
+state_file="${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper"
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+log_file="${XDG_CACHE_HOME:-$HOME/.cache}/set-wallpaper.log"
 
-log() {
-    printf '%s %s\n' "$(date +'%Y-%m-%dT%H:%M:%S%z')" "$*" >> "$LOGFILE"
-}
+mkdir -p "$(dirname "$log_file")" "$(dirname "$state_file")"
+# Keep only the latest run's log.
+: >"$log_file"
+log() { printf '%s %s\n' "$(date +%T)" "$*" >>"$log_file"; }
 
-log "set-wallpaper: starting"
-
-# Find the first wallpaper file in the directory (any image format)
-WALLPAPER_FILE=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" -o -iname "*.bmp" -o -iname "*.gif" \) | head -1)
-if [ -z "$WALLPAPER_FILE" ]; then
-    log "no wallpaper found in $WALLPAPER_DIR"
-    echo "no wallpaper found in $WALLPAPER_DIR"
+if [ $# -gt 0 ]; then
+    if [ ! -f "$1" ]; then
+        echo "no such file: $1" >&2
+        exit 1
+    fi
+    wallpaper=$(realpath "$1")
+    printf '%s\n' "$wallpaper" >"$state_file"
+elif [ -r "$state_file" ] && [ -f "$(cat "$state_file")" ]; then
+    wallpaper=$(cat "$state_file")
+else
+    wallpaper=$(find "$default_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' \
+        -o -iname '*.jpeg' -o -iname '*.webp' \) | sort | head -n1)
+fi
+if [ -z "$wallpaper" ]; then
+    log "no wallpaper found in $default_dir"
+    echo "no wallpaper found in $default_dir" >&2
     exit 1
 fi
-log "found wallpaper: $WALLPAPER_FILE"
+log "wallpaper: $wallpaper"
 
-# Regenerate the waybar colour tokens from the wallpaper. config/matugen/config.toml
-# holds the template and reloads waybar through its post_hook.
-if command -v matugen >/dev/null 2>&1; then
-    matugen image --source-color-index 0 "$WALLPAPER_FILE" >>"$LOGFILE" 2>&1 || log "matugen failed"
-    log "regenerated colours with matugen"
-else
-    log "matugen not in PATH; keeping existing colours"
+# hyprlock reads the wallpaper through this link.
+ln -sfn "$wallpaper" "$runtime_dir/wallpaper"
+
+# Regenerate the colour tokens; config/matugen/config.toml's post_hook then
+# reloads Waybar and mako. Quickshell watches the tokens file itself.
+if command -v matugen >/dev/null; then
+    matugen image --source-color-index 0 "$wallpaper" >>"$log_file" 2>&1 || log "matugen failed"
 fi
 
-# Build a runtime-only hyprpaper.conf. Never rewrite the tracked Hyprland files.
-{
-    echo "preload = $WALLPAPER_FILE"
-    echo "splash = false"
-    echo "ipc = on"
-} > "$RUNTIME_CONFIG"
+if ! pgrep -x hyprpaper >/dev/null; then
+    printf 'splash = false\nipc = on\n' >"$runtime_dir/hyprpaper.conf"
+    # Own session, so it outlives whatever started this script.
+    setsid -f hyprpaper -c "$runtime_dir/hyprpaper.conf" >>"$log_file" 2>&1
+    log "started hyprpaper"
+fi
 
-if command -v hyprpaper >/dev/null 2>&1; then
-    if pgrep -x hyprpaper >/dev/null 2>&1; then
-        log "hyprpaper already running; will reuse existing instance"
-    else
-        nohup hyprpaper -c "$RUNTIME_CONFIG" >>"$LOGFILE" 2>&1 &
-        log "started hyprpaper (nohup)"
+# Wait until hyprpaper answers IPC (it takes a moment at login).
+i=0
+until hyprctl hyprpaper listactive >/dev/null 2>&1; do
+    i=$((i + 1))
+    if [ "$i" -ge 25 ]; then
+        log "hyprpaper did not respond"
+        exit 1
     fi
-    # wait for hyprpaper socket to appear (hypr creates per-instance dirs)
-    HP_DIR=""
-    for _ in $(seq 1 20); do
-        HP_DIR=$(find "/run/user/$(id -u)/hypr" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null || true)
-        if [ -n "$HP_DIR" ] && [ -e "$HP_DIR/.hyprpaper.sock" ]; then
-            log "found hyprpaper socket in $HP_DIR"
-            break
-        fi
-        sleep 0.2
-    done
-else
-    log "hyprpaper not found in PATH"
-fi
+    sleep 0.2
+done
 
-# Try to apply wallpaper targets through hyprpaper IPC with retries.
-# This avoids stale/wrong monitor names at startup.
-MONITORS=""
-if command -v hyprctl >/dev/null 2>&1; then
-    for _ in $(seq 1 20); do
-        # Try to extract monitor name robustly from hyprctl output
-        MONITORS=$(hyprctl monitors 2>/dev/null | awk '/^Monitor/ { if (match($0, /: ([^ ]+)/)) { print substr($0, RSTART+2, RLENGTH-2) } else { print $2 } }')
-        [ -n "$MONITORS" ] && break
-        sleep 0.2
-    done
+for monitor in $(hyprctl monitors -j | jq -r '.[].name'); do
+    hyprctl hyprpaper wallpaper "$monitor,$wallpaper" >>"$log_file" 2>&1 || log "failed on $monitor"
+done
 
-    # Fall back to DP-1 if the runtime list is still empty.
-    if [ -z "$MONITORS" ]; then
-        MONITORS="DP-1"
-        log "no monitors found; using fallback: $MONITORS"
-    fi
-
-    # Ensure image is loaded in hyprpaper and mapped to each detected output.
-    hyprctl hyprpaper preload "$WALLPAPER_FILE" >>"$LOGFILE" 2>&1 || log "hyprctl preload failed"
-    echo "$MONITORS" | awk '!seen[$0]++' | while IFS= read -r MONITOR; do
-        if [ -n "$MONITOR" ]; then
-            hyprctl hyprpaper wallpaper "$MONITOR,$WALLPAPER_FILE" >>"$LOGFILE" 2>&1 || log "failed to set wallpaper for $MONITOR"
-            log "set wallpaper for monitor: $MONITOR"
-        fi
-    done
-fi
-
-echo "both desktop and lock screen now use: $(basename "$WALLPAPER_FILE")"
-log "completed: $(basename "$WALLPAPER_FILE")"
+log "done"
+echo "wallpaper and lock screen now use: $(basename "$wallpaper")"
