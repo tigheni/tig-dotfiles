@@ -15,7 +15,6 @@
     "custom/separator",
     "hyprland/workspaces",
     "custom/separator",
-    "idle_inhibitor",
     "custom/voxtype",
     "custom/separator",
     "custom/daytrack",
@@ -25,7 +24,6 @@
     "systemd-failed-units",
     "custom/flake-age",
     "group/tray-expander",
-    "custom/gpu-usage",
     "cpu",
     "temperature",
     "memory",
@@ -54,13 +52,6 @@
     },
   },
 
-  "custom/gpu-usage": {
-    "exec": "$DOTFILES_DIR/scripts/waybar-gpu.sh",
-    "return-type": "json",
-    "interval": 3,
-    "format": "{}",
-    "on-click": "wezterm start --class float btop",
-  },
   "custom/daytrack": {
     "exec": "$DOTFILES_DIR/scripts/daytrack.sh waybar",
     "return-type": "json",
@@ -100,12 +91,14 @@
     "tooltip-format": "Launcher",
     "on-click": "rofi -show drun",
   },
+  // CPU, temperature and memory stay hidden (empty format) until they pass
+  // 80; the dashboard's System card has the full graphs.
   "cpu": {
     "interval": 5,
-    "format": "<span color='#df6124'>cpu</span> {usage:02}%",
+    "format": "",
+    "format-critical": "<span color='#df6124'>cpu</span> {usage:02}%",
     "on-click": "wezterm start --class float btop",
     "states": {
-      "warning": 50,
       "critical": 80,
     },
   },
@@ -114,7 +107,8 @@
     "input-filename": "temp1_input",
     "interval": 5,
     "critical-threshold": 80,
-    "format": "{temperatureC}°",
+    "format": "",
+    "format-critical": "{temperatureC}°",
     "tooltip-format": "CPU (Tctl) {temperatureC}°C",
   },
   "systemd-failed-units": {
@@ -133,11 +127,11 @@
   },
   "memory": {
     "interval": 5,
-    "format": "<span color='#df6124'>mem</span> {percentage:02}%",
+    "format": "",
+    "format-critical": "<span color='#df6124'>mem</span> {percentage:02}%",
     "tooltip-format": "Used {percentage}%\n{used:0.1f}GB/{total:0.1f}GB",
     "on-click": "wezterm start --class float btop",
     "states": {
-      "warning": 50,
       "critical": 80,
     },
   },
@@ -195,15 +189,6 @@
     "on-scroll-up": "playerctl next",
     "on-scroll-down": "playerctl previous",
     "smooth-scrolling-threshold": 2,
-  },
-  "idle_inhibitor": {
-    "format": "{icon}",
-    "tooltip-format-activated": "Stay Awake: ON",
-    "tooltip-format-deactivated": "Stay Awake: OFF",
-    "format-icons": {
-      "activated": "󰛨",
-      "deactivated": "󰛩",
-    },
   },
   "group/tray-expander": {
     "orientation": "inherit",

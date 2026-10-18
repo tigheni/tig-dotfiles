@@ -92,14 +92,12 @@ button:hover {
 /* Modules */
 
 #tray,
-#idle_inhibitor,
 #memory,
 #cpu,
 #clock,
 #pulseaudio,
 #custom-expand-icon,
 #custom-weather,
-#custom-gpu-usage,
 #temperature,
 #systemd-failed-units,
 #custom-flake-age,
@@ -117,14 +115,6 @@ button:hover {
   font-size: 14px;
   padding: 0 4px 0 0;
   margin: 0 4px;
-}
-
-#idle_inhibitor.deactivated {
-  color: alpha(@fg, 0.4);
-}
-
-#idle_inhibitor.activated {
-  color: @accent;
 }
 
 #custom-expand-icon {
@@ -184,11 +174,6 @@ button:hover {
   to {
     color: @accent;
   }
-}
-
-#memory.warning,
-#cpu.warning {
-  color: @warn;
 }
 
 #memory.critical,
