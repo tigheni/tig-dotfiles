@@ -565,14 +565,6 @@ Item {
                             id: apiKeyRepeater
                             model: [
                                 {
-                                    path: "openrouter.user",
-                                    label: "OpenRouter User"
-                                },
-                                {
-                                    path: "openrouter.key",
-                                    label: "OpenRouter API Key"
-                                },
-                                {
                                     path: "danbooru.user",
                                     label: "Danbooru User"
                                 },
@@ -684,16 +676,6 @@ Item {
                                         onClicked: root.copyText(keyField.text)
                                     }
                                 }
-                            }
-                        }
-                        // ChatBot reply notifications (replies stay in the
-                        // tab unless this is on; errors always notify).
-                        SettingRow {
-                            text: "Notify on chatbot reply"
-                            tip: "Pop a notification when the chatbot replies."
-                            AppToggle {
-                                checked: Settings.chatBotNotify
-                                onToggled: Settings.chatBotNotify = checked
                             }
                         }
                     }
@@ -1625,10 +1607,6 @@ Item {
     // Concise tooltip per API-key row (shown via SettingLabel).
     function apiKeyTip(path, label) {
         switch (path) {
-        case "openrouter.user":
-            return "Your OpenRouter account name.";
-        case "openrouter.key":
-            return "Key for chatbot AI models.";
         case "danbooru.user":
             return "Your Danbooru login name.";
         case "danbooru.key":

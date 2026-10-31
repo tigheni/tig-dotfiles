@@ -2,8 +2,8 @@ import QtQuick
 import qs.theme
 import qs.widgets.shared
 
-// Shared 48px rail with 40px icon cells for the left island tabs (toggle highlight, Donations
-// nudge, tooltips); `dragEnabled` is reserved — RightIsland keeps its custom reorder rail.
+// Shared 48px rail with 40px icon cells for the left island tabs (toggle highlight,
+// tooltips); `dragEnabled` is reserved — RightIsland keeps its custom reorder rail.
 Rectangle {
     id: root
     property var model: []
@@ -40,12 +40,10 @@ Rectangle {
                     checked: index === root.currentIndex
                     outlined: modelData.name === root.highlightedName
                     outlineColor: Theme.accent
-                    // Donations special red color to nudge users toward
-                    // the support widget (preserved from LeftIsland).
-                    idleBg: modelData.name === "Donations" ? "#f96854" : "transparent"
-                    idleFg: modelData.name === "Donations" ? "#052d49" : Theme.fg
-                    borderColor: modelData.name === "Donations" ? "#f96854" : Theme.accent
-                    tooltipText: modelData.name === "Donations" ? "Click to open Donations\n<b>＼(o￣∇￣)／</b> — Support the project" : "Click to open " + modelData.name
+                    idleBg: "transparent"
+                    idleFg: Theme.fg
+                    borderColor: Theme.accent
+                    tooltipText: "Click to open " + modelData.name
                     onClicked: root.selected(index)
                 }
             }

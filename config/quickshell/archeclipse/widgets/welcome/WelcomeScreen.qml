@@ -180,19 +180,9 @@ Scope {
     readonly property var _stepStates: ["", "search", "left", "right", "wallpaper", "control"]
     readonly property var _leftWidgetTour: [
         {
-            tab: "UserProfile",
-            title: "User profile",
-            description: "Sign in with a magic link to link your account. View your profile and sync shell settings between installs."
-        },
-        {
             tab: "BooruViewer",
             title: "Booru viewer",
             description: "Search Danbooru, Gelbooru, or Safebooru with tags and browse the result grid. Open a post for details, then favorite, download, or pin it to a workspace."
-        },
-        {
-            tab: "ChatBot",
-            title: "Chat bot",
-            description: "Choose a provider and model, then chat in separate saved sessions. Optional context can include workspace and active-file details."
         },
         {
             tab: "MangaViewer",
@@ -213,11 +203,6 @@ Scope {
             tab: "KeyBinds",
             title: "Key binds",
             description: "Browse Hyprland shortcuts by category and compare each action with its key combination. Use this tab as a quick reference."
-        },
-        {
-            tab: "Donations",
-            title: "Support the project",
-            description: "Check whether your account is linked and supporter status is active. The tab also links to sign-in and optional support methods."
         }
     ]
     readonly property var _rightWidgetDescriptions: ({

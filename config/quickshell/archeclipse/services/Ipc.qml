@@ -251,7 +251,7 @@ Item {
         }
 
         function showWidget(name: string, monitor: string): string {
-            const valid = ["UserProfile", "BooruViewer", "ChatBot", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds", "Donations"];
+            const valid = Settings.leftPanelWidgetNames;
             if (valid.indexOf(name) === -1) return "unknown widget: " + name;
             Settings.setLeftPanelWidgetFor(monitor, name);
             BarState.activate("left", 0, monitor);
@@ -327,24 +327,6 @@ Item {
             }
         }
 
-        // Scripted capture helper: primes the ChatBot tab and switches to a session id;
-        // the tab Loader may have no item yet, so callers retry after a short delay.
-        function chatSession(id: string, monitor: string): string {
-            try {
-                const mon = (monitor && monitor !== "") ? monitor : Registry.monitorName;
-                const isl = Registry.get(`left-island-${mon}`) ?? Registry.get("left-island");
-                if (!isl) return "no island: left-island-" + mon;
-                Registry.selectLeftTab("ChatBot", undefined, mon);
-                const w = isl.activeWidget;
-                if (!w || !w.switchToSession) return "chat widget not ready";
-                w.loadSessions();
-                w.switchToSession(id);
-                return "chat session=" + w.activeSessionId;
-            } catch (e) {
-                return "EX: " + e;
-            }
-        }
-
         function togglePanel(name: string, monitor: string): string {
             // MediaWindow keeps one player handle per monitor (media-panel-<mon>); the
             // hypr `togglePanel wallpaper-switcher <mon>` alias must keep working.
@@ -356,17 +338,6 @@ Item {
                 return toggleLeftPanel(monitor);
             if (name === "right-panel" || name === "rightPanel")
                 return toggleRightPanel(monitor);
-            // The UserProfile moved into the left island — keep SUPER+ESC
-            // opening that profile tab instead of duplicating the lock bind.
-            if (name === "user-panel" || name === "userPanel") {
-                if (BarState.isOpenFor("left", monitor) && Settings.leftPanelWidgetFor(monitor) === "UserProfile") {
-                    BarState.deactivate("left", monitor);
-                    return "user profile closed";
-                }
-                Settings.setLeftPanelWidgetFor(monitor, "UserProfile");
-                BarState.activate("left", 0, monitor);
-                return "user profile open";
-            }
             const key = `${name}-${monitor}`;
             const w = Registry.get(key);
             if (w) { w.visible = !w.visible; return key + " toggled"; }

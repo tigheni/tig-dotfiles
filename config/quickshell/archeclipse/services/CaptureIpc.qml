@@ -130,7 +130,7 @@ Item {
         function select(name: string): string {
             if (!root.active) return root.reply({ok: false, error: "No capture lease"});
             const tabs = {"left-panel-settings": "SettingsWidget", "left-panel-keybinds": "KeyBinds",
-                "left-panel-chatbot": "ChatBot", "left-panel-booru-1": "BooruViewer"};
+                "left-panel-booru-1": "BooruViewer"};
             const states = {"app-launcher": "search", "control-panel": "control", "wallpaper-switcher": "wallpaper",
                 "workspace-overview": "overview", "right-panel-layout-1": "right", "right-panel-layout-2": "right",
                 "overview": "player"};

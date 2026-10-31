@@ -32,9 +32,10 @@ Item {
     property real expand: 0
     // Tab-name order for the rail index mapping; names keep the QS "Widget" suffix for IPC
     // showWidget/widgetState compat.
-    readonly property var tabOrder: ["UserProfile", "BooruViewer", "ChatBot", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds", "Donations"]
+    readonly property var tabOrder: ["BooruViewer", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds"]
     function tabIndex(name) {
-        return Math.max(0, root.tabOrder.indexOf(name));
+        const i = root.tabOrder.indexOf(name);
+        return i >= 0 ? i : root.tabOrder.indexOf("SettingsWidget");
     }
     Component.onCompleted: {
         expand = 1;
@@ -103,21 +104,15 @@ Item {
     readonly property var activeWidget: {
         switch (widgetStack.currentIndex) {
         case 0:
-            return userProfileLoader.item;
-        case 1:
             return booruLoader.item;
-        case 2:
-            return chatBotLoader.item;
-        case 3:
+        case 1:
             return mangaLoader.item;
-        case 4:
+        case 2:
             return settingsLoader.item;
-        case 5:
+        case 3:
             return scriptsLoader.item;
-        case 6:
+        case 4:
             return keybindsLoader.item;
-        case 7:
-            return donationsLoader.item;
         default:
             return null;
         }
@@ -228,27 +223,19 @@ Item {
                 clip: true
 
                 // Widget selector rail (shared component: tab order,
-                // icons, Donations highlight and tooltips preserved).
+                // icons and tooltips preserved).
                 IslandSideRail {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.margins: Theme.pad
                     highlightedName: BarState.tourHighlightMonitor === root.monitorName ? BarState.tourHighlightTab : ""
-                    // Tab order + icons: UserProfile, BooruViewer, ChatBot, MangaViewer,
-                    // Settings, CustomScripts, KeyBinds, Donations ("Widget" suffix for IPC).
+                    // Tab order + icons: BooruViewer, MangaViewer, Settings,
+                    // CustomScripts, KeyBinds ("Widget" suffix for IPC).
                     model: [
-                        {
-                            name: "UserProfile",
-                            icon: Icons.user
-                        },
                         {
                             name: "BooruViewer",
                             icon: Icons.image
-                        },
-                        {
-                            name: "ChatBot",
-                            icon: Icons.chatbot
                         },
                         {
                             name: "MangaViewer",
@@ -265,10 +252,6 @@ Item {
                         {
                             name: "KeyBinds",
                             icon: Icons.keyboard
-                        },
-                        {
-                            name: "Donations",
-                            icon: Icons.coffee
                         }
                     ]
                     currentIndex: root.tabIndex(root.selectedWidget)
@@ -310,32 +293,19 @@ Item {
                     anchors.margins: Theme.pad
                     currentIndex: {
                         switch (root.selectedWidget) {
-                        case "UserProfile":
-                            return 0;
                         case "BooruViewer":
-                            return 1;
-                        case "ChatBot":
-                            return 2;
-                        case "MangaViewer":
-                            return 3;
-                        case "SettingsWidget":
-                            return 4;
-                        case "CustomScripts":
-                            return 5;
-                        case "KeyBinds":
-                            return 6;
-                        case "Donations":
-                            return 7;
-                        default:
                             return 0;
+                        case "MangaViewer":
+                            return 1;
+                        case "SettingsWidget":
+                            return 2;
+                        case "CustomScripts":
+                            return 3;
+                        case "KeyBinds":
+                            return 4;
+                        default:
+                            return 2;
                         }
-                    }
-                    Loader {
-                        id: userProfileLoader
-                        active: root.tabPrimed("UserProfile")
-                        sourceComponent: userProfileComp
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
                     }
                     Loader {
                         id: booruLoader
@@ -360,14 +330,6 @@ Item {
                                 }
                             }
                         }
-                    }
-                    Loader {
-                        id: chatBotLoader
-                        active: root.tabPrimed("ChatBot")
-                        sourceComponent: chatBotComp
-                        asynchronous: true
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
                     }
                     Loader {
                         id: mangaLoader
@@ -399,29 +361,10 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                     }
-                    Loader {
-                        id: donationsLoader
-                        active: root.tabPrimed("Donations")
-                        sourceComponent: donationsComp
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
-                }
-                Component {
-                    id: userProfileComp
-                    UserProfileWidget {
-                        monitorName: root.monitorName
-                    }
                 }
                 Component {
                     id: booruComp
                     BooruViewer {}
-                }
-                Component {
-                    id: chatBotComp
-                    ChatBotWidget {
-                        monitorName: root.monitorName
-                    }
                 }
                 Component {
                     id: mangaComp
@@ -444,12 +387,6 @@ Item {
                 Component {
                     id: keybindsComp
                     KeyBindsWidget {}
-                }
-                Component {
-                    id: donationsComp
-                    DonationsWidget {
-                        monitorName: root.monitorName
-                    }
                 }
             }
         }

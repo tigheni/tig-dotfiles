@@ -55,8 +55,8 @@ Singleton {
     // password within this window after locking), persisted, default 10.
     property int lockGraceSeconds: 10
     // Selected left-panel tab (persisted)
-    property string leftPanelWidget: "UserProfile"
-    readonly property var leftPanelWidgetNames: ["UserProfile", "BooruViewer", "ChatBot", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds", "Donations"]
+    property string leftPanelWidget: "SettingsWidget"
+    readonly property var leftPanelWidgetNames: ["BooruViewer", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds"]
     // Wallpaper switcher category (persisted)
     property string wallpaperCategory: "defaults/sfw"
     // Wallpaper provider: "local" (default/* + custom folders) or "wallhaven"; the
@@ -219,14 +219,6 @@ Singleton {
     // hard-rejects danbooru/gelbooru with MISSING_CREDENTIALS.
     function defaultApiKeys() {
         return {
-            openrouter: {
-                user: {
-                    value: ""
-                },
-                key: {
-                    value: ""
-                }
-            },
             danbooru: {
                 user: {
                     value: "publicapi"
@@ -424,18 +416,6 @@ Singleton {
             return "";
         return String(w.id) + "|" + ((w.api && w.api.value) || "") + "|" + String(w.extension || "");
     }
-
-    // ChatBot provider (default: first provider).
-    property string chatBotApi: "openai/gpt-4o-mini"
-    // ChatBot context chips (Minimal+explicit: workspace/window/clipboard/active-file).
-    property var chatBotContext: ({
-        ws: true,
-        win: true,
-        clip: true,
-        file: true
-    })
-    // ChatBot reply notifications (default off — replies stay in the tab).
-    property bool chatBotNotify: false
 
     // Theme variants
     property bool dynamicThemeColors: true
@@ -730,7 +710,6 @@ Singleton {
             "blueLight.end": "blueLightEnd",
             "dynamicThemeColors": "dynamicThemeColors",
             "dynamicThemeVariants": "dynamicThemeVariants",
-            "chatBot.api": "chatBotApi",
             "waifuWidget.current": "waifu"
         };
         if (aliases[path] !== undefined) {
@@ -946,11 +925,6 @@ Singleton {
                 "waifuWidget": {
                     current: root.waifu
                 },
-                "chatBot": {
-                    api: root.chatBotApi,
-                    context: root.chatBotContext,
-                    notify: root.chatBotNotify
-                },
                 "booru": {
                     api: root.booru.api,
                     tags: root.booru.tags,
@@ -1096,7 +1070,7 @@ Singleton {
                 // The file may store {name, icon}; only {name} is persisted and restored —
                 // left icons live in LeftIsland (legacy files used "leftPanel.widget").
                 const _lpw = s["leftPanel.widget"] ?? s.leftPanel?.widget;
-                root.leftPanelWidget = (typeof _lpw === "string" ? _lpw : _lpw?.name) ?? "UserProfile";
+                root.leftPanelWidget = (typeof _lpw === "string" ? _lpw : _lpw?.name) ?? "SettingsWidget";
                 const _wc = s.wallpaperSwitcher?.category;
                 root.wallpaperCategory = ((typeof _wc === "object" && _wc !== null ? _wc.value : _wc) ?? "defaults/sfw");
                 // Merge the saved wallhaven filter over fresh defaults so new params never
@@ -1187,20 +1161,6 @@ Singleton {
                 const _w = s.waifuWidget?.current ?? null;
                 if (root.waifuKey(_w) !== root.waifuKey(root.waifu))
                     root.waifu = _w;
-
-                // ChatBot provider (restored on launch; stored as the model
-                // value string here).
-                const cbApi = s.chatBot?.api;
-                root.chatBotApi = (cbApi && typeof cbApi === "object" ? cbApi.value : cbApi) ?? "openai/gpt-4o-mini";
-                // ChatBot context chips (defaults on; merge saved flags over them).
-                const cbCtx = s.chatBot?.context ?? {};
-                root.chatBotContext = ({
-                    ws: cbCtx.ws ?? true,
-                    win: cbCtx.win ?? true,
-                    clip: cbCtx.clip ?? true,
-                    file: cbCtx.file ?? true
-                });
-                root.chatBotNotify = s.chatBot?.notify ?? false;
 
                 // Lockscreen grace period (seconds of free Esc dismiss)
                 root.lockGraceSeconds = s.lockscreen?.graceSeconds ?? 10;
@@ -1628,15 +1588,6 @@ Singleton {
             root.schedulePersist();
         }
         function onBooruChanged() {
-            root.schedulePersist();
-        }
-        function onChatBotApiChanged() {
-            root.schedulePersist();
-        }
-        function onChatBotContextChanged() {
-            root.schedulePersist();
-        }
-        function onChatBotNotifyChanged() {
             root.schedulePersist();
         }
     }
