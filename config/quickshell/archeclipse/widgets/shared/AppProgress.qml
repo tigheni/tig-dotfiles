@@ -1,0 +1,178 @@
+// Shared progress indicator: status idle|loading|error|success over pill/bar/badge/inline/
+// spinner variants (value < 0 = indeterminate). Collapses to 0 height when inactive.
+
+import QtQuick
+import QtQuick.Controls
+import qs.theme
+
+Item {
+    id: root
+
+    property string status: "idle"
+    property string variant: "pill"
+
+    property string loadingText: "Working..."
+    property string errorText: "Error — see notification"
+    property string successText: "Ready"
+    property string idleText: ""
+
+    // Determinate fill for pill/bar. Negative = indeterminate.
+    property real value: -1
+
+    property bool showLoading: true
+    property bool showError: true
+    property bool showSuccess: false
+    property bool showIdle: false
+
+    readonly property bool active: (status === "loading" && showLoading) || (status === "error" && showError) || (status === "success" && showSuccess) || (status === "idle" && showIdle)
+    readonly property string displayText: {
+        if (status === "loading")
+            return loadingText;
+        if (status === "error")
+            return errorText;
+        if (status === "success")
+            return successText;
+        return idleText;
+    }
+    readonly property color statusColor: status === "error" ? Theme.danger : Theme.accent
+    readonly property color statusBg: status === "error" ? Theme.dangerBg : Theme.surfaceActive
+    readonly property real clampedValue: Math.max(0, Math.min(1, value))
+    readonly property bool determinate: value >= 0
+
+    visible: active
+    implicitHeight: {
+        if (!active)
+            return 0;
+        if (variant === "bar")
+            return 4;
+        if (variant === "badge")
+            return 20;
+        if (variant === "spinner")
+            return 20;
+        if (variant === "inline")
+            return inlineLabel.implicitHeight;
+        return 22;
+    }
+    implicitWidth: {
+        if (variant === "badge")
+            return 64;
+        if (variant === "spinner")
+            return 20;
+        if (variant === "inline")
+            return inlineLabel.implicitWidth;
+        return 0;
+    }
+
+    // ---- pill (ChatBot) ----
+    Rectangle {
+        anchors.fill: parent
+        visible: root.variant === "pill" && root.active
+        radius: Theme.radius
+        color: root.statusBg
+        border.color: root.statusColor
+        clip: true
+
+        // Determinate fill underneath the label.
+        Rectangle {
+            visible: root.determinate
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: parent.width * root.clampedValue
+            color: root.statusColor
+            opacity: 0.35
+            Behavior on width {
+                Anim {
+                    type: Anim.FastEffects
+                }
+            }
+        }
+
+        Label {
+            anchors.centerIn: parent
+            text: root.displayText
+            color: root.statusColor
+            font.pixelSize: Theme.fontSizeSmall
+            font.family: Theme.fontFamily
+        }
+    }
+
+    // ---- bar (Booru / Player) ----
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: 4
+        radius: 2
+        visible: root.variant === "bar" && root.active
+        color: root.determinate ? Theme.color8 : root.statusColor
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: root.determinate ? parent.width * root.clampedValue : parent.width
+            radius: 2
+            color: root.statusColor
+            Behavior on width {
+                Anim {
+                    type: Anim.FastEffects
+                }
+            }
+        }
+    }
+
+    // ---- badge (Waifu) ----
+    Rectangle {
+        anchors.fill: parent
+        visible: root.variant === "badge" && root.active
+        radius: Theme.radius
+        color: root.status === "error" ? Theme.danger : (root.status === "success" ? Theme.surfaceActive : Theme.bg)
+        border.color: root.status === "error" ? Theme.danger : Theme.border
+
+        Text {
+            anchors.centerIn: parent
+            text: root.displayText
+            color: root.status === "loading" ? Theme.fgDim : (root.status === "error" ? Theme.criticalFg : Theme.accent)
+            font.pixelSize: Theme.fontSizeSmall
+            font.family: Theme.fontFamily
+        }
+    }
+
+    // Anchored left/right/verticalCenter (NOT fill): fill forces a wrapped label into a 0-width
+    // root in auto-size parents and blows up implicitHeight.
+    Label {
+        id: inlineLabel
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        visible: root.variant === "inline" && root.active
+        text: root.displayText
+        color: root.status === "error" ? Theme.danger : (root.status === "success" ? Theme.accent : Theme.fgDim)
+        font.pixelSize: Theme.fontSizeSmall
+        font.family: Theme.fontFamily
+        wrapMode: Text.WordWrap
+        verticalAlignment: Text.AlignVCenter
+    }
+
+    // ---- spinner (Wallpaper / KeyBinds / BooruDialog) ----
+    BusyIndicator {
+        anchors.centerIn: parent
+        visible: root.variant === "spinner" && root.active && root.status === "loading"
+        running: visible
+        implicitWidth: 20
+        implicitHeight: 20
+    }
+    Text {
+        anchors.centerIn: parent
+        visible: root.variant === "spinner" && root.active && root.status === "error"
+        text: "⚠"
+        color: Theme.danger
+    }
+    Text {
+        anchors.centerIn: parent
+        visible: root.variant === "spinner" && root.active && root.status === "success"
+        text: "✓"
+        color: Theme.success
+    }
+}

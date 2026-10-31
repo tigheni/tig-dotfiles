@@ -1,0 +1,1643 @@
+pragma Singleton
+import QtQuick
+import Quickshell
+import Quickshell.Io
+
+// Mirrors the subset of ~/.cache/quickshell/settings/settings.json the bar and panels
+// consume; read once at startup, with the settings UI as the editor.
+Singleton {
+    id: root
+
+    // --- simple booleans / ints / strings ---
+    property bool barSmartHide: false
+    property bool barFullWidth: false
+    property real revealInPressure: 250
+    property real revealOutPressure: 1000
+    property bool barOrientation: true        // true = top
+
+    property string dateFormat: "%H:%M"
+    readonly property var dateFormats: ["%H:%M", "%I:%M %p"]
+    property real uiOpacity: 0.618
+    property int uiRadius: 12
+    property int uiPad: 6
+    property int uiSpacing: 6
+    property int uiFontSize: 12
+
+    // Keybind glyph settings
+    property string keybindsSuperKey: Icons.keySuperArch
+    property bool keybindsUseMacSymbol: false
+    property bool keybindsUseFunctionSymbol: false
+    property bool keybindsUseMouseSymbol: false
+    property bool keybindsSplitButtons: false
+    property int keybindsFontSize: 12
+    property int keybindsDescriptionFontSize: 11
+
+    // animScale multiplies every Theme.anim duration (1.0 = normal, lower = faster);
+    // islandAnimStyle picks the IslandExpandClip easing.
+    property bool animationsEnabled: true
+    property real animScale: 1.0
+    property string islandAnimStyle: "Emphasized"
+
+    property real leftPanelHotZoneSize: 5
+    property real rightPanelHotZoneSize: 5
+    property bool leftPanelHotZone: true
+    property bool rightPanelHotZone: true
+    property bool notifDnd: false
+    property bool leftPanelLock: false
+    property bool rightPanelLock: false
+    property int leftPanelWidth: 500
+    property int rightPanelWidth: 350
+    // Per-monitor overrides. The flat properties above remain the defaults
+    // for monitors without an explicit override and for older settings files.
+    property var leftPanelByMonitor: ({})
+    property var rightPanelByMonitor: ({})
+    // Lockscreen grace period in seconds (Esc dismisses the lock without a
+    // password within this window after locking), persisted, default 10.
+    property int lockGraceSeconds: 10
+    // Selected left-panel tab (persisted)
+    property string leftPanelWidget: "UserProfile"
+    readonly property var leftPanelWidgetNames: ["UserProfile", "BooruViewer", "ChatBot", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds", "Donations"]
+    // Wallpaper switcher category (persisted)
+    property string wallpaperCategory: "defaults/sfw"
+    // Wallpaper provider: "local" (default/* + custom folders) or "wallhaven"; the
+    // Wallhaven filter state persists alongside it.
+    property string wallpaperProvider: "local"
+    property var wallpaperWallhaven: root.defaultWallpaperWallhaven()
+    // Shared masonry view (row count + exact tile height in px): both providers render
+    // through one AppMasonryRow and the island grows to the true height.
+    property int wallpaperMasonryRows: 2
+    property int wallpaperTileSize: 120
+    // Workspace-switch transition: "slide" (default) or "fade" — anything else falls back
+    // to slide. The daemon keeps its own copy in its config dir; this mirrors it.
+    property string wallpaperTransition: "slide"
+    // Default Wallhaven filter state (reload() merges the file over a fresh copy);
+    // categories/purity are bit-strings: general/anime/people and sfw/sketchy/nsfw.
+    function defaultWallpaperWallhaven() {
+        return {
+            q: "",
+            categories: "111",
+            purity: "100",
+            sorting: "date_added",
+            order: "desc",
+            topRange: "1M",
+            atleast: "",
+            ratios: "",
+            page: 1
+        };
+    }
+    // Weather city override (empty = Auto/IP), persisted
+    property string weatherCity: ""
+
+    // CODE IS THE SOURCE OF TRUTH FOR ICONS: persist()/reload() save only {name, enabled}
+    // + order, so editing defaultRightPanelWidgets cannot be clobbered.
+    property var rightPanelWidgets: root.defaultRightPanelWidgets()
+    // Canonical widget definitions (names + code-owned icons + default enabled).
+    function defaultRightPanelWidgets() {
+        return [
+            {
+                name: "Waifu",
+                icon: Icons.heart,
+                enabled: true
+            },
+            {
+                name: "Media",
+                icon: Icons.play,
+                enabled: true
+            },
+            {
+                name: "NotificationHistory",
+                icon: Icons.bell,
+                enabled: true
+            },
+            {
+                name: "Calendar",
+                icon: Icons.calendar,
+                enabled: true
+            },
+            {
+                name: "SystemResources",
+                icon: Icons.cpu,
+                enabled: true
+            },
+        ];
+    }
+    // Merge a saved list onto the code defaults: keep file order + enabled flags, drop
+    // unknown names, take icons from code, append code-defined widgets the file lacks.
+    function mergeRightPanelWidgets(saved) {
+        const defs = root.defaultRightPanelWidgets();
+        const byName = {};
+        for (const d of defs)
+            byName[d.name] = d;
+        if (!Array.isArray(saved))
+            return defs;
+        const out = [];
+        for (const w of saved) {
+            if (!w || !w.name || !byName[w.name])
+                continue;
+            if (out.some(e => e.name === w.name))
+                continue;
+            out.push({
+                name: w.name,
+                icon: byName[w.name].icon,
+                enabled: (w.enabled ?? byName[w.name].enabled ?? true)
+            });
+        }
+        for (const d of defs) {
+            if (!out.some(e => e.name === d.name))
+                out.push({
+                    name: d.name,
+                    icon: d.icon,
+                    enabled: d.enabled
+                });
+        }
+        return out.length > 0 ? out : defs;
+    }
+    property bool autoWorkspaceSwitching: true
+    property bool gameModeEnabled: false
+    // Blue light filter (hyprsunset). Temperature in Kelvin: lower = warmer.
+    property bool blueLightEnabled: false
+    property int blueLightTemperature: 4000
+    // Auto mode: filter ON between start and end (local "HH:MM", may span midnight, e.g.
+    // 21:00 -> 07:00). A manual toggle overrides until the next boundary.
+    property bool blueLightAuto: false
+    property string blueLightStart: "21:00"
+    property string blueLightEnd: "07:00"
+
+    property var booru: ({
+            api: ({
+                    name: "Danbooru",
+                    value: "danbooru",
+                    url: "https://danbooru.donmai.us/",
+                    idSearchUrl: "https://danbooru.donmai.us/posts/"
+                }),
+            tags: ["-rating:explicit"],
+            limit: 30,
+            page: 1,
+            columns: 3,
+            bookmarks: [],
+            pins: [],
+            selectedTab: "Danbooru"
+        })
+    // Shipped defaults (not {}) so early fetchers like Booru onCompleted have credentials
+    // before the file merges; the per-service User-Agent strings live here too.
+    property var apiKeys: root.defaultApiKeys()
+    property var userAgents: root.defaultUserAgents()
+
+    function defaultUserAgents() {
+        return {
+            booru: "QuickshellBooru/1.0 (ArchLinux; Hyprland)",
+            mangaDex: "ArchEclipse-MangaCLI/1.0",
+            mangaLib: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            waifu: "QuickshellBooru/1.0 (ArchLinux; Hyprland)",
+            fastfetch: "QuickshellBooru/1.0 (ArchLinux; Hyprland)"
+        };
+    }
+
+    function mergeUserAgents(saved) {
+        const d = root.defaultUserAgents();
+        if (!saved || typeof saved !== "object")
+            return d;
+        for (const key of Object.keys(d)) {
+            const v = saved[key];
+            if (v !== undefined && v !== null && String(v).trim() !== "")
+                d[key] = String(v);
+        }
+        return d;
+    }
+
+    function userAgent(name) {
+        return String((root.userAgents || {})[name] || root.defaultUserAgents()[name] || "");
+    }
+
+    // POSIX single-quote escaping: double quotes still expand $(...) and backticks inside
+    // `bash -c`, so only single-quote wrapping neutralizes shell metacharacters.
+    function shQuote(s) {
+        return "'" + String(s).replace(/'/g, "'\\''") + "'";
+    }
+
+    // Shipped API fallback used when the file has none saved; QS must match or booru.py
+    // hard-rejects danbooru/gelbooru with MISSING_CREDENTIALS.
+    function defaultApiKeys() {
+        return {
+            openrouter: {
+                user: {
+                    value: ""
+                },
+                key: {
+                    value: ""
+                }
+            },
+            danbooru: {
+                user: {
+                    value: "publicapi"
+                },
+                key: {
+                    value: "Pr5ddYN7P889AnM6nq2nhgw1"
+                }
+            },
+            gelbooru: {
+                user: {
+                    value: "1667355"
+                },
+                key: {
+                    value: "1ccd9dd7c457c2317e79bd33f47a1138ef9545b9ba7471197f477534efd1dd05"
+                }
+            },
+            safebooru: {
+                user: {
+                    value: "publicapi"
+                },
+                key: {
+                    value: "Pr5ddYN7P889AnM6nq2nhgw1"
+                }
+            },
+            // Wallhaven needs only a key (no user); empty = guest mode
+            // (SFW-only). A key unlocks sketchy/NSFW purity + user filters.
+            wallhaven: {
+                key: {
+                    value: ""
+                }
+            }
+        };
+    }
+
+    // Merge saved apiKeys over the defaults (per api, per field), accepting
+    // both the nested shape {user:{value}} and flat strings.
+    function mergeApiKeys(saved) {
+        const d = root.defaultApiKeys();
+        if (!saved)
+            return d;
+        for (const api of Object.keys(d)) {
+            const s = saved[api];
+            if (s == null)
+                continue;
+            for (const field of ["user", "key"]) {
+                const v = s[field];
+                if (v == null)
+                    continue;
+                const str = (typeof v === "object") ? (v.value ?? "") : String(v);
+                if (str !== "")
+                    d[api][field] = {
+                        value: str
+                    };
+            }
+        }
+        return d;
+    }
+
+    // Unwrap one credential as a plain string regardless of stored shape.
+    function apiKey(api, field) {
+        const v = (root.apiKeys || {})[api]?.[field];
+        if (v == null)
+            return "";
+        return String((typeof v === "object" ? (v.value ?? "") : v)).replace(/\n/g, "").trim();
+    }
+
+    // Single list of the code-owned default sets: a new defaulted key adds a row here;
+    // startup snapshot, and merge*() keep calling default*() for a fresh mutable copy.
+    readonly property var _defaults: ({
+            "apiKeys": defaultApiKeys(),
+            "rightPanelWidgets": defaultRightPanelWidgets()
+        })
+    // Static hyprland leaf metadata ({name, min, max, type}) mirroring persist()'s order:
+    // general/decoration are {name,value,min,max,type}, blur/shadow typeFirst.
+    readonly property var _hyprlandLeafSchema: [
+        {
+            path: ["general", "border_size"],
+            name: "Border Size",
+            min: 0,
+            max: 10,
+            type: "int",
+            def: 0
+        },
+        {
+            path: ["general", "gaps_in"],
+            name: "Gaps In",
+            min: 0,
+            max: 20,
+            type: "int",
+            def: 7
+        },
+        {
+            path: ["general", "gaps_out"],
+            name: "Gaps Out",
+            min: 0,
+            max: 40,
+            type: "int",
+            def: 10
+        },
+        {
+            path: ["decoration", "rounding"],
+            name: "Rounding",
+            min: 0,
+            max: 50,
+            type: "int",
+            def: 16
+        },
+        {
+            path: ["decoration", "active_opacity"],
+            name: "Active Opacity",
+            min: 0,
+            max: 1,
+            type: "float",
+            def: 0.9
+        },
+        {
+            path: ["decoration", "inactive_opacity"],
+            name: "Inactive Opacity",
+            min: 0,
+            max: 1,
+            type: "float",
+            def: 0.8
+        },
+        {
+            path: ["decoration", "blur", "enabled"],
+            name: "Blur Enabled",
+            min: 0,
+            max: 1,
+            type: "bool",
+            def: true,
+            typeFirst: true
+        },
+        {
+            path: ["decoration", "blur", "size"],
+            name: "Blur Size",
+            min: 0,
+            max: 10,
+            type: "int",
+            def: 4,
+            typeFirst: true
+        },
+        {
+            path: ["decoration", "blur", "passes"],
+            name: "Blur Passes",
+            min: 0,
+            max: 10,
+            type: "int",
+            def: 4,
+            typeFirst: true
+        },
+        {
+            path: ["decoration", "blur", "xray"],
+            name: "Blur Xray",
+            min: 0,
+            max: 1,
+            type: "bool",
+            def: false,
+            typeFirst: true
+        },
+        {
+            path: ["decoration", "shadow", "enabled"],
+            name: "Shadow Enabled",
+            min: 0,
+            max: 1,
+            type: "bool",
+            def: true,
+            typeFirst: true
+        },
+        {
+            path: ["decoration", "shadow", "range"],
+            name: "Shadow Range",
+            min: 0,
+            max: 20,
+            type: "int",
+            def: 15,
+            typeFirst: true
+        },
+        {
+            path: ["decoration", "shadow", "render_power"],
+            name: "Shadow Render Power",
+            min: 1,
+            max: 4,
+            type: "int",
+            def: 3,
+            typeFirst: true
+        }
+    ]
+
+    // Waifu widget setting group
+    property var waifu: null
+    // Identity key for change detection: id+api+extension only. Tags carry
+    // no identity (and may contain any separator), so they stay out.
+    function waifuKey(w) {
+        if (!w || w.id === undefined || w.id === null)
+            return "";
+        return String(w.id) + "|" + ((w.api && w.api.value) || "") + "|" + String(w.extension || "");
+    }
+
+    // ChatBot provider (default: first provider).
+    property string chatBotApi: "openai/gpt-4o-mini"
+    // ChatBot context chips (Minimal+explicit: workspace/window/clipboard/active-file).
+    property var chatBotContext: ({
+        ws: true,
+        win: true,
+        clip: true,
+        file: true
+    })
+    // ChatBot reply notifications (default off — replies stay in the tab).
+    property bool chatBotNotify: false
+
+    // Theme variants
+    property bool dynamicThemeColors: true
+    property bool dynamicThemeVariants: false
+
+    // Screenshot capture settings used by ~/.config/hypr/scripts/screenshot.sh.
+    property var screenshot: root.defaultScreenshotSettings()
+    function defaultScreenshotSettings() {
+        return {
+            directory: `${Quickshell.env("HOME")}/Pictures/Screenshots`,
+            format: "png",
+            jpegQuality: 85,
+            pngCompression: 6,
+            optimizePng: false,
+            copyToClipboard: true,
+            notifyOnSave: true,
+            freezeOnArea: true,
+            includeCursor: false
+        };
+    }
+    function normalizeScreenshotSettings(saved) {
+        const defaults = root.defaultScreenshotSettings();
+        if (!saved || typeof saved !== "object" || Array.isArray(saved))
+            return defaults;
+        return {
+            directory: typeof saved.directory === "string" && saved.directory.trim() !== "" ? saved.directory.trim() : defaults.directory,
+            format: saved.format === "jpeg" ? "jpeg" : "png",
+            jpegQuality: Number.isInteger(saved.jpegQuality) && saved.jpegQuality >= 0 && saved.jpegQuality <= 100 ? saved.jpegQuality : defaults.jpegQuality,
+            pngCompression: Number.isInteger(saved.pngCompression) && saved.pngCompression >= 0 && saved.pngCompression <= 9 ? saved.pngCompression : defaults.pngCompression,
+            optimizePng: typeof saved.optimizePng === "boolean" ? saved.optimizePng : defaults.optimizePng,
+            copyToClipboard: typeof saved.copyToClipboard === "boolean" ? saved.copyToClipboard : defaults.copyToClipboard,
+            notifyOnSave: typeof saved.notifyOnSave === "boolean" ? saved.notifyOnSave : defaults.notifyOnSave,
+            freezeOnArea: typeof saved.freezeOnArea === "boolean" ? saved.freezeOnArea : defaults.freezeOnArea,
+            includeCursor: typeof saved.includeCursor === "boolean" ? saved.includeCursor : defaults.includeCursor
+        };
+    }
+
+    // GPU Screen Recorder options (persisted under `recording` in settings.json).
+    property var recording: root.defaultRecordingSettings()
+    function defaultRecordingSettings() {
+        return {
+            videoCodec: "auto",
+            quality: "very_high",
+            colorRange: "limited",
+            audioCodec: "opus",
+            frameRate: 60,
+            frameRateMode: "auto",
+            recordCursor: true,
+            outputDevice: "default_output",
+            inputDevice: "none",
+            directory: `${Quickshell.env("HOME")}/Videos/ScreenRecords`,
+            container: "mp4"
+        };
+    }
+    function normalizeRecordingSettings(saved) {
+        const defaults = root.defaultRecordingSettings();
+        if (!saved || typeof saved !== "object" || Array.isArray(saved))
+            return defaults;
+        const codecs = ["auto", "h264", "hevc", "av1", "vp8", "vp9", "hevc_hdr", "av1_hdr", "hevc_10bit", "av1_10bit", "h264_vulkan", "hevc_vulkan", "hevc_hdr_vulkan", "hevc_10bit_vulkan", "av1_vulkan", "av1_hdr_vulkan", "av1_10bit_vulkan"];
+        const quality = ["medium", "high", "very_high", "ultra"];
+        const frameModes = ["auto", "cfr", "vfr", "content"];
+        const audioCodecs = ["aac", "opus", "mp3"];
+        const containers = ["mp4", "mkv", "webm", "flv", "mov", "ts"];
+        const fps = Number(saved.frameRate);
+        return {
+            videoCodec: codecs.includes(saved.videoCodec) ? saved.videoCodec : defaults.videoCodec,
+            quality: quality.includes(saved.quality) ? saved.quality : defaults.quality,
+            colorRange: ["limited", "full"].includes(saved.colorRange) ? saved.colorRange : defaults.colorRange,
+            audioCodec: audioCodecs.includes(saved.audioCodec) ? saved.audioCodec : defaults.audioCodec,
+            frameRate: Number.isInteger(fps) && fps >= 1 && fps <= 360 ? fps : defaults.frameRate,
+            frameRateMode: frameModes.includes(saved.frameRateMode) ? saved.frameRateMode : defaults.frameRateMode,
+            recordCursor: typeof saved.recordCursor === "boolean" ? saved.recordCursor : defaults.recordCursor,
+            outputDevice: typeof saved.outputDevice === "string" && saved.outputDevice !== "" ? saved.outputDevice : defaults.outputDevice,
+            inputDevice: typeof saved.inputDevice === "string" && saved.inputDevice !== "" ? saved.inputDevice : defaults.inputDevice,
+            directory: typeof saved.directory === "string" && saved.directory.trim() !== "" ? saved.directory.trim() : defaults.directory,
+            container: containers.includes(saved.container) ? saved.container : defaults.container
+        };
+    }
+
+    // Hyprland settings (plain values internally; persist() writes the
+    // {name,value,min,max,type} leaf shape the settings panel renders).
+    property var hyprland: ({
+            general: {
+                border_size: 0,
+                gaps_in: 7,
+                gaps_out: 10
+            },
+            decoration: {
+                rounding: 16,
+                active_opacity: 0.9,
+                inactive_opacity: 0.8,
+                blur: {
+                    enabled: true,
+                    size: 4,
+                    passes: 4,
+                    xray: false
+                },
+                shadow: {
+                    enabled: true,
+                    range: 15,
+                    render_power: 3
+                }
+            }
+        })
+
+    // --- functions ---
+
+    function fmt(d, f) {
+        const p = n => n.toString().padStart(2, "0");
+        if (f === "%I:%M %p") {
+            let h = d.getHours() % 12;
+            if (h === 0)
+                h = 12;
+            return `${p(h)}:${p(d.getMinutes())} ${d.getHours() < 12 ? "AM" : "PM"}`;
+        }
+        return `${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function panelWidthFor(side, monitorName) {
+        const isLeft = side === "left";
+        const fallback = isLeft ? root.leftPanelWidth : root.rightPanelWidth;
+        const minimum = 200;
+        const name = String(monitorName || "");
+        const entries = isLeft ? root.leftPanelByMonitor : root.rightPanelByMonitor;
+        const override = name !== "" ? entries[name]?.width : undefined;
+        if (override === undefined)
+            return fallback;
+        const width = Number(override);
+        return isFinite(width) ? Math.min(1500, Math.max(minimum, Math.round(width))) : fallback;
+    }
+
+    function panelLockFor(side, monitorName) {
+        const isLeft = side === "left";
+        const fallback = isLeft ? root.leftPanelLock : root.rightPanelLock;
+        const name = String(monitorName || "");
+        const entries = isLeft ? root.leftPanelByMonitor : root.rightPanelByMonitor;
+        const override = name !== "" ? entries[name]?.lock : undefined;
+        return override === undefined ? fallback : !!override;
+    }
+
+    function leftPanelWidgetFor(monitorName) {
+        const name = String(monitorName || "");
+        const override = name !== "" ? root.leftPanelByMonitor[name]?.widget : undefined;
+        return override === undefined ? root.leftPanelWidget : String(override);
+    }
+
+    function setLeftPanelWidgetFor(monitorName, widget) {
+        const selected = String(widget || "");
+        if (!root.leftPanelWidgetNames.includes(selected))
+            return;
+        const name = String(monitorName || "");
+        if (name === "") {
+            if (root.leftPanelWidget !== selected) {
+                root.leftPanelWidget = selected;
+                root.persist();
+            }
+            return;
+        }
+        root.setPanelOverride("left", name, "widget", selected);
+    }
+
+    function setPanelOverride(side, monitorName, key, value) {
+        const name = String(monitorName || "");
+        if (name === "" || (side !== "left" && side !== "right"))
+            return;
+        const isLeft = side === "left";
+        const current = isLeft ? root.leftPanelByMonitor : root.rightPanelByMonitor;
+        const next = Object.assign({}, current || {});
+        const oldEntry = next[name] && typeof next[name] === "object" ? next[name] : {};
+        const updatedEntry = Object.assign({}, oldEntry);
+        updatedEntry[key] = value;
+        next[name] = updatedEntry;
+        if (isLeft)
+            root.leftPanelByMonitor = next;
+        else
+            root.rightPanelByMonitor = next;
+        root.persist();
+    }
+
+    function clearPanelOverride(side, monitorName, key) {
+        const name = String(monitorName || "");
+        if (name === "" || (side !== "left" && side !== "right"))
+            return;
+        const isLeft = side === "left";
+        const current = isLeft ? root.leftPanelByMonitor : root.rightPanelByMonitor;
+        const next = Object.assign({}, current || {});
+        const oldEntry = next[name];
+        if (!oldEntry || typeof oldEntry !== "object" || !(key in oldEntry))
+            return;
+        const updatedEntry = Object.assign({}, oldEntry);
+        delete updatedEntry[key];
+        if (Object.keys(updatedEntry).length)
+            next[name] = updatedEntry;
+        else
+            delete next[name];
+        if (isLeft)
+            root.leftPanelByMonitor = next;
+        else
+            root.rightPanelByMonitor = next;
+        root.persist();
+    }
+
+    function setPanelWidthFor(side, monitorName, value) {
+        const minimum = 200;
+        const width = Number(value);
+        if (!isFinite(width))
+            return;
+        root.setPanelOverride(side, monitorName, "width", Math.min(1500, Math.max(minimum, Math.round(width))));
+    }
+
+    function setPanelLockFor(side, monitorName, value) {
+        root.setPanelOverride(side, monitorName, "lock", !!value);
+    }
+
+    function normalizePanelOverrides(saved, side) {
+        if (!saved || typeof saved !== "object" || Array.isArray(saved))
+            return {};
+        const minimum = 200;
+        const normalized = {};
+        for (const name of Object.keys(saved)) {
+            const entry = saved[name];
+            if (!name || !entry || typeof entry !== "object" || Array.isArray(entry))
+                continue;
+            const clean = {};
+            if (entry.width !== undefined) {
+                const rawWidth = entry.width && typeof entry.width === "object" ? entry.width.value : entry.width;
+                const width = Number(rawWidth);
+                if (isFinite(width))
+                    clean.width = Math.min(1500, Math.max(minimum, Math.round(width)));
+            }
+            if (entry.lock !== undefined) {
+                const rawLock = entry.lock && typeof entry.lock === "object" ? entry.lock.value : entry.lock;
+                clean.lock = !!rawLock;
+            }
+            if (side === "left" && entry.widget !== undefined) {
+                const rawWidget = entry.widget && typeof entry.widget === "object"
+                    ? (entry.widget.name ?? entry.widget.value) : entry.widget;
+                const widget = String(rawWidget ?? "");
+                if (root.leftPanelWidgetNames.includes(widget))
+                    clean.widget = widget;
+            }
+            if (Object.keys(clean).length > 0)
+                normalized[name] = clean;
+        }
+        return normalized;
+    }
+
+    // Update a setting by dotted path and persist to settings.json
+    function updateSetting(path, value) {
+        // Dotted paths that map to flat QS properties (Singleton cannot
+        // gain new properties at runtime, so root["rightPanel"] = {} throws).
+        const aliases = {
+            "bar.smartHide": "barSmartHide",
+            "bar.fullWidth": "barFullWidth",
+            "bar.revealPressure": "revealInPressure",
+            "bar.revealInPressure": "revealInPressure",
+            "bar.revealOutPressure": "revealOutPressure",
+            "bar.orientation": "barOrientation",
+            "ui.opacity": "uiOpacity",
+            "ui.radius": "uiRadius",
+            "ui.pad": "uiPad",
+            "ui.spacing": "uiSpacing",
+            "ui.fontSize": "uiFontSize",
+            "animations.enabled": "animationsEnabled",
+            "animations.scale": "animScale",
+            "animations.islandStyle": "islandAnimStyle",
+            "leftPanel.hotZoneSize": "leftPanelHotZoneSize",
+            "rightPanel.hotZoneSize": "rightPanelHotZoneSize",
+            "leftPanel.hotZone": "leftPanelHotZone",
+            "rightPanel.hotZone": "rightPanelHotZone",
+            "leftPanel.lock": "leftPanelLock",
+            "rightPanel.lock": "rightPanelLock",
+            "leftPanel.width": "leftPanelWidth",
+            "leftPanel.widget": "leftPanelWidget",
+            "wallpaperSwitcher.category": "wallpaperCategory",
+            "wallpaperSwitcher.provider": "wallpaperProvider",
+            "wallpaperSwitcher.wallhaven": "wallpaperWallhaven",
+            "wallpaperSwitcher.masonryRows": "wallpaperMasonryRows",
+            "wallpaperSwitcher.tileSize": "wallpaperTileSize",
+            "wallpaperSwitcher.transition": "wallpaperTransition",
+            "weather.city": "weatherCity",
+            "rightPanel.width": "rightPanelWidth",
+            "rightPanel.widgets": "rightPanelWidgets",
+            "notifications.dnd": "notifDnd",
+            "lockscreen.graceSeconds": "lockGraceSeconds",
+            "autoWorkspaceSwitching": "autoWorkspaceSwitching",
+            "gameMode.enabled": "gameModeEnabled",
+            "blueLight.enabled": "blueLightEnabled",
+            "blueLight.temperature": "blueLightTemperature",
+            "blueLight.auto": "blueLightAuto",
+            "blueLight.start": "blueLightStart",
+            "blueLight.end": "blueLightEnd",
+            "dynamicThemeColors": "dynamicThemeColors",
+            "dynamicThemeVariants": "dynamicThemeVariants",
+            "chatBot.api": "chatBotApi",
+            "waifuWidget.current": "waifu"
+        };
+        if (aliases[path] !== undefined) {
+            // Widget icons are code-owned: never store incoming icons, merge
+            // onto the code defaults so a stale settings.json can't stick.
+            if (path === "rightPanel.widgets") {
+                root[aliases[path]] = root.mergeRightPanelWidgets(value);
+            } else {
+                root[aliases[path]] = value;
+            }
+            persist();
+            return;
+        }
+        const parts = path.split(".");
+        let obj = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+            const p = parts[i];
+            if (obj[p] === undefined || typeof obj[p] !== "object" || obj[p] === null) {
+                return;
+            } else {
+                obj = obj[p];
+            }
+        }
+        const key = parts[parts.length - 1];
+        obj[key] = value;
+        // Reassign a FRESH clone or the top-level change signal never fires (assigning the
+        // same reference back leaves bindings like Settings.booru.limit stale).
+        if (parts.length > 1) {
+            root[parts[0]] = Object.assign({}, obj);
+        }
+        persist();
+    }
+
+    // Persist to JSON (nested shape; per-monitor overrides under each panel's `monitors`);
+    // hyprland comes from _hyprlandLeafSchema with typeFirst so on-disk bytes never change.
+    readonly property var _hyprlandOut: (() => {
+            const out = {};
+            for (const leaf of root._hyprlandLeafSchema) {
+                const v = leaf.path.reduce((o, k) => ((o == null) ? o : o[k]), root.hyprland) ?? leaf.def;
+                let node = out;
+                for (let i = 0; i < leaf.path.length - 1; i++) {
+                    const g = leaf.path[i];
+                    if (node[g] === undefined)
+                        node[g] = {};
+                    node = node[g];
+                }
+                const key = leaf.path[leaf.path.length - 1];
+                node[key] = (leaf.typeFirst === true) ? {
+                    name: leaf.name,
+                    value: v,
+                    type: leaf.type,
+                    min: leaf.min,
+                    max: leaf.max
+                } : {
+                    name: leaf.name,
+                    value: v,
+                    min: leaf.min,
+                    max: leaf.max,
+                    type: leaf.type
+                };
+            }
+            return out;
+        })()
+
+    function persist() {
+        if (!root.ready)
+            return;
+        // Never write until a settings file has actually been read: FileView is async, and
+        // a persist() in that window wrote code defaults over the user's pins/keys (2026-10-27).
+        if (!root._adopted) {
+            console.warn("[Settings] persist skipped: settings not adopted yet");
+            return;
+        }
+        try {
+            const s = {
+                bar: {
+                    smartHide: {
+                        value: root.barSmartHide
+                    },
+                    fullWidth: {
+                        value: root.barFullWidth
+                    },
+                    revealInPressure: {
+                        value: root.revealInPressure
+                    },
+                    revealOutPressure: {
+                        value: root.revealOutPressure
+                    },
+                    orientation: {
+                        value: root.barOrientation
+                    }
+                },
+                dateFormat: root.dateFormat,
+                ui: {
+                    opacity: {
+                        value: root.uiOpacity
+                    },
+                    radius: {
+                        value: root.uiRadius
+                    },
+                    pad: {
+                        value: root.uiPad
+                    },
+                    spacing: {
+                        value: root.uiSpacing
+                    },
+                    fontSize: {
+                        value: root.uiFontSize
+                    }
+                },
+                keybinds: {
+                    superKey: root.keybindsSuperKey,
+                    useMacSymbol: root.keybindsUseMacSymbol,
+                    useFunctionSymbol: root.keybindsUseFunctionSymbol,
+                    useMouseSymbol: root.keybindsUseMouseSymbol,
+                    splitButtons: root.keybindsSplitButtons,
+                    fontSize: root.keybindsFontSize,
+                    descriptionFontSize: root.keybindsDescriptionFontSize
+                },
+                animations: {
+                    enabled: {
+                        value: root.animationsEnabled
+                    },
+                    scale: {
+                        value: root.animScale
+                    },
+                    islandStyle: root.islandAnimStyle
+                },
+                leftPanel: {
+                    hotZoneSize: {
+                        value: root.leftPanelHotZoneSize
+                    },
+                    hotZone: {
+                        value: root.leftPanelHotZone
+                    },
+                    lock: root.leftPanelLock,
+                    width: root.leftPanelWidth,
+                    monitors: root.leftPanelByMonitor,
+                    widget: {
+                        name: root.leftPanelWidget
+                    }
+                },
+                rightPanel: {
+                    hotZoneSize: {
+                        value: root.rightPanelHotZoneSize
+                    },
+                    hotZone: {
+                        value: root.rightPanelHotZone
+                    },
+                    lock: root.rightPanelLock,
+                    width: root.rightPanelWidth,
+                    monitors: root.rightPanelByMonitor,
+                    // Icons are code-owned: persist only {name, enabled} +
+                    // order so icon edits in code are never clobbered.
+                    widgets: (root.rightPanelWidgets || []).map(w => ({
+                                name: w.name,
+                                enabled: !!w.enabled
+                            }))
+                },
+                notifications: {
+                    dnd: root.notifDnd
+                },
+                lockscreen: {
+                    graceSeconds: root.lockGraceSeconds
+                },
+                wallpaperSwitcher: {
+                    category: root.wallpaperCategory,
+                    provider: root.wallpaperProvider,
+                    wallhaven: root.wallpaperWallhaven,
+                    masonryRows: root.wallpaperMasonryRows,
+                    tileSize: root.wallpaperTileSize,
+                    transition: root.wallpaperTransition
+                },
+                weather: {
+                    city: root.weatherCity
+                },
+                autoWorkspaceSwitching: {
+                    value: root.autoWorkspaceSwitching
+                },
+                gameMode: {
+                    enabled: {
+                        value: root.gameModeEnabled
+                    }
+                },
+                blueLight: {
+                    enabled: {
+                        value: root.blueLightEnabled
+                    },
+                    temperature: {
+                        value: root.blueLightTemperature
+                    },
+                    auto: {
+                        value: root.blueLightAuto
+                    },
+                    start: {
+                        value: root.blueLightStart
+                    },
+                    end: {
+                        value: root.blueLightEnd
+                    }
+                },
+                // Leaf shape {name,value,min,max,type} — the settings panel renders from
+                // it (plain numbers look like nested groups); it must be written or the section resets.
+                hyprland: root._hyprlandOut,
+                dynamicThemeColors: {
+                    value: root.dynamicThemeColors
+                },
+                dynamicThemeVariants: {
+                    value: root.dynamicThemeVariants
+                },
+                screenshot: root.screenshot,
+                recording: root.recording,
+                "waifuWidget": {
+                    current: root.waifu
+                },
+                "chatBot": {
+                    api: root.chatBotApi,
+                    context: root.chatBotContext,
+                    notify: root.chatBotNotify
+                },
+                "booru": {
+                    api: root.booru.api,
+                    tags: root.booru.tags,
+                    limit: root.booru.limit,
+                    page: root.booru.page,
+                    columns: root.booru.columns,
+                    bookmarks: root.booru.bookmarks,
+                    pins: root.booru.pins,
+                    selectedTab: root.booru.selectedTab ?? root.booru.api?.name ?? "Danbooru"
+                },
+                "apiKeys": root.apiKeys,
+                "userAgents": root.userAgents
+            };
+            // One-generation backup: keep the bytes that were on disk before
+            // this write, so the previous settings state is always recoverable.
+            const prev = _file.text();
+            if (prev && prev.trim().startsWith("{"))
+                _backupFile.setText(prev);
+            _lastText = JSON.stringify(s, null, 2);
+            _file.setText(_lastText);
+        } catch (e) {
+            console.warn("[Settings] Failed to persist:", e);
+        }
+    }
+
+    // Bare reload() here resolves to FileView.reload(), not the settings parser below —
+    // always qualify with root (this shadowing silently stopped settings applying).
+    property FileView _file: FileView {
+        path: `${Quickshell.env("HOME")}/.cache/quickshell/settings/settings.json`
+        watchChanges: true
+        // Delayed: FileView saves are async, so an immediate re-read can catch pre-write
+        // bytes and persist the stale state back (limit 30 reverted to 40 in-file).
+        onFileChanged: _reloadTimer.restart()
+        onLoaded: {
+            root.reload();
+            root.ready = true;
+        }
+    }
+    // Last text we wrote (or successfully adopted): reload() skips it so
+    // our own watcher echo can't churn assignments back over newer state.
+    property string _lastText: ""
+    property Timer _reloadTimer: Timer {
+        interval: 300
+        onTriggered: root.reload()
+    }
+    // FileView never emits loaded for a missing file, which left ready=false forever and
+    // gated every persist() (no file was created); adopt disk state after 2s.
+    property Timer _readyTimer: Timer {
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            if (root.ready)
+                return;
+            root.reload();
+            root.ready = true;
+            const disk = (_file.text() || "").trim();
+            // Missing/empty file: create it from code defaults. A file that exists but did
+            // not parse stays untouched — overwriting unreadable bytes caused the 2026-10-27 wipe.
+            if (disk !== "" && !root._adopted) {
+                console.warn("[Settings] settings file unreadable — refusing to overwrite");
+                return;
+            }
+            root._adopted = true;
+            root.persist();
+        }
+    }
+    // Gate: FileView loads async, so a persist() before the first load would write
+    // in-memory defaults over the saved file (booru.limit 20 clobbered back to 100).
+    property bool ready: false
+    // Set by reload() once a file has really been parsed; persist() refuses to write
+    // while false, so a slow/failed load can never replace the file with code defaults.
+    property bool _adopted: false
+
+    // One-generation safety net: before each overwrite keep the on-disk bytes (when they
+    // differ from what we last wrote) so a future clobber is recoverable without Supabase.
+    property FileView _backupFile: FileView {
+        path: `${Quickshell.env("HOME")}/.cache/quickshell/settings/settings.prev.json`
+    }
+
+    // Fresh on-disk settings for upload sync — never an empty stub
+    // (uploading {} would wipe remote).
+    function readLocalSettingsJson() {
+        try {
+            const text = _file.text();
+            if (text && text.trim().startsWith("{"))
+                return JSON.parse(text);
+        } catch (e) {}
+        return {};
+    }
+
+    function reload() {
+        try {
+            const text = _file.text();
+            if (text !== "" && text.trim().startsWith("{")) {
+                if (text === root._lastText)
+                    return;
+                const s = JSON.parse(text);
+                root._lastText = text;
+                root._adopted = true;
+                root.barSmartHide = s.bar?.smartHide?.value ?? false;
+                root.barFullWidth = s.bar?.fullWidth?.value ?? false;
+                root.revealInPressure = s.bar?.revealInPressure?.value ?? s.bar?.revealPressure?.value ?? 250;
+                root.revealOutPressure = s.bar?.revealOutPressure?.value ?? s.bar?.revealPressure?.value ?? 1000;
+                root.barOrientation = s.bar?.orientation?.value ?? true;
+
+                root.dateFormat = s.dateFormat ?? "%H:%M";
+                root.uiOpacity = s.ui?.opacity?.value ?? 0.618;
+                root.uiRadius = s.ui?.radius?.value ?? 12;
+                root.uiPad = s.ui?.pad?.value ?? 8;
+                root.uiSpacing = s.ui?.spacing?.value ?? 8;
+                root.uiFontSize = s.ui?.fontSize?.value ?? 12;
+
+                const keybinds = s.keybinds ?? {};
+                root.keybindsSuperKey = typeof keybinds.superKey === "string" && keybinds.superKey !== "" ? keybinds.superKey : Icons.keySuperArch;
+                root.keybindsUseMacSymbol = keybinds.useMacSymbol ?? false;
+                root.keybindsUseFunctionSymbol = keybinds.useFunctionSymbol ?? false;
+                root.keybindsUseMouseSymbol = keybinds.useMouseSymbol ?? false;
+                root.keybindsSplitButtons = keybinds.splitButtons ?? false;
+                root.keybindsFontSize = Math.min(30, Math.max(8, parseInt(keybinds.fontSize) || 12));
+                root.keybindsDescriptionFontSize = Math.min(30, Math.max(8, parseInt(keybinds.descriptionFontSize) || 11));
+
+                // Shell motion: accept both {value} leaves and plain values;
+                // clamp scale so a stale file can't freeze or stall motion.
+                const _ae = s.animations?.enabled;
+                root.animationsEnabled = ((typeof _ae === "object" && _ae !== null ? _ae.value : _ae) ?? true);
+                const _as = s.animations?.scale;
+                const _asV = ((typeof _as === "object" && _as !== null ? _as.value : _as) ?? 1.0);
+                root.animScale = Math.min(2.0, Math.max(0.2, Number(_asV) || 1.0));
+                const _ais = s.animations?.islandStyle;
+                const _aisV = ((typeof _ais === "object" && _ais !== null ? _ais.value : _ais) ?? "Emphasized");
+                const _styles = ["Standard", "Emphasized", "ExpressiveFast", "ExpressiveDefault", "ExpressiveSlow"];
+                root.islandAnimStyle = _styles.includes(_aisV) ? _aisV : "Emphasized";
+
+                root.leftPanelHotZoneSize = s.leftPanel?.hotZoneSize?.value ?? 5;
+                root.rightPanelHotZoneSize = s.rightPanel?.hotZoneSize?.value ?? 5;
+                root.leftPanelHotZone = s.leftPanel?.hotZone?.value ?? true;
+                root.rightPanelHotZone = s.rightPanel?.hotZone?.value ?? true;
+                root.notifDnd = s.notifications?.dnd ?? false;
+                root.leftPanelLock = !!s.leftPanel?.lock;
+                root.rightPanelLock = !!s.rightPanel?.lock;
+                root.leftPanelWidth = (typeof s.leftPanel?.width === "object" && s.leftPanel?.width !== null ? s.leftPanel.width.value : s.leftPanel?.width) ?? 400;
+                root.leftPanelByMonitor = root.normalizePanelOverrides(s.leftPanel?.monitors, "left");
+                // The file may store {name, icon}; only {name} is persisted and restored —
+                // left icons live in LeftIsland (legacy files used "leftPanel.widget").
+                const _lpw = s["leftPanel.widget"] ?? s.leftPanel?.widget;
+                root.leftPanelWidget = (typeof _lpw === "string" ? _lpw : _lpw?.name) ?? "UserProfile";
+                const _wc = s.wallpaperSwitcher?.category;
+                root.wallpaperCategory = ((typeof _wc === "object" && _wc !== null ? _wc.value : _wc) ?? "defaults/sfw");
+                // Merge the saved wallhaven filter over fresh defaults so new params never
+                // come back undefined; bits re-validated, unknown sort -> date_added.
+                const _wp = s.wallpaperSwitcher?.provider;
+                root.wallpaperProvider = ((_wp && typeof _wp === "object" ? _wp.value : _wp) ?? "local");
+                if (root.wallpaperProvider !== "local" && root.wallpaperProvider !== "wallhaven")
+                    root.wallpaperProvider = "local";
+                const _whSaved = s.wallpaperSwitcher?.wallhaven;
+                const _wh = root.defaultWallpaperWallhaven();
+                if (_whSaved && typeof _whSaved === "object") {
+                    const pick = (v, fb) => ((v !== undefined && v !== null) ? String(v) : fb);
+                    _wh.q = pick(_whSaved.q, _wh.q);
+                    const bits = (v, fb) => (/^[01]{3}$/.test(String(v ?? "")) ? String(v) : fb);
+                    _wh.categories = bits(_whSaved.categories, _wh.categories);
+                    _wh.purity = bits(_whSaved.purity, _wh.purity);
+                    const _sortings = ["date_added", "relevance", "random", "views", "favorites", "toplist"];
+                    _wh.sorting = _sortings.includes(_whSaved.sorting) ? _whSaved.sorting : _wh.sorting;
+                    _wh.order = (_whSaved.order === "asc" ? "asc" : "desc");
+                    _wh.topRange = pick(_whSaved.topRange, _wh.topRange);
+                    _wh.atleast = pick(_whSaved.atleast, _wh.atleast);
+                    _wh.ratios = pick(_whSaved.ratios, _wh.ratios);
+                    _wh.page = Math.max(1, parseInt(_whSaved.page) || 1);
+                }
+                root.wallpaperWallhaven = _wh;
+                // Shared masonry view: plain or {value} leaves, clamped
+                // (rows 1-4, tile height 80-200px).
+                const _mr = s.wallpaperSwitcher?.masonryRows;
+                const _mrV = (typeof _mr === "object" && _mr !== null ? _mr.value : _mr);
+                root.wallpaperMasonryRows = Math.min(4, Math.max(1, parseInt(_mrV) || 2));
+                const _ts = s.wallpaperSwitcher?.tileSize;
+                const _tsV = (typeof _ts === "object" && _ts !== null ? _ts.value : _ts);
+                root.wallpaperTileSize = Math.min(200, Math.max(80, parseInt(_tsV) || 120));
+                // Workspace transition: only slide/fade are adopted.
+                const _wt = s.wallpaperSwitcher?.transition;
+                const _wtV = ((typeof _wt === "object" && _wt !== null ? _wt.value : _wt) ?? "slide");
+                root.wallpaperTransition = (_wtV === "fade" ? "fade" : "slide");
+                const _wth = s.weather?.city ?? s.weatherCity;
+                root.weatherCity = ((typeof _wth === "object" && _wth !== null ? _wth.value : _wth) ?? "");
+                root.rightPanelWidth = (typeof s.rightPanel?.width === "object" && s.rightPanel?.width !== null ? s.rightPanel.width.value : s.rightPanel?.width) ?? 250;
+                root.rightPanelByMonitor = root.normalizePanelOverrides(s.rightPanel?.monitors, "right");
+                // Drop stale/removed widgets (retired Crypto/ScriptTimer) so deleted
+                // options never reappear; icons are code-owned, the file gives order + enabled.
+                if (Array.isArray(s.rightPanel?.widgets)) {
+                    root.rightPanelWidgets = root.mergeRightPanelWidgets(s.rightPanel.widgets);
+                }
+                root.autoWorkspaceSwitching = s.autoWorkspaceSwitching?.value ?? true;
+                const _gm = s.gameMode?.enabled;
+                root.gameModeEnabled = (typeof _gm === "object" && _gm !== null) ? (_gm.value ?? false) : (_gm ?? false);
+                const _bl = s.blueLight?.enabled;
+                root.blueLightEnabled = (typeof _bl === "object" && _bl !== null) ? (_bl.value ?? false) : (_bl ?? false);
+                const _blt = s.blueLight?.temperature;
+                const _bltv = (typeof _blt === "object" && _blt !== null) ? _blt.value : _blt;
+                root.blueLightTemperature = Math.max(1000, Math.min(20000, Math.round(Number(_bltv)) || 4000));
+                const _bla = s.blueLight?.auto;
+                root.blueLightAuto = (typeof _bla === "object" && _bla !== null) ? (_bla.value ?? false) : (_bla ?? false);
+                const _bls = s.blueLight?.start;
+                root.blueLightStart = root._normTime((typeof _bls === "object" && _bls !== null) ? _bls.value : _bls, "21:00");
+                const _ble = s.blueLight?.end;
+                root.blueLightEnd = root._normTime((typeof _ble === "object" && _ble !== null) ? _ble.value : _ble, "07:00");
+
+                // Rating tag leads, defaulting to -rating:explicit, done here (not viewer
+                // boot) so the file's tags are normalized the moment they are adopted.
+                let _tags = (s.booru?.tags ?? ["-rating:explicit"]).slice();
+                const _rt = _tags.find(t => t.match(/[-]rating:explicit|rating:explicit/));
+                _tags = _tags.filter(t => !t.match(/[-]rating:explicit|rating:explicit/));
+                _tags.unshift(_rt ?? "-rating:explicit");
+                root.booru = {
+                    api: s.booru?.api ?? {
+                        name: "Danbooru",
+                        value: "danbooru",
+                        url: "https://danbooru.donmai.us/",
+                        idSearchUrl: "https://danbooru.donmai.us/posts/"
+                    },
+                    tags: _tags,
+                    limit: s.booru?.limit ?? 100,
+                    page: s.booru?.page ?? 1,
+                    columns: s.booru?.columns ?? 3,
+                    bookmarks: s.booru?.bookmarks ?? [],
+                    pins: s.booru?.pins ?? [],
+                    selectedTab: s.booru?.selectedTab ?? s.booru?.api?.name ?? "Danbooru"
+                };
+                root.apiKeys = root.mergeApiKeys(s.apiKeys);
+                root.userAgents = root.mergeUserAgents(s.userAgents);
+
+                // Skip the assign when the waifu post is unchanged (same id+api+extension):
+                // every settings write hands down a fresh identity and re-kicks downloads.
+                const _w = s.waifuWidget?.current ?? null;
+                if (root.waifuKey(_w) !== root.waifuKey(root.waifu))
+                    root.waifu = _w;
+
+                // ChatBot provider (restored on launch; stored as the model
+                // value string here).
+                const cbApi = s.chatBot?.api;
+                root.chatBotApi = (cbApi && typeof cbApi === "object" ? cbApi.value : cbApi) ?? "openai/gpt-4o-mini";
+                // ChatBot context chips (defaults on; merge saved flags over them).
+                const cbCtx = s.chatBot?.context ?? {};
+                root.chatBotContext = ({
+                    ws: cbCtx.ws ?? true,
+                    win: cbCtx.win ?? true,
+                    clip: cbCtx.clip ?? true,
+                    file: cbCtx.file ?? true
+                });
+                root.chatBotNotify = s.chatBot?.notify ?? false;
+
+                // Lockscreen grace period (seconds of free Esc dismiss)
+                root.lockGraceSeconds = s.lockscreen?.graceSeconds ?? 10;
+
+                const _dtc = s.dynamicThemeColors;
+                root.dynamicThemeColors = (typeof _dtc === "object" && _dtc !== null ? _dtc.value : _dtc) ?? false;
+                const _dtv = s.dynamicThemeVariants;
+                root.dynamicThemeVariants = (typeof _dtv === "object" && _dtv !== null ? _dtv.value : _dtv) ?? false;
+
+                root.screenshot = root.normalizeScreenshotSettings(s.screenshot);
+                root.recording = root.normalizeRecordingSettings(s.recording);
+
+                // Full schema (blur passes, xray, gaps, opacities) — a partial one reset
+                // missing keys to 0/false on every reload; defaults from _hyprlandLeafSchema.
+                root.hyprland = (() => {
+                        const out = {};
+                        for (const leaf of root._hyprlandLeafSchema) {
+                            const node = leaf.path.reduce((o, k) => ((o == null) ? undefined : o[k]), s.hyprland);
+                            const v = ((typeof node === "object" && node !== null) ? node.value : undefined) ?? leaf.def;
+                            let target = out;
+                            for (let i = 0; i < leaf.path.length - 1; i++) {
+                                const g = leaf.path[i];
+                                if (target[g] === undefined)
+                                    target[g] = {};
+                                target = target[g];
+                            }
+                            target[leaf.path[leaf.path.length - 1]] = v;
+                        }
+                        return out;
+                    })();
+            }
+        } catch (e) {
+            console.warn("[Settings] parse failed:", e);
+        }
+    }
+
+    Component.onCompleted: {
+        root.reload();
+        root._readyTimer.start();
+        Qt.callLater(function () {
+            if (root.gameModeEnabled)
+                root.applyGameMode(true);
+            // Re-apply after a shell restart (idempotent: a running hyprsunset just gets
+            // the same temperature); auto mode applies its own state on the first tick.
+            if (root.blueLightEnabled && !root.blueLightAuto)
+                root.applyBlueLight(true);
+        });
+    }
+
+    // Blue light filter via hyprsunset: ON sets the temperature over IPC (or starts the
+    // daemon), OFF uses `identity` so a user-managed daemon is never killed; no conf needed.
+    function applyBlueLight(enabled) {
+        root.blueLightEnabled = enabled;
+        const temp = Math.max(1000, Math.min(20000, Math.round(root.blueLightTemperature) || 4000));
+        Quickshell.execDetached(["bash", "-c", enabled ? `
+            if ! command -v hyprsunset >/dev/null 2>&1; then
+                notify-send -a ArchEclipse "Blue light filter" "hyprsunset is not installed" >/dev/null 2>&1 || true
+                exit 0
+            fi
+            if pgrep -x hyprsunset >/dev/null 2>&1; then
+                # (stale/hung daemon), restart the daemon with the temperature.
+                out="$(hyprctl hyprsunset temperature ${temp} 2>&1)" || out="Couldn't"
+                case "$out" in
+                    Couldn*|*rror*)
+                        pkill -x hyprsunset >/dev/null 2>&1
+                        sleep 0.15
+                        setsid -f hyprsunset --temperature ${temp} >/dev/null 2>&1
+                        ;;
+                esac
+            else
+                setsid -f hyprsunset --temperature ${temp} >/dev/null 2>&1
+            fi` : `
+            hyprctl hyprsunset identity >/dev/null 2>&1 || true`]);
+        root.schedulePersist();
+    }
+
+    // ---- Blue light schedule (auto mode) ----
+    function _timeToMinutes(str, fallback) {
+        const m = /^(\d{1,2}):(\d{2})$/.exec(String(str));
+        if (!m)
+            return fallback;
+        const h = parseInt(m[1]);
+        const mi = parseInt(m[2]);
+        if (h > 23 || mi > 59)
+            return fallback;
+        return h * 60 + mi;
+    }
+    function _normTime(str, fallback) {
+        const t = root._timeToMinutes(str, -1);
+        if (t < 0)
+            return fallback;
+        return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+    }
+    // Public: "7:30" -> "07:30"; anything invalid -> fallback (SettingsWidget time fields)
+    function normalizeTime(str, fallback) {
+        return root._normTime(str, fallback);
+    }
+
+    // Leaves edit by dotted path ("decoration.rounding"): reads return 0 when missing,
+    // writes clone the subtree so every bound row re-evaluates, then schedule a persist.
+    function hyprGet(path) {
+        let o = root.hyprland;
+        for (const k of path.split(".")) {
+            if (o == null)
+                return 0;
+            o = o[k];
+        }
+        return (o == null) ? 0 : o;
+    }
+    function hyprSet(path, value) {
+        const keys = path.split(".");
+        const h = JSON.parse(JSON.stringify(root.hyprland || {}));
+        let o = h;
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (o[keys[i]] == null || typeof o[keys[i]] !== "object")
+                o[keys[i]] = {};
+            o = o[keys[i]];
+        }
+        o[keys[keys.length - 1]] = value;
+        root.hyprland = h;
+        root.schedulePersist();
+    }
+
+    // Lua builders emit nested tables (hl.config({ decoration = { rounding = 16 } }));
+    // the flat "decoration:rounding = 16" form is invalid on lua-parser Hyprland builds.
+    function luaValue(v) {
+        if (typeof v === "boolean")
+            return v ? "true" : "false";
+        if (typeof v === "number")
+            return String(v);
+        if (Array.isArray(v))
+            return "{ " + v.map(x => root.luaValue(x)).join(", ") + " }";
+        return "\"" + String(v).replace(/\\/g, "\\\\").replace(/\"/g, "\\\"") + "\"";
+    }
+    function luaKey(k) {
+        return /^[A-Za-z_][A-Za-z0-9_]*$/.test(k) ? k : "[\"" + k + "\"]";
+    }
+    function buildLuaConfig(fullKey, value) {
+        const parts = fullKey.split(":");
+        let expr = root.luaValue(value);
+        for (let i = parts.length - 1; i >= 0; i--)
+            expr = "{ " + root.luaKey(parts[i]) + " = " + expr + " }";
+        return "hl.config(" + expr + ")";
+    }
+
+    // Apply one leaf live: one nested-table lua file per key plus an instant
+    // `hyprctl eval` (`hyprctl keyword` is rejected on lua-parser builds).
+    function applyHyprlandSettingLive(fullKey, value) {
+        const keyword = fullKey.replace(/\./g, ":");
+        const fileName = fullKey.replace(/\./g, "_");
+        const luaConfig = root.buildLuaConfig(keyword, value);
+        try {
+            Quickshell.execDetached(["bash", "-c", `mkdir -p $HOME/.config/hypr/config/custom && ` + `cat > $HOME/.config/hypr/config/custom/${fileName}.lua <<'EOF'\n${luaConfig}\nEOF\n` + `hyprctl eval '${luaConfig}'`]);
+        } catch (e) {
+            console.warn("[Settings] apply live:", e);
+        }
+    }
+
+    // True when "now" is inside [start, end). Start > end spans midnight;
+    // start == end means "never".
+    function blueLightScheduleActive() {
+        const s = root._timeToMinutes(root.blueLightStart, 21 * 60);
+        const e = root._timeToMinutes(root.blueLightEnd, 7 * 60);
+        // The minute event can arrive before the wall-clock minute rolls over, so use the
+        // later of the two (otherwise the transition slips a minute).
+        const d = new Date(Math.max(Date.now(), root._blueLightClock.date.getTime()));
+        const now = d.getHours() * 60 + d.getMinutes();
+        if (s === e)
+            return false;
+        return s < e ? (now >= s && now < e) : (now >= s || now < e);
+    }
+    // -1 = unknown (forces an apply), 0 = outside window, 1 = inside window
+    property int _blSched: -1
+    // Human-readable window summary for SettingsWidget, so an unintended wrap-around
+    // (03:15 -> 03:13 = 23h58) is obvious; reads start/end/_blSched so it refreshes.
+    function blueLightHint() {
+        const s = root._timeToMinutes(root.blueLightStart, 21 * 60);
+        const e = root._timeToMinutes(root.blueLightEnd, 7 * 60);
+        if (s === e)
+            return "Start equals end: the filter will never turn on.";
+        const dur = (e - s + 1440) % 1440;
+        let t = "ON " + root.blueLightStart + " \u2192 OFF " + root.blueLightEnd + (s > e ? " (next day)" : "")
+            + " \u00b7 " + Math.floor(dur / 60) + " h " + (dur % 60) + " min";
+        if (root._blSched === 1)
+            t += " \u00b7 active now";
+        return t;
+    }
+    function _blueLightTick() {
+        if (!root.ready || !root.blueLightAuto)
+            return;
+        const want = root.blueLightScheduleActive();
+        const first = root._blSched < 0;
+        if (first || (want ? 1 : 0) !== root._blSched) {
+            root._blSched = want ? 1 : 0;
+            // Only acts on a boundary crossing (or the first tick), so a manual
+            // toggle in between sticks until the next boundary.
+            if (first || root.blueLightEnabled !== want)
+                root.applyBlueLight(want);
+        }
+    }
+    function _blueLightRescan() {
+        root._blSched = -1;
+        root._blueLightTick();
+    }
+    // Minute-aligned clock like the bar Clock: fires when the wall-clock minute changes
+    // (after suspend too) — no polling lag, and no wakeups while auto mode is off.
+    property SystemClock _blueLightClock: SystemClock {
+        precision: SystemClock.Minutes
+        enabled: root.ready && root.blueLightAuto
+        onDateChanged: root._blueLightTick()
+    }
+
+    function applyGameMode(enabled) {
+        const stateFile = "${XDG_RUNTIME_DIR:-/tmp}/archeclipse-gamemode-profile-$UID";
+        const requestPidFile = "${XDG_RUNTIME_DIR:-/tmp}/archeclipse-gamemode-request-$UID";
+        root.gameModeEnabled = enabled;
+        Quickshell.execDetached(["bash", "-c", enabled ? `set -u
+            hyprctl eval 'hl.config({
+                general = {
+                    gaps_in = 0,
+                    gaps_out = 0,
+                    border_size = 1,
+                    allow_tearing = true,
+                },
+                animations = {
+                    enabled = false,
+                },
+                decoration = {
+                    shadow = { enabled = false },
+                    blur = { enabled = false },
+                    rounding = 0,
+                },
+            })' >/dev/null 2>&1 || true
+            if command -v powerprofilesctl >/dev/null 2>&1; then
+                profile="$(powerprofilesctl get 2>/dev/null || true)"
+                [ -n "$profile" ] && printf '%s\n' "$profile" > "${stateFile}"
+                if powerprofilesctl list 2>/dev/null | grep -qE '(^|[[:space:]])performance([[:space:]]|:)'; then
+                    powerprofilesctl set performance >/dev/null 2>&1 || true
+                fi
+            fi
+            if command -v gamemoded >/dev/null 2>&1; then
+                if [ ! -s "${requestPidFile}" ] || ! kill -0 "$(cat "${requestPidFile}")" 2>/dev/null; then
+                    gamemoded --request >/dev/null 2>&1 &
+                    printf '%s\n' "$!" > "${requestPidFile}"
+                fi
+            fi` : `set -u
+            hyprctl reload >/dev/null 2>&1 || true
+            if [ -s "${requestPidFile}" ]; then
+                request_pid="$(cat "${requestPidFile}")"
+                if kill -0 "$request_pid" 2>/dev/null; then
+                    kill "$request_pid" 2>/dev/null || true
+                    for _ in 1 2 3 4 5; do
+                        kill -0 "$request_pid" 2>/dev/null || break
+                        sleep 0.1
+                    done
+                fi
+                rm -f "${requestPidFile}"
+            fi
+            if command -v powerprofilesctl >/dev/null 2>&1 && [ -s "${stateFile}" ]; then
+                profile="$(tr -d '\r\n' < "${stateFile}")"
+                if [ -n "$profile" ]; then
+                    for _ in 1 2 3; do
+                        powerprofilesctl set "$profile" >/dev/null 2>&1 || true
+                        [ "$(powerprofilesctl get 2>/dev/null || true)" = "$profile" ] && break
+                        sleep 0.2
+                    done
+                fi
+                rm -f "${stateFile}"
+            fi`]);
+        root.schedulePersist();
+    }
+
+    // Auto-persist: debounce writes so the settings file isn't thrashed
+    // by rapid UI toggles (e.g. dragging the opacity slider).
+    property Timer _persistTimer: Timer {
+        interval: 250
+        onTriggered: persist()
+    }
+    function schedulePersist() {
+        if (root.ready)
+            _persistTimer.start();
+    }
+
+    // Handlers exist only for keys written as `Settings.x = ...` outside updateSetting()
+    // (that one persists itself); onApiKeysChanged covers SettingsWidget's direct write.
+    Connections {
+        target: root
+        function onBarSmartHideChanged() {
+            root.schedulePersist();
+        }
+        function onBarFullWidthChanged() {
+            root.schedulePersist();
+        }
+        function onRevealInPressureChanged() {
+            root.schedulePersist();
+        }
+        function onRevealOutPressureChanged() {
+            root.schedulePersist();
+        }
+        function onBarOrientationChanged() {
+            root.schedulePersist();
+        }
+        function onRightPanelWidgetsChanged() {
+            root.schedulePersist();
+        }
+        function onApiKeysChanged() {
+            root.schedulePersist();
+        }
+        function onDateFormatChanged() {
+            root.schedulePersist();
+        }
+        function onUiOpacityChanged() {
+            root.schedulePersist();
+        }
+        function onUiRadiusChanged() {
+            root.schedulePersist();
+        }
+        function onUiPadChanged() {
+            root.schedulePersist();
+        }
+        function onUiSpacingChanged() {
+            root.schedulePersist();
+        }
+        function onUiFontSizeChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsSuperKeyChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsUseMacSymbolChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsUseFunctionSymbolChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsUseMouseSymbolChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsSplitButtonsChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsFontSizeChanged() {
+            root.schedulePersist();
+        }
+        function onKeybindsDescriptionFontSizeChanged() {
+            root.schedulePersist();
+        }
+        function onAnimationsEnabledChanged() {
+            root.schedulePersist();
+        }
+        function onAnimScaleChanged() {
+            root.schedulePersist();
+        }
+        function onIslandAnimStyleChanged() {
+            root.schedulePersist();
+        }
+        function onLeftPanelHotZoneSizeChanged() {
+            root.schedulePersist();
+        }
+        function onRightPanelHotZoneSizeChanged() {
+            root.schedulePersist();
+        }
+        function onLeftPanelHotZoneChanged() {
+            root.schedulePersist();
+        }
+        function onRightPanelHotZoneChanged() {
+            root.schedulePersist();
+        }
+        function onLockGraceSecondsChanged() {
+            root.schedulePersist();
+        }
+        function onLeftPanelLockChanged() {
+            root.schedulePersist();
+        }
+        function onRightPanelLockChanged() {
+            root.schedulePersist();
+        }
+        function onLeftPanelWidthChanged() {
+            root.schedulePersist();
+        }
+        function onLeftPanelWidgetChanged() {
+            root.schedulePersist();
+        }
+        function onRightPanelWidthChanged() {
+            root.schedulePersist();
+        }
+        function onHyprlandChanged() {
+            root.schedulePersist();
+        }
+        function onDynamicThemeColorsChanged() {
+            root.schedulePersist();
+        }
+        function onDynamicThemeVariantsChanged() {
+            root.schedulePersist();
+        }
+        function onGameModeEnabledChanged() {
+            root.schedulePersist();
+        }
+        function onBlueLightEnabledChanged() {
+            root.schedulePersist();
+        }
+        function onReadyChanged() {
+            // settings just loaded from disk: evaluate the schedule right away
+            root._blueLightRescan();
+        }
+        function onBlueLightAutoChanged() {
+            root.schedulePersist();
+            root._blueLightRescan();
+        }
+        function onBlueLightStartChanged() {
+            root.schedulePersist();
+            root._blueLightRescan();
+        }
+        function onBlueLightEndChanged() {
+            root.schedulePersist();
+            root._blueLightRescan();
+        }
+        function onBlueLightTemperatureChanged() {
+            root.schedulePersist();
+            // Live-apply a new temperature while the filter is on
+            if (root.ready && root.blueLightEnabled)
+                root.applyBlueLight(true);
+        }
+        function onWaifuChanged() {
+            root.schedulePersist();
+        }
+        function onBooruChanged() {
+            root.schedulePersist();
+        }
+        function onChatBotApiChanged() {
+            root.schedulePersist();
+        }
+        function onChatBotContextChanged() {
+            root.schedulePersist();
+        }
+        function onChatBotNotifyChanged() {
+            root.schedulePersist();
+        }
+    }
+}

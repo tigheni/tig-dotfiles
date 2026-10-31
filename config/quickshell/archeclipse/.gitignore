@@ -1,0 +1,11 @@
+.qmlls.ini
+.qmllint.ini
+
+tests/
+*.pyc
+
+docs
+profiler/traces/*.qtd
+.claude
+.agents
+skills-lock.json

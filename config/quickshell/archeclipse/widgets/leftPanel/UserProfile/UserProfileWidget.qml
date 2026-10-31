@@ -1,0 +1,1534 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
+import Quickshell.Widgets
+import qs.theme
+import qs.widgets.leftPanel
+import qs.widgets.leftPanel.UserProfile.components as Profile
+import qs.widgets.shared
+import qs.services
+
+// User profile: magic-link auth writes session.json, the profile comes from Supabase REST,
+// settings sync to the qs cache. Minimal mode (lockscreen) shows avatar + username only.
+Item {
+    id: root
+    property string monitorName: ""
+    property int widgetWidth: parent.width
+    property string className: ""
+    property bool minimal: false
+
+    // --- Config (values live in the Supabase singleton; keep these aliases
+    // so the rest of the widget is untouched) ---
+    readonly property string supabaseUrl: Supabase.url
+    readonly property string supabaseKey: Supabase.anonKey
+    readonly property string homeDir: Supabase.homeDir
+    // scripts/auth-server-callback.py owns session.json (its SESSION_PATH) — no legacy paths;
+    // shell.qml ensures the auth cache dir at startup.
+    readonly property string authServerScript: homeDir + "/.config/quickshell/archeclipse/scripts/auth-server-callback.py"
+    readonly property string authSessionPath: Supabase.authSessionPath
+    readonly property string authLogPath: "/tmp/qs-auth-server.log"
+    readonly property string settingsPath: homeDir + "/.cache/quickshell/settings/settings.json"
+    readonly property string settingsMetaPath: homeDir + "/.cache/quickshell/settings/settings-sync.json"
+    readonly property string avatarPath: homeDir + "/.face.icon"
+    // Cache-busting avatar source: same path strings don't refetch after
+    // cp/curl rewrites ~/.face.icon, so toggle through "" to force reload.
+    property string avatarSrc: homeDir + "/.face.icon"
+    function reloadAvatar() {
+        root.avatarSrc = "";
+        Qt.callLater(() => {
+            root.avatarSrc = root.avatarPath;
+        });
+    }
+
+    // --- State ---
+    property var profile: null
+    property string progressStatus: "idle"
+    property string progressText: "Not signed in"
+    property bool isSyncing: false
+    property bool isRefreshing: false
+    property string lastSyncAt: "Never"
+    property string lastSyncResult: "-"
+    property string lastRemoteUpdatedAt: "Never"
+    property var _cachedSession: null
+    // Magic-link button confirmation (flips the label on success)
+    property string magicState: "Send Magic Link"
+
+    // Per-API bookmark counts from Settings.booru.bookmarks
+    // (each item stores api.value).
+    readonly property var booruApis: [
+        {
+            name: "Danbooru",
+            value: "danbooru"
+        },
+        {
+            name: "Gelbooru",
+            value: "gelbooru"
+        },
+        {
+            name: "Safebooru",
+            value: "safebooru"
+        },
+    ]
+    readonly property var booruFavoriteCounts: {
+        const counts = {
+            danbooru: 0,
+            gelbooru: 0,
+            safebooru: 0
+        };
+        const marks = Settings.booru ? Settings.booru.bookmarks : null;
+        if (marks)
+            for (const b of marks) {
+                const v = b && b.api ? b.api.value : null;
+                if (v && typeof counts[v] === "number")
+                    counts[v] += 1;
+            }
+        return counts;
+    }
+    // Fastfetch pin count.
+    readonly property int pinnedCount: {
+        const pins = Settings.booru ? Settings.booru.pins : null;
+        return pins ? pins.length : 0;
+    }
+
+    property QtObject fileWatch: QtObject {
+        id: _fw
+    }
+    property int activeTab: 0
+
+    // Change-gated polling: poll the two LOCAL files and only refetch
+    // the profile when session.json actually changed — no network on ticks.
+    property string _lastSessionText: ""
+    property int _netAttempts: 0
+
+    // UserProfileState cache: LeftIsland is recreated on every open, so restore instantly and
+    // refetch only when a cheap local `cat` shows session.json actually changed elsewhere.
+    function saveToCache() {
+        UserProfileState.profile = root.profile;
+        UserProfileState.cachedSession = root._cachedSession;
+        UserProfileState.cachedUid = root._cachedUid;
+        UserProfileState.cachedEmail = root._cachedEmail;
+        UserProfileState.supporterSince = root.supporterSince;
+        UserProfileState.lastSessionText = root._lastSessionText;
+        UserProfileState.lastSyncAt = root.lastSyncAt;
+        UserProfileState.lastSyncResult = root.lastSyncResult;
+        UserProfileState.lastRemoteUpdatedAt = root.lastRemoteUpdatedAt;
+        UserProfileState.initialized = true;
+    }
+    function restoreFromCache() {
+        root.profile = UserProfileState.profile;
+        root._cachedSession = UserProfileState.cachedSession;
+        root._cachedUid = UserProfileState.cachedUid;
+        root._cachedEmail = UserProfileState.cachedEmail;
+        root.supporterSince = UserProfileState.supporterSince;
+        root._lastSessionText = UserProfileState.lastSessionText;
+        root.lastSyncAt = UserProfileState.lastSyncAt;
+        root.lastSyncResult = UserProfileState.lastSyncResult;
+        root.lastRemoteUpdatedAt = UserProfileState.lastRemoteUpdatedAt;
+        if (!root.profile) {
+            root.progressStatus = "idle";
+            root.progressText = "Not signed in";
+        } else {
+            // Don't leave the initial "Not signed in" idle text under a
+            // restored profile — mirror what a fresh fetch would show.
+            root.progressStatus = "idle";
+            const un = root.profile.username;
+            root.progressText = un ? root.supporterLabel() : "Signed in, but profile not found";
+        }
+    }
+
+    Component.onCompleted: {
+        if (UserProfileState.initialized) {
+            restoreFromCache();
+            // No usable cached profile (first load failed, still in flight, or signed state
+            // changed): retry once. Signed out this is local-only (cat -> idle, no network).
+            if (!root.profile) {
+                root.loadProfile();
+                pollTimer.restart();
+                return;
+            }
+            // Local avatar file only — no network.
+            root.reloadAvatar();
+            pollTimer.restart();
+            // One-shot local session check: onPollSession refetches only
+            // when the file text differs from the cached one.
+            const p = pollSessionComp.createObject(root);
+            p.command = ["cat", root.authSessionPath];
+            p.running = true;
+            return;
+        }
+        applySettingsSyncMeta();
+        // The auth server is NOT started here: sendMagicLink() starts the managed listener and it
+        // stops itself once session.json appears (or times out), so no detached server goes stale.
+        _netTimer.restart();
+    }
+    Component.onDestruction: {
+        // Never clobber a good cached profile with a transient failure: if this instance has
+        // none, the cache holds one and the session didn't change, keep the cache.
+        if (!root.profile && UserProfileState.profile && root._lastSessionText === UserProfileState.lastSessionText)
+            return;
+        root.saveToCache();
+    }
+
+    // Network gate (wait up to 30s): check the Supabase
+    // health endpoint, 3s apart, max 10 tries, then proceed regardless.
+    property Timer _netTimer: Timer {
+        interval: 3000
+        repeat: false
+        running: false
+        onTriggered: {
+            const p = netGateComp.createObject(root);
+            p.command = ["curl", "-sS", "-o", "/dev/null", "--max-time", "5", root.supabaseUrl + "/auth/v1/health"];
+            p.running = true;
+        }
+    }
+
+    function onNetGateDone(ok) {
+        if (ok || root._netAttempts >= 9) {
+            root.loadProfile();
+            pollTimer.restart();
+            return;
+        }
+        root._netAttempts++;
+        _netTimer.restart();
+    }
+
+    property Timer pollTimer: Timer {
+        interval: 10000
+        repeat: true
+        running: false
+        onTriggered: {
+            const p = pollSessionComp.createObject(root);
+            p.command = ["cat", root.authSessionPath];
+            p.running = true;
+            root.applySettingsSyncMeta();
+        }
+    }
+
+    function onPollSession(text) {
+        if (text !== root._lastSessionText) {
+            root._lastSessionText = text;
+            root.saveToCache();
+            root.loadProfile();
+        }
+    }
+
+    // ===== PROFILE =====
+    function loadProfile() {
+        const p = loadAuthComp.createObject(root);
+        p.command = ["cat", root.authSessionPath];
+        p.running = true;
+    }
+
+    function lookupUserId() {
+        return root._cachedUid || _cachedSession?.user?.id || _cachedSession?.id || "";
+    }
+    // UID resolved from /auth/v1/user: session.json only carries tokens (no id), so the profile
+    // query cannot reuse lookupUserId() synchronously.
+    property string _cachedUid: ""
+    property string _cachedEmail: ""
+    property string supporterSince: ""
+    // Supabase access_tokens expire after 1h, so refresh via grant_type=refresh_token and retry
+    // the request once — else every call fails "JWT expired" and forces a magic-link re-login.
+    property bool _refreshing: false
+    property string _retryAfterRefresh: ""
+
+    function tokenNeedsRefresh() {
+        const s = root._cachedSession;
+        if (!s?.access_token)
+            return false;
+        const exp = Number(s.expires_at || 0);
+        if (!exp)
+            return false;
+        // Refresh 60s before expiry; expires_at is unix seconds.
+        return Date.now() / 1000 >= exp - 60;
+    }
+
+    function isAuthErrorText(text) {
+        return Supabase.isAuthError(text);
+    }
+
+    function doRefresh(reason) {
+        if (root._refreshing)
+            return;
+        const rt = root._cachedSession?.refresh_token || "";
+        if (!rt) {
+            root.progressStatus = "error";
+            root.progressText = "Session expired — please sign in again";
+            Notifications.notify({
+                summary: "Session expired",
+                body: "Please send a new magic link to sign in again."
+            });
+            return;
+        }
+        root._refreshing = true;
+        root._retryAfterRefresh = reason || "";
+        root.progressStatus = "loading";
+        root.progressText = "Refreshing session...";
+        const p = refreshTokenComp.createObject(root);
+        p.command = ["bash", "-c", "curl -sS -X POST -H 'apikey: " + supabaseKey + "' -H 'Content-Type: application/json' -d " + JSON.stringify(JSON.stringify({
+                refresh_token: rt
+            })) + " " + JSON.stringify(supabaseUrl + "/auth/v1/token?grant_type=refresh_token")];
+        p.running = true;
+    }
+
+    function onRefreshFinished(text) {
+        root._refreshing = false;
+        let r = null;
+        try {
+            r = text ? JSON.parse(text) : null;
+        } catch (e) {
+            r = null;
+        }
+        if (!r?.access_token) {
+            const reason = root._retryAfterRefresh;
+            root._retryAfterRefresh = "";
+            root.progressStatus = "error";
+            root.progressText = "Session expired — please sign in again";
+            Notifications.notify({
+                summary: "Session expired",
+                body: "Refresh failed. Please send a new magic link."
+            });
+            return;
+        }
+        // Merge refreshed tokens into the cached session, preserving the embedded user (older
+        // saves carry it) and the magic-link type marker.
+        const prev = root._cachedSession || {};
+        root._cachedSession = {
+            access_token: r.access_token,
+            refresh_token: r.refresh_token || prev.refresh_token || "",
+            expires_at: r.expires_at || prev.expires_at || "",
+            expires_in: r.expires_in || prev.expires_in || 3600,
+            token_type: r.token_type || prev.token_type || "bearer",
+            type: prev.type || "magiclink",
+            user: r.user || prev.user || undefined,
+            email: r.user?.email || prev.email || undefined
+        };
+        // Persist so the next shell start / poll sees the fresh token.
+        const sp = refreshSaveComp.createObject(root);
+        sp.command = ["bash", "-c", "mkdir -p " + JSON.stringify(root.authSessionPath.split("/").slice(0, -1).join("/")) + " && cat > " + JSON.stringify(root.authSessionPath) + " <<'EOF'\n" + JSON.stringify(root._cachedSession, null, 2) + "\nEOF"];
+        sp.running = true;
+        const reason = root._retryAfterRefresh;
+        root._retryAfterRefresh = "";
+        root.saveToCache();
+        if (reason === "download" || reason === "upload") {
+            root.isSyncing = false;
+            root.syncSettings(reason);
+        } else {
+            // Profile path: re-run from the top so uid resolution retries
+            // with the fresh token (handles both /user and profile steps).
+            root.loadProfile();
+        }
+    }
+
+    function handleSessionJson(text) {
+        root._lastSessionText = text || "";
+        let session = null;
+        try {
+            session = text ? JSON.parse(text) : null;
+        } catch (e) {
+            session = null;
+        }
+        root._cachedSession = session;
+        if (!session?.access_token) {
+            root.profile = null;
+            root._cachedUid = "";
+            root._cachedEmail = "";
+            root.supporterSince = "";
+            root.progressStatus = "idle";
+            root.progressText = "Not signed in";
+            root.isRefreshing = false;
+            root.saveToCache();
+            return;
+        }
+        // Session arrived (via /save POST or manual paste) — the on-demand
+        // listener has done its job, stop it so it only runs when needed.
+        root.stopAuthServer("session saved");
+        // Proactive refresh: don't burn a failing /user call when we can
+        // see from expires_at that the token is already stale.
+        if (root.tokenNeedsRefresh()) {
+            root.progressStatus = "loading";
+            root.progressText = "Refreshing session...";
+            root.doRefresh("profile");
+            return;
+        }
+        // Fast path: session.json already embeds the user (older saves) —
+        // skip straight to the profile query.
+        const embeddedId = session?.user?.id ?? session?.id ?? "";
+        if (embeddedId) {
+            root._cachedUid = embeddedId;
+            root._cachedEmail = session?.user?.email ?? session?.email ?? "";
+            root.saveToCache();
+            root.fetchUserProfile(embeddedId);
+            return;
+        }
+        root.progressStatus = "loading";
+        root.progressText = "Loading profile...";
+        // Step 1: resolve the uid
+        // from /auth/v1/user first — the profile table needs id=eq.<uid>.
+        const p = fetchUserComp.createObject(root);
+        p.command = ["bash", "-c", "curl -sS -H 'apikey: " + supabaseKey + "' -H 'Authorization: Bearer " + session.access_token + "' '" + supabaseUrl + "/auth/v1/user'"];
+        p.running = true;
+    }
+
+    function onUserFetched(text) {
+        let user = null;
+        try {
+            user = text ? JSON.parse(text) : null;
+        } catch (e) {
+            user = null;
+        }
+        if (!user?.id) {
+            // Expired access_token returns {"code":403,...,"msg":"...expired"}
+            // here — refresh once and retry instead of looking signed out.
+            if (!root._refreshing && root.isAuthErrorText(text)) {
+                root.doRefresh("profile");
+                return;
+            }
+            root.profile = null;
+            root.progressStatus = "error";
+            root.progressText = "Signed in, but profile not found";
+            root.isRefreshing = false;
+            return;
+        }
+        root._cachedUid = user.id;
+        root._cachedEmail = user.email ?? "";
+        root.saveToCache();
+        root.fetchUserProfile(user.id);
+    }
+
+    function fetchUserProfile(uid) {
+        root.progressStatus = "loading";
+        root.progressText = "Loading profile...";
+        const session = root._cachedSession;
+        if (!session?.access_token)
+            return;
+        const p = fetchProfileComp.createObject(root);
+        // NOTE: user_profiles has no is_supporter column — entitlement is the
+        // presence of a `supporters` row (see checkSupporter below).
+        p.command = ["bash", "-c", "curl -sS -H 'apikey: " + supabaseKey + "' -H 'Authorization: Bearer " + session.access_token + "' '" + supabaseUrl + "/rest/v1/user_profiles?select=id,username,avatar&id=eq." + encodeURIComponent(uid) + "'"];
+        p.running = true;
+    }
+
+    // ===== SUPPORTER STATE ===== — a `supporters` row is written only by the verified-payment
+    // DB trigger, so this read-only query can never grant status.
+    function supporterLabel() {
+        if (!root.profile)
+            return "Not signed in";
+        const name = root.profile.username ?? "No username";
+        if (root.profile.is_supporter === true)
+            return name + " \u2022 Supporter";
+        if (root.profile.is_supporter === false)
+            return name + " \u2022 Member";
+        return name + " \u2022 \u2026";
+    }
+    function checkSupporter() {
+        const session = root._cachedSession;
+        const uid = lookupUserId();
+        if (!session?.access_token || !uid)
+            return;
+        const p = supporterCheckComp.createObject(root);
+        p.command = ["bash", "-c", "curl -sS -H 'apikey: " + supabaseKey + "' -H 'Authorization: Bearer " + session.access_token + "' '" + supabaseUrl + "/rest/v1/supporters?select=id,created_at&id=eq." + encodeURIComponent(uid) + "'"];
+        p.running = true;
+    }
+    function onSupporterChecked(text) {
+        if (!root._refreshing && root.isAuthErrorText(text)) {
+            root.doRefresh("profile");
+            return;
+        }
+        let rows = null;
+        try {
+            rows = text ? JSON.parse(text) : null;
+        } catch (e) {
+            rows = null;
+        }
+        if (!Array.isArray(rows) || !root.profile)
+            return;
+        const supported = rows.length > 0;
+        const since = (supported && rows[0]?.created_at) ? rows[0].created_at : "";
+        if (root.profile.is_supporter === supported && root.supporterSince === since)
+            return;
+        root.supporterSince = since;
+        root.profile = {
+            id: root.profile.id,
+            email: root.profile.email,
+            username: root.profile.username,
+            avatar: root.profile.avatar,
+            is_supporter: supported
+        };
+        root.saveToCache();
+        root.progressStatus = "idle";
+        root.progressText = root.supporterLabel();
+    }
+
+    // ===== MAGIC LINK ===== — managed on-demand listener: authServerProc runs the callback
+    // script as a child while authServerActive is true (no nohup), dying with the shell.
+    property bool authServerActive: false
+    property string authServerStatus: "stopped"
+    // Fallback when the browser cannot reach the listener (server down, link opened elsewhere):
+    // paste the full callback URL and the #fragment is parsed in pure QML — no HTTP server.
+    property string callbackUrlText: ""
+    function sendMagicLink(email) {
+        if (!email || email.trim() === "") {
+            Notifications.notify({
+                summary: "Email",
+                body: "Enter a valid email"
+            });
+            return;
+        }
+        // Start the listener first so it is up by the time the user
+        // opens the email link (server must be listening for /callback).
+        startAuthServer();
+        const p = magicLinkComp.createObject(root);
+        p.command = ["bash", "-c", "curl -sS -X POST -H 'Content-Type: application/json' -H 'apikey: " + supabaseKey + "' -d '" + JSON.stringify({
+                email: email.trim(),
+                options: {
+                    shouldCreateUser: true,
+                    emailRedirectTo: "http://127.0.0.1:53100/callback"
+                }
+            }) + "' '" + supabaseUrl + "/auth/v1/otp'"];
+        p.running = true;
+    }
+
+    function startAuthServer() {
+        // Kill a stale detached server (legacy nohup holding the port), then onExited spawns the
+        // managed child; the #fragment never reaches it, so /callback must POST it to /save.
+        if (root.authServerActive)
+            return;
+        root.authServerStatus = "starting";
+        const p = authServerKickComp.createObject(root);
+        p.command = ["bash", "-c", "pkill -f '[a]uth-server-callback\\.py' || true"];
+        p.running = true;
+    }
+
+    function stopAuthServer(reason) {
+        if (!root.authServerActive && root.authServerStatus !== "starting")
+            return;
+        root.authServerActive = false;
+        root.authServerStatus = "stopped";
+        authServerTimeout.stop();
+    }
+
+    // Server-less fallback: parse the pasted callback URL's #fragment (browsers never send it)
+    // and write session.json directly, even if the listener never started.
+    function importCallbackUrl(url) {
+        const s = (url || "").trim();
+        if (!s) {
+            Notifications.notify({
+                summary: "Auth",
+                body: "Paste the callback URL first."
+            });
+            return;
+        }
+        const hashIdx = s.indexOf("#");
+        const frag = hashIdx >= 0 ? s.slice(hashIdx + 1) : "";
+        if (!frag || frag.indexOf("access_token=") < 0) {
+            Notifications.notify({
+                summary: "Invalid link",
+                body: "That URL has no #access_token=… fragment."
+            });
+            return;
+        }
+        const params = {};
+        for (const part of frag.split("&")) {
+            const eq = part.indexOf("=");
+            if (eq > 0)
+                params[decodeURIComponent(part.slice(0, eq))] = decodeURIComponent(part.slice(eq + 1));
+        }
+        if (!params.access_token) {
+            Notifications.notify({
+                summary: "Invalid link",
+                body: "Could not find access_token in the URL."
+            });
+            return;
+        }
+        // Stop the listener — we got the session without it.
+        root.stopAuthServer("manual import");
+        const session = {
+            access_token: params.access_token || "",
+            refresh_token: params.refresh_token || "",
+            expires_at: params.expires_at || "",
+            token_type: params.token_type || "bearer",
+            type: params.type || "magiclink"
+        };
+        const p = manualSaveComp.createObject(root);
+        p.command = ["bash", "-c", "mkdir -p " + JSON.stringify(root.authSessionPath.split("/").slice(0, -1).join("/")) + " && cat > " + JSON.stringify(root.authSessionPath) + " <<'EOF'\n" + JSON.stringify(session, null, 2) + "\nEOF"];
+        p.running = true;
+    }
+
+    // ===== UPDATE PROFILE =====
+    function updateProfile() {
+        const session = _cachedSession;
+        if (!session?.access_token) {
+            Notifications.notify({
+                summary: "Not signed in",
+                body: "Please sign in to update profile."
+            });
+            return;
+        }
+        root.progressStatus = "loading";
+        root.progressText = "Updating profile...";
+        const uid = lookupUserId();
+        const username = identityCard.username.trim() || homeDir.split("/").pop();
+        const p = updateProfileComp.createObject(root);
+        p.command = ["bash", "-c", "curl -sS -X PATCH -H 'Content-Type: application/json' -H 'apikey: " + supabaseKey + "' -H 'Authorization: Bearer " + session.access_token + "' -H 'Prefer: return=representation' -d '" + JSON.stringify({
+                username
+            }) + "' '" + supabaseUrl + "/rest/v1/user_profiles?id=eq." + encodeURIComponent(uid) + "'"];
+        p.running = true;
+    }
+
+    // ===== LOGOUT =====
+    function logout() {
+        logoutComp.createObject(root).running = true;
+        root.profile = null;
+        root._cachedSession = null;
+        root._cachedUid = "";
+        root._cachedEmail = "";
+        root.supporterSince = "";
+        root._lastSessionText = "";
+        root.progressStatus = "idle";
+        root.progressText = "Signed out";
+        root.saveToCache();
+        Notifications.notify({
+            summary: "Signed out",
+            body: "Your session has been cleared."
+        });
+    }
+
+    // ===== SETTINGS SYNC =====
+    function applySettingsSyncMeta() {
+        const p = readMetaComp.createObject(root);
+        p.command = ["cat", root.settingsMetaPath];
+        p.running = true;
+    }
+
+    function formatTs(iso) {
+        if (!iso)
+            return "Never";
+        const d = new Date(iso);
+        if (isNaN(d.getTime()))
+            return "Never";
+        const p = n => n.toString().padStart(2, "0");
+        return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+    }
+
+    function syncSettings(direction) {
+        if (root.isSyncing)
+            return;
+        const session = _cachedSession;
+        if (!session?.access_token) {
+            Notifications.notify({
+                summary: "Settings Sync",
+                body: "Not signed in."
+            });
+            return;
+        }
+        // Proactive refresh: never send a visibly-expired token — that
+        // failure used to surface as the misleading "No settings found".
+        if (root.tokenNeedsRefresh()) {
+            root.doRefresh(direction);
+            return;
+        }
+        root.isSyncing = true;
+        root.progressStatus = "loading";
+        root.progressText = direction === "upload" ? "Uploading settings..." : "Downloading settings...";
+        const uid = lookupUserId();
+        if (!uid) {
+            root.isSyncing = false;
+            root.progressStatus = "error";
+            root.progressText = "Refreshing session...";
+            root.doRefresh(direction);
+            return;
+        }
+
+        if (direction === "upload") {
+            const settingsJson = readLocalSettings();
+            // Never upload an empty stub — it would wipe the remote copy.
+            if (!settingsJson || Object.keys(settingsJson).length === 0) {
+                root.progressStatus = "error";
+                root.progressText = "Upload refused: local settings empty";
+                Notifications.notify({
+                    summary: "Settings Sync",
+                    body: "Local settings file is empty — refusing to overwrite the cloud copy."
+                });
+                return;
+            }
+            // Write the payload to a temp file and --data-binary it: inlining JSON in -d breaks
+            // on any single quote in the settings and always reported "Upload failed".
+            const payload = JSON.stringify({
+                id: uid,
+                settings: settingsJson,
+                updated_at: new Date().toISOString()
+            });
+            const p = syncUploadComp.createObject(root);
+            p.command = ["bash", "-c", "cat > /tmp/qs-settings-upload.json <<'QSSETTINGSEOF'\n" + payload + "\nQSSETTINGSEOF\ncurl -sS -X POST -H 'Content-Type: application/json' -H 'apikey: " + supabaseKey + "' -H 'Authorization: Bearer " + session.access_token + "' -H 'Prefer: resolution=merge-duplicates,return=representation' --data-binary @/tmp/qs-settings-upload.json '" + supabaseUrl + "/rest/v1/user_settings?on_conflict=id'"];
+            p.running = true;
+        } else {
+            const p = syncDownloadComp.createObject(root);
+            p.command = ["bash", "-c", "curl -sS -H 'apikey: " + supabaseKey + "' -H 'Authorization: Bearer " + session.access_token + "' '" + supabaseUrl + "/rest/v1/user_settings?select=id,settings,updated_at&id=eq." + encodeURIComponent(uid) + "'"];
+            p.running = true;
+        }
+    }
+
+    // Read the real on-disk
+    // settings file — never {} (an empty upload would wipe the remote copy).
+    function readLocalSettings() {
+        return Settings.readLocalSettingsJson();
+    }
+
+    // ===== AVATAR =====
+    // State carried across the convert -> upload -> patch -> fetch chain.
+    property string _avatarSrc: ""
+    property string _avatarUid: ""
+    property string _avatarUploadPath: ""
+    property string _avatarContentType: ""
+    property string _avatarExt: ""
+
+    function chooseAvatar() {
+        const p = zenityComp.createObject(root);
+        p.command = ["zenity", "--file-selection", "--title=Select Profile Picture", "--file-filter=Images (png, jpg, webp) | *.png *.jpg *.jpeg *.webp"];
+        p.running = true;
+    }
+
+    function onAvatarPicked(path) {
+        const clean = (path || "").trim();
+        if (!clean)
+            return;
+        const ext = (clean.split(".").pop() || "").toLowerCase();
+        const ctype = ext === "png" ? "image/png" : (ext === "jpg" || ext === "jpeg") ? "image/jpeg" : ext === "webp" ? "image/webp" : null;
+        if (!ctype) {
+            Notifications.notify({
+                summary: "Invalid image",
+                body: "Pick a PNG, JPG, or WebP file."
+            });
+            return;
+        }
+        const session = root._cachedSession;
+        const uid = lookupUserId();
+        // Not signed in: local-only copy.
+        if (!session?.access_token || !uid) {
+            root.progressStatus = "loading";
+            root.progressText = "Updating local avatar...";
+            Notifications.notify({
+                summary: "Not signed in",
+                body: "Updating local avatar only. Sign in to sync across devices."
+            });
+            root._avatarSrc = clean;
+            const p = setAvatarComp.createObject(root);
+            p.command = ["cp", clean, root.avatarPath];
+            p.running = true;
+            return;
+        }
+        root._avatarSrc = clean;
+        root._avatarUid = uid;
+        root._avatarContentType = ctype;
+        root._avatarExt = ext === "jpeg" ? "jpg" : ext;
+        root.progressStatus = "loading";
+        root.progressText = "Uploading avatar...";
+        // Convert non-JPEG via magick/convert;
+        // failures fall back to the original file inside the chain step.
+        if (ext === "jpg" || ext === "jpeg") {
+            root._avatarUploadPath = clean;
+            root.avatarUpload();
+        } else {
+            const p = avatarConvertComp.createObject(root);
+            p.command = ["bash", "-c", "magick " + JSON.stringify(clean) + " " + JSON.stringify("/tmp/" + uid + "-avatar.jpg") + " || convert " + JSON.stringify(clean) + " " + JSON.stringify("/tmp/" + uid + "-avatar.jpg")];
+            p.running = true;
+        }
+    }
+
+    function onAvatarConverted(ok) {
+        const tmp = "/tmp/" + root._avatarUid + "-avatar.jpg";
+        if (ok) {
+            root._avatarUploadPath = tmp;
+            root._avatarContentType = "image/jpeg";
+            root._avatarExt = "jpg";
+        } else {
+            Notifications.notify({
+                summary: "Image conversion warning",
+                body: "Conversion failed, uploading original file."
+            });
+            root._avatarUploadPath = root._avatarSrc;
+        }
+        root.avatarUpload();
+    }
+
+    function avatarUpload() {
+        const p = avatarUploadComp.createObject(root);
+        p.command = ["curl", "-sS", "-X", "PUT", "-H", "Content-Type: " + root._avatarContentType, "-H", "apikey: " + root.supabaseKey, "-H", "Authorization: Bearer " + (root._cachedSession?.access_token ?? ""), "-H", "x-upsert: true", "--data-binary", "@" + root._avatarUploadPath, root.supabaseUrl + "/storage/v1/object/avatars/" + root._avatarUid + "." + root._avatarExt];
+        p.running = true;
+    }
+
+    function onAvatarUploaded(ok) {
+        if (!ok) {
+            root.progressStatus = "error";
+            root.progressText = "Upload failed";
+            Notifications.notify({
+                summary: "Upload failed",
+                body: "Failed to upload profile picture."
+            });
+            return;
+        }
+        const url = root.supabaseUrl + "/storage/v1/object/public/avatars/" + root._avatarUid + "." + root._avatarExt;
+        root._avatarUrl = url;
+        const p = avatarPatchComp.createObject(root);
+        p.command = ["bash", "-c", "curl -sS -X PATCH -H 'Content-Type: application/json' -H 'apikey: " + root.supabaseKey + "' -H 'Authorization: Bearer " + (root._cachedSession?.access_token ?? "") + "' -H 'Prefer: return=representation' -d " + JSON.stringify(JSON.stringify({
+                avatar: url
+            })) + " " + JSON.stringify(root.supabaseUrl + "/rest/v1/user_profiles?id=eq." + encodeURIComponent(root._avatarUid))];
+        p.running = true;
+    }
+    property string _avatarUrl: ""
+
+    function onAvatarPatched(ok) {
+        if (!ok) {
+            root.progressStatus = "error";
+            root.progressText = "Upload failed";
+            Notifications.notify({
+                summary: "Upload failed",
+                body: "Failed to update profile picture."
+            });
+            return;
+        }
+        // Sync the fresh avatar down to ~/.face.icon immediately
+        // (keeps the UI truthful).
+        const p = avatarFetchComp.createObject(root);
+        p.command = ["curl", "-sS", "--max-time", "30", "-o", root.avatarPath, root._avatarUrl];
+        p.running = true;
+    }
+
+    function onAvatarFetched(ok) {
+        if (!ok) {
+            Notifications.notify({
+                summary: "Avatar sync failed",
+                body: "Uploaded, but the local picture could not be refreshed — will retry on next refresh."
+            });
+            root.progressStatus = "error";
+            root.progressText = "Avatar sync failed";
+            return;
+        }
+        root.progressStatus = "success";
+        root.progressText = "Avatar updated";
+        Notifications.notify({
+            summary: "Avatar updated",
+            body: "Your profile picture has been uploaded."
+        });
+        root.avatarPathChanged();
+        root.loadProfile();
+    }
+
+    function maskEmail(email) {
+        if (!email)
+            return "No email";
+        const at = email.indexOf("@");
+        if (at <= 0)
+            return email;
+        return email.slice(0, 1) + "***@" + email.slice(at + 1);
+    }
+
+    // ===== UI: MINIMAL MODE (avatar + 2em username on a pill) =====
+    Profile.MinimalView {
+        anchors.fill: parent
+        visible: root.minimal
+        store: root
+    }
+
+    // ===== UI: FULL MODE =====
+    Column {
+        id: fullView
+        anchors.fill: parent
+        spacing: Theme.spacing
+        visible: !root.minimal
+
+        // Tab buttons
+        Row {
+            id: tabRow
+            width: parent.width
+            spacing: Theme.spacing
+            AppButton {
+                width: (parent.width - 6) / 2
+                implicitHeight: 30
+                toggle: true
+                checked: root.activeTab === 0
+                tooltipText: "Show the account tab"
+                outlined: true
+                text: "Account"
+                onClicked: root.activeTab = 0
+            }
+            AppButton {
+                width: (parent.width - 6) / 2
+                implicitHeight: 30
+                toggle: true
+                checked: root.activeTab === 1
+                tooltipText: "Show the about tab"
+                outlined: true
+                text: "About"
+                onClicked: root.activeTab = 1
+            }
+        }
+
+        // Stack: Account | About (unanchored: StackLayout children
+        // must not use anchors; height derives from the tab row above).
+        StackLayout {
+            width: parent.width
+            height: parent.height - tabRow.height - fullView.spacing
+            currentIndex: root.activeTab
+
+            // Account tab (scrolls on narrow panels)
+            SmoothFlickable {
+                id: acctFlick
+                width: parent.width
+                height: parent.height
+                contentWidth: width
+                contentHeight: acctCol.height
+                flickableDirection: Flickable.VerticalFlick
+                clip: true
+                Column {
+                    id: acctCol
+                    width: acctFlick.width
+                    spacing: Theme.spacing
+
+                    // ── Identity block: avatar above, fields in the card ──
+                    Profile.IdentityCard {
+                        id: identityCard
+                        store: root
+                    }
+
+                    Profile.SupporterCard {
+                        store: root
+                        monitorName: root.monitorName
+                    }
+
+                    Profile.ProfileActions {
+                        store: root
+                    }
+
+                    Profile.SyncCard {
+                        store: root
+                    }
+
+                    // Favorites + pins side by side.
+                    Profile.StatsRow {
+                        store: root
+                    }
+
+                    Profile.SignInCard {
+                        id: signInCard
+                        store: root
+                    }
+                }
+            }
+
+            // About tab (StackLayout auto-sizes children: no anchors here)
+            GeneralTab {}
+        }
+    }
+
+    // Hidden Process components for async ops. onStreamFinished parses payloads; onExited with
+    // a non-zero code overrides to the error state (curl -sS exits 0 on HTTP errors without -f).
+    Component {
+        id: netGateComp
+        Process {
+            id: proc
+            onExited: code => {
+                root.onNetGateDone(code === 0);
+                proc.destroy();
+            }
+        }
+    }
+    Component {
+        id: pollSessionComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    root.onPollSession(text);
+                    proc.destroy();
+                }
+            }
+        }
+    }
+    Component {
+        id: loadAuthComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    root.handleSessionJson(text);
+                    proc.destroy();
+                }
+            }
+        }
+    }
+    Component {
+        id: fetchUserComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    root.onUserFetched(text);
+                    proc.destroy();
+                }
+            }
+            onExited: code => {
+                if (code !== 0 && !root.profile) {
+                    root.progressStatus = "error";
+                    root.progressText = "Profile fetch failed";
+                    root.isRefreshing = false;
+                }
+            }
+        }
+    }
+    Component {
+        id: fetchProfileComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const raw = text.trim();
+                        // Expired token returns an error object, not an array —
+                        // refresh once instead of reporting "not found".
+                        if (!root._refreshing && root.isAuthErrorText(raw)) {
+                            root.doRefresh("profile");
+                            return;
+                        }
+                        const prof = JSON.parse(raw);
+                        if (prof?.[0]) {
+                            root.profile = {
+                                id: root._cachedUid,
+                                email: root._cachedEmail,
+                                username: prof[0].username,
+                                avatar: prof[0].avatar,
+                                // Resolved by checkSupporter() below — never
+                                // trust a profile-column value here.
+                                is_supporter: null
+                            };
+                            root.saveToCache();
+                            root.progressStatus = "idle";
+                            root.progressText = root.supporterLabel();
+                            // Sync avatar to ~/.face.icon on every load:
+                            // silent download, notify only on failure.
+                            if (prof[0].avatar)
+                                root.syncAvatarSilent(prof[0].avatar);
+                            root.checkSupporter();
+                        } else {
+                            // Fall back to a user-only profile when the
+                            // user_profiles row is missing — stay signed in.
+                            if (root._cachedUid) {
+                                root.profile = {
+                                    id: root._cachedUid,
+                                    email: root._cachedEmail,
+                                    username: null,
+                                    avatar: null,
+                                    is_supporter: null
+                                };
+                                root.saveToCache();
+                                root.progressStatus = "idle";
+                                root.progressText = "Signed in, but profile not found";
+                                root.checkSupporter();
+                            } else {
+                                root.profile = null;
+                                root.progressStatus = "error";
+                                root.progressText = "Profile not found";
+                                root.saveToCache();
+                            }
+                        }
+                    } catch (e) {
+                        root.profile = null;
+                        root.progressStatus = "error";
+                        root.progressText = "Failed to parse profile";
+                    }
+                }
+            }
+            onExited: code => {
+                proc.destroy();
+                root.isRefreshing = false;
+                if (code !== 0) {
+                    root.progressStatus = "error";
+                    root.progressText = root.profile ? "Refresh failed" : "Profile fetch failed";
+                }
+            }
+        }
+    }
+    Component {
+        id: supporterCheckComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: root.onSupporterChecked(text)
+            }
+            onExited: code => {
+                proc.destroy();
+            }
+        }
+    }
+    Component {
+        id: magicLinkComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const r = JSON.parse(text);
+                        if (r.error) {
+                            Notifications.notify({
+                                summary: "Error",
+                                body: r.error
+                            });
+                        } else {
+                            root.magicState = "Check email...";
+                            Notifications.notify({
+                                summary: "Magic link sent",
+                                body: "Check your email and open the link to complete sign-in."
+                            });
+                        }
+                    } catch (e) {
+                        Notifications.notify({
+                            summary: "Error",
+                            body: "Failed to send magic link"
+                        });
+                    }
+                    proc.destroy();
+                }
+            }
+        }
+    }
+    // On-demand listener: child of the widget, running only while
+    // authServerActive. stdout goes to the log file for debugging.
+    Process {
+        id: authServerProc
+        command: ["bash", "-c", "exec python3 " + JSON.stringify(root.authServerScript) + " >>" + JSON.stringify(root.authLogPath) + " 2>&1"]
+        running: root.authServerActive
+        onStarted: {
+            root.authServerStatus = "running";
+            authServerTimeout.restart();
+        }
+        onExited: code => {
+            if (root.authServerActive) {
+                // Crashed or port busy while still wanted — surface it.
+                root.authServerActive = false;
+                root.authServerStatus = "error";
+                authServerTimeout.stop();
+                Notifications.notify({
+                    summary: "Auth server failed",
+                    body: "Listener exited (code " + code + "). Paste the callback URL below instead — no server needed."
+                });
+            }
+        }
+    }
+    // Kills stale detached servers, then hands off to authServerProc.
+    Component {
+        id: authServerKickComp
+        Process {
+            onExited: code => {
+                root.authServerActive = true;
+            }
+        }
+    }
+    // Shows listener state in the sign-in card.
+    Timer {
+        id: authServerTimeout
+        interval: 15 * 60 * 1000
+        repeat: false
+        running: false
+        onTriggered: {
+            root.stopAuthServer("15min timeout");
+            Notifications.notify({
+                summary: "Auth server stopped",
+                body: "No sign-in completed in 15 minutes. Send a new magic link to restart it."
+            });
+        }
+    }
+    // Manual paste fallback writer (importCallbackUrl).
+    Component {
+        id: manualSaveComp
+        Process {
+            id: proc
+            onExited: code => {
+                proc.destroy();
+                if (code !== 0) {
+                    Notifications.notify({
+                        summary: "Auth",
+                        body: "Could not write session file."
+                    });
+                    return;
+                }
+                root.callbackUrlText = "";
+                signInCard.callbackText = "";
+                Notifications.notify({
+                    summary: "Signed in",
+                    body: "Session imported from the pasted link."
+                });
+                root.loadProfile();
+            }
+        }
+    }
+    Component {
+        id: updateProfileComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const r = JSON.parse(text);
+                        if (r?.[0]?.username) {
+                            root.progressStatus = "success";
+                            root.progressText = "Profile updated";
+                            Notifications.notify({
+                                summary: "Profile updated",
+                                body: "Your profile has been updated successfully."
+                            });
+                            root.loadProfile();
+                        } else {
+                            root.progressStatus = "error";
+                            root.progressText = "Update failed";
+                            Notifications.notify({
+                                summary: "Update failed",
+                                body: "Failed to update profile."
+                            });
+                        }
+                    } catch (e) {
+                        root.progressStatus = "error";
+                        root.progressText = "Update failed";
+                        Notifications.notify({
+                            summary: "Update failed",
+                            body: "Failed to update profile."
+                        });
+                    }
+                    proc.destroy();
+                }
+            }
+        }
+    }
+    Component {
+        id: logoutComp
+        Process {
+            id: proc
+            command: ["rm", "-f", root.authSessionPath]
+            onExited: proc.destroy()
+        }
+    }
+    // SettingsSyncMeta is camelCase {lastSyncAt, lastDirection,
+    // lastRemoteUpdatedAt}; direction maps to human labels.
+    Component {
+        id: readMetaComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const m = JSON.parse(text);
+                        root.lastSyncAt = m?.lastSyncAt ? root.formatTs(m.lastSyncAt) : "Never";
+                        const d = m?.lastDirection;
+                        root.lastSyncResult = !d ? "-" : d === "noop" ? "Up to date" : d === "download" ? "Downloaded" : "Uploaded";
+                        root.lastRemoteUpdatedAt = m?.lastRemoteUpdatedAt ? root.formatTs(m.lastRemoteUpdatedAt) : "Never";
+                        root.saveToCache();
+                    } catch (e) {
+                        root.lastSyncAt = "Never";
+                        root.lastSyncResult = "-";
+                        root.lastRemoteUpdatedAt = "Never";
+                    }
+                    proc.destroy();
+                }
+            }
+        }
+    }
+    function writeSyncMeta(direction, remoteUpdatedAt) {
+        const p = metaWriteComp.createObject(root);
+        p.command = ["bash", "-c", "cat > " + JSON.stringify(root.settingsMetaPath) + " <<'EOF'\n" + JSON.stringify({
+                lastSyncAt: new Date().toISOString(),
+                lastDirection: direction,
+                lastRemoteUpdatedAt: remoteUpdatedAt || null
+            }, null, 2) + "\nEOF"];
+        p.running = true;
+    }
+    Component {
+        id: syncUploadComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const r = JSON.parse(text);
+                        root._syncOut = JSON.stringify(r);
+                    } catch (e) {
+                        root._syncOut = "";
+                    }
+                }
+            }
+            onExited: code => {
+                proc.destroy();
+                root.isSyncing = false;
+                if (code !== 0 || !root._syncOut) {
+                    root.progressStatus = "error";
+                    root.progressText = "Upload failed";
+                    Notifications.notify({
+                        summary: "Settings Sync",
+                        body: "Upload failed."
+                    });
+                    return;
+                }
+                try {
+                    if (!root._refreshing && root.isAuthErrorText(root._syncOut)) {
+                        root.doRefresh("upload");
+                        return;
+                    }
+                    const r = JSON.parse(root._syncOut);
+                    // PostgREST errors come back as {message, code, ...} with
+                    // curl exit 0 — surface them instead of fake success.
+                    if (r?.message || r?.msg || r?.error) {
+                        root.progressStatus = "error";
+                        root.progressText = "Upload failed: " + (r.message || r.msg || r.error);
+                        Notifications.notify({
+                            summary: "Settings Sync",
+                            body: "Upload failed: " + (r.message || r.msg || r.error)
+                        });
+                        return;
+                    }
+                    const updated = r?.updated_at ?? (Array.isArray(r) ? r[0]?.updated_at : null);
+                    root.writeSyncMeta("upload", updated);
+                    root.progressStatus = "success";
+                    root.progressText = "Settings uploaded";
+                    Notifications.notify({
+                        summary: "Settings Sync",
+                        body: "Uploaded to cloud"
+                    });
+                    root.applySettingsSyncMeta();
+                } catch (e) {
+                    root.progressStatus = "error";
+                    root.progressText = "Upload failed";
+                    Notifications.notify({
+                        summary: "Settings Sync",
+                        body: "Upload failed."
+                    });
+                }
+            }
+        }
+    }
+    property string _syncOut: ""
+    Component {
+        id: syncDownloadComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    root._syncOut = text;
+                }
+            }
+            onExited: code => {
+                proc.destroy();
+                root.isSyncing = false;
+                if (code !== 0) {
+                    root.progressStatus = "error";
+                    root.progressText = "Download failed";
+                    Notifications.notify({
+                        summary: "Settings Sync",
+                        body: "Download failed."
+                    });
+                    return;
+                }
+                try {
+                    // Auth failure looks like {"message":"JWT expired"} — that
+                    // is NOT "no settings", it just needs a token refresh.
+                    if (!root._refreshing && root.isAuthErrorText(root._syncOut)) {
+                        root.doRefresh("download");
+                        return;
+                    }
+                    const r = JSON.parse(root._syncOut);
+                    if (r?.[0]?.settings) {
+                        const p = writeSettingsComp.createObject(root);
+                        p.command = ["bash", "-c", "cat > " + root.settingsPath + " <<'EOF'\n" + JSON.stringify(r[0].settings, null, 2) + "\nEOF"];
+                        p.running = true;
+                        root.writeSyncMeta("download", r[0].updated_at);
+                        root.progressStatus = "success";
+                        root.progressText = "Settings downloaded";
+                        Notifications.notify({
+                            summary: "Settings Sync",
+                            body: "Downloaded from cloud"
+                        });
+                        root.applySettingsSyncMeta();
+                    } else {
+                        root.isSyncing = false;
+                        root.progressStatus = "error";
+                        root.progressText = "No settings found — upload first";
+                        Notifications.notify({
+                            summary: "Settings Sync",
+                            body: "No remote settings for this account yet. Press Upload on the device that has your settings, then Download here."
+                        });
+                    }
+                } catch (e) {
+                    root.progressStatus = "error";
+                    root.progressText = "Download failed";
+                    Notifications.notify({
+                        summary: "Settings Sync",
+                        body: "Download failed."
+                    });
+                }
+            }
+        }
+    }
+    Component {
+        id: refreshTokenComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: root.onRefreshFinished(text)
+            }
+            onExited: code => {
+                proc.destroy();
+                if (code !== 0 && root._refreshing) {
+                    root._refreshing = false;
+                    root._retryAfterRefresh = "";
+                    root.isSyncing = false;
+                    root.progressStatus = "error";
+                    root.progressText = "Session expired — please sign in again";
+                    Notifications.notify({
+                        summary: "Session expired",
+                        body: "Could not refresh the session. Please send a new magic link."
+                    });
+                }
+            }
+        }
+    }
+    Component {
+        id: refreshSaveComp
+        Process {
+            onExited: destroy()
+        }
+    }
+    Component {
+        id: writeSettingsComp
+        Process {
+            onExited: destroy()
+        }
+    }
+    Component {
+        id: metaWriteComp
+        Process {
+            onExited: destroy()
+        }
+    }
+    // zenity exits 1 on cancel — silent.
+    Component {
+        id: zenityComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    root._zenityOut = text.trim();
+                }
+            }
+            onExited: code => {
+                proc.destroy();
+                if (code === 0)
+                    root.onAvatarPicked(root._zenityOut);
+                else if (code !== 1)
+                    Notifications.notify({
+                        summary: "Avatar picker failed",
+                        body: "Could not open the file picker."
+                    });
+            }
+        }
+    }
+    property string _zenityOut: ""
+    // Local-only avatar copy (not signed in): progress + reload on success.
+    Component {
+        id: setAvatarComp
+        Process {
+            id: proc
+            onExited: code => {
+                proc.destroy();
+                if (code !== 0) {
+                    root.progressStatus = "error";
+                    root.progressText = "Local update failed";
+                    Notifications.notify({
+                        summary: "Local update failed",
+                        body: "Could not copy the selected picture."
+                    });
+                    return;
+                }
+                root.progressStatus = "success";
+                root.progressText = "Avatar updated locally";
+                Notifications.notify({
+                    summary: "Avatar updated",
+                    body: "Using the selected picture locally."
+                });
+                root.reloadAvatar();
+            }
+        }
+    }
+    Component {
+        id: avatarConvertComp
+        Process {
+            id: proc
+            onExited: code => {
+                proc.destroy();
+                root.onAvatarConverted(code === 0);
+            }
+        }
+    }
+    Component {
+        id: avatarUploadComp
+        Process {
+            id: proc
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    root._avatarUpOut = text;
+                }
+            }
+            onExited: code => {
+                proc.destroy();
+                root.onAvatarUploaded(code === 0);
+            }
+        }
+    }
+    property string _avatarUpOut: ""
+    Component {
+        id: avatarPatchComp
+        Process {
+            id: proc
+            onExited: code => {
+                proc.destroy();
+                root.onAvatarPatched(code === 0);
+            }
+        }
+    }
+    Component {
+        id: avatarFetchComp
+        Process {
+            id: proc
+            onExited: code => {
+                proc.destroy();
+                root.reloadAvatar();
+                root.onAvatarFetched(code === 0);
+            }
+        }
+    }
+    // Silent avatar sync on profile load:
+    // no success notification, failure notifies once (retried next load).
+    function syncAvatarSilent(url) {
+        if (!url)
+            return;
+        const p = avatarSyncComp.createObject(root);
+        p.command = ["curl", "-sS", "--max-time", "30", "-o", root.avatarPath, url];
+        p.running = true;
+    }
+    Component {
+        id: avatarSyncComp
+        Process {
+            id: proc
+            onExited: code => {
+                proc.destroy();
+                if (code === 0) {
+                    root.reloadAvatar();
+                } else {
+                    Notifications.notify({
+                        summary: "Avatar sync failed",
+                        body: "Could not refresh the local picture — will retry on next refresh."
+                    });
+                }
+            }
+        }
+    }
+}
