@@ -484,8 +484,7 @@ Item {
                 if (query === "categories") return "categories=" + (w.categories || []).join(",");
                 if (query === "selected") return "selected=" + w.selectedCategory;
                 if (query === "count") return "count=" + (w.provider === "wallhaven" ? (w.whResults || []).length : (w.selectedWallpapers || []).length);
-                if (query === "current") return "current=" + (w.currentWallpapers || []).length;
-                if (query === "target") return "target=" + w.targetType + " ws=" + w.selectedWorkspaceId;
+                if (query === "current") return "current=" + w.currentWallpaper;
                 if (query === "progress") return "progress=" + w.progressStatus + " label=" + w.progressText;
                 if (query === "provider") return "provider=" + w.provider;
                 if (query === "view") return "rows=" + Settings.wallpaperMasonryRows + " size=" + Settings.wallpaperTileSize;

@@ -63,10 +63,10 @@ QtObject {
     }
 
     function fetchWallpapers() {
-        // QML-native directory scan (one FolderListModel, one dir per Ready step),
-        // replacing get-wallpapers.sh default mode; a refresh resets mid-scan.
+        // QML-native directory scan (one FolderListModel, one dir per Ready step) over
+        // the wallpaperRoots; a refresh resets mid-scan.
         root._scanResult = {};
-        root._scanStack = [""];
+        root._scanStack = Object.keys(root.wallpaperRoots).reverse();
         root._scanSeen = true;
         root._scanActive = true;
         root._scanRetries = 0;
@@ -85,7 +85,17 @@ QtObject {
     property bool _scanSeen: true
     property bool _scanActive: false
     property int _scanRetries: 0
-    readonly property string wallpaperFolder: home + "/.config/wallpapers"
+    // Category name -> scanned root; subfolders become "<category>/<sub>".
+    readonly property var wallpaperRoots: ({
+            "Pictures": home + "/Pictures/Wallpapers",
+            "Dotfiles": home + "/.config/hypr/wallpaper"
+        })
+    // Filesystem dir for a category, e.g. "Pictures/sub" -> ~/Pictures/Wallpapers/sub.
+    function _dirFor(category) {
+        const i = category.indexOf("/");
+        const rootName = i === -1 ? category : category.slice(0, i);
+        return root.wallpaperRoots[rootName] + (i === -1 ? "" : category.slice(i));
+    }
     // Same extension set as the old script's find -iname list.
     readonly property var _scanExts: ["jpg", "jpeg", "png", "webp", "bmp", "gif", "svg", "mp4", "webm", "mkv", "mov"]
 
@@ -153,7 +163,7 @@ QtObject {
         root._scanCurrent = root._scanStack.pop();
         root._scanSeen = false;
         root._scanRetries = 0;
-        root.scanModel.folder = "file://" + root.wallpaperFolder + (root._scanCurrent !== "" ? "/" + root._scanCurrent : "");
+        root.scanModel.folder = "file://" + root._dirFor(root._scanCurrent);
         root._scanKick.restart();
     }
 
@@ -178,13 +188,13 @@ QtObject {
         files.sort(root._scanLess);
         dirs.sort(root._scanLess);
         if (files.length > 0) {
-            const base = root.wallpaperFolder + (root._scanCurrent !== "" ? "/" + root._scanCurrent : "");
+            const base = root._dirFor(root._scanCurrent);
             root._scanResult[root._scanCurrent] = files.map(f => base + "/" + f);
         }
         // Push reversed so the smallest subdir pops first: pre-order DFS equals the
         // old `find | sort` order the combo and capture tooling observe via Object.keys.
         for (let i = dirs.length - 1; i >= 0; i--)
-            root._scanStack.push(root._scanCurrent !== "" ? root._scanCurrent + "/" + dirs[i] : dirs[i]);
+            root._scanStack.push(root._scanCurrent + "/" + dirs[i]);
         root._scanNext();
     }
 

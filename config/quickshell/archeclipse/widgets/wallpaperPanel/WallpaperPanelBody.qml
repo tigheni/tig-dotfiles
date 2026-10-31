@@ -3,13 +3,12 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtMultimedia
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import qs.theme
 import qs.services
 import qs.widgets.shared
 
-// Pick a wallpaper per workspace or the greeter background, browse/add/delete; hosted by
+// Pick a wallpaper (applied on every monitor via set-wallpaper.sh), browse/add/delete; hosted by
 // WallpaperIsland in the main pill. Previews render the original files, no thumbnails.
 Item {
     id: root
@@ -23,9 +22,9 @@ Item {
     implicitHeight: mainCol.implicitHeight
 
     readonly property string home: Quickshell.env("HOME")
-    // WallEclipse CLI: `set <monitor> <ws> <path>` and `transition [slide|fade]` (persisted
-    // daemon-side). The daemon re-reads config per event, so "reload" is just a health-check.
-    readonly property string walleclipseBin: "walleclipse"
+    readonly property string dotfilesDir: Quickshell.env("DOTFILES_DIR")
+    // Where imports and wallhaven downloads land (the "Pictures" category).
+    readonly property string wallpapersDir: home + "/Pictures/Wallpapers"
 
     function isVideoFile(file) {
         return WallpaperService.isVideoFile(file);
@@ -41,24 +40,29 @@ Item {
 
     // ---------------------------------------------------------------- state
 
-    readonly property var targetTypes: ["workspace", "greeter"]
-    property string targetType: "workspace"
-    property int selectedWorkspaceId: 1
-    // Fixed filename the greeter reads, overwritten in place on every set — so the tile loads
-    // it cache:false and reloads explicitly, never a cached static source.
-    readonly property string greeterPath: "/etc/xdg/quickshell/archeclipse-greeter/greeter-wallpaper"
-    readonly property string greeterThemePath: "/etc/xdg/quickshell/archeclipse-greeter/colors.scss"
-    readonly property string greeterThemeCache: root.home + "/.cache/archeclipse-greeter-theme"
-    readonly property string greeterThemeConfig: root.home + "/.config/quickshell/archeclipse-greeter/greeter-theme-config"
-    readonly property string greeterPaletteNormalizer: root.home + "/.config/quickshell/archeclipse/scripts/normalize-greeter-palette.py"
-    readonly property string greeterSource: "file://" + root.greeterPath
-    property string _pendingGreeterThemePath: ""
-    property string _greeterThemeWallpaper: ""
-    // Re-read the greeter file from disk (same-URL assignments don't
-    // reload, so clear first and restore deferred past the cancel).
-    function refreshGreeterTile() {
-        greeterImg.source = "";
-        Qt.callLater(() => greeterImg.source = root.greeterSource);
+    // Current wallpaper: one absolute path, written by set-wallpaper.sh (realpath'd, so a
+    // file under the symlinked ~/.config/hypr is recorded with its dotfiles-repo path).
+    readonly property string stateFile: (Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")) + "/wallpaper"
+    property string currentWallpaper: ""
+    function isCurrentWallpaper(path) {
+        const cur = root.currentWallpaper;
+        if (cur === "" || path === undefined)
+            return false;
+        if (cur === path)
+            return true;
+        // Same file reached through the symlinked hypr dir: compare the tail past it.
+        const key = "/hypr/wallpaper/";
+        const a = cur.lastIndexOf(key), b = String(path).lastIndexOf(key);
+        return a !== -1 && b !== -1 && cur.slice(a) === String(path).slice(b);
+    }
+    FileView {
+        id: currentFile
+        path: root.stateFile
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.currentWallpaper = text().trim()
+        onLoadFailed: root.currentWallpaper = ""
     }
 
     // Phased progress label (no spinner): searching/downloading/setting/deleting/adding and so
@@ -154,13 +158,9 @@ Item {
     readonly property alias localMasonry: localMasonry
 
     // ------------------------------------------------- provider abstraction
-    // "local" reuses the folder categories; "wallhaven" fetches into wallhaven/, same pipeline.
+    // "local" reuses the folder categories; "wallhaven" downloads into wallpapersDir, same pipeline.
     readonly property var providerTypes: ["local", "wallhaven"]
     readonly property string provider: Settings.wallpaperProvider
-    // Workspace-switch transition (slide default, fade optional): Settings.wallpaperTransition
-    // is the source of truth, the daemon keeps its own copy, and setTransition() reloads it.
-    readonly property var transitionTypes: ["slide", "fade"]
-    readonly property string transition: Settings.wallpaperTransition
     readonly property var wh: Settings.wallpaperWallhaven
     readonly property string whApiKey: Settings.apiKey("wallhaven", "key")
     readonly property bool isWallhaven: root.provider === "wallhaven"
@@ -191,7 +191,6 @@ Item {
     }
 
     readonly property string wallhavenScript: home + "/.config/quickshell/archeclipse/scripts/wallhaven.py"
-    readonly property string wallhavenDir: home + "/.config/wallpapers/wallhaven"
 
     // First-frame thumbnails for video tiles live in the shared store
     // (adopted from WallpaperService's background ffmpeg queue).
@@ -264,59 +263,20 @@ Item {
             root.whSearch(true);
     }
 
-    property var currentWallpapers: []           // path per workspace index, this monitor
-
     Component.onCompleted: {
         // Shared store is primed at shell boot; ensure it here too for
-        // island-first creation paths, then load this monitor's current.
+        // island-first creation paths.
         WallpaperService.start();
-        // The real monitor name arrives in onLoaded (after onCompleted): waiting avoids the
-        // Registry fallback resolving wrong and a stale run swallowing the corrected fetch.
-        if (root.monitorName !== "")
-            fetchCurrentWallpapers();
-        const ws = Hyprland.focusedWorkspace;
-        if (ws)
-            root.selectedWorkspaceId = ws.id;
         if (root.isWallhaven)
             root.whSearch();
-    }
-
-    // Best-effort: a fire-and-forget spawn during teardown may not survive, so the daemon's own
-    // 5s preview watchdog is the real guarantee when the island goes away.
-    Component.onDestruction: {
-        previewDwell.stop();
-        root.clearPreview();
     }
 
     // Hosts call this when the body becomes visible.
     function refresh() {
         WallpaperService.refresh();
-        fetchCurrentWallpapers();
-        root.refreshGreeterTile();
+        currentFile.reload();
         if (root.isWallhaven)
             root.whSearch();
-    }
-
-    // Re-fetch when the real monitor name arrives (onLoaded is after onCompleted). Restart, not
-    // start, so a stale in-flight run for the previous monitor cannot deliver after us.
-    onMonitorNameChanged: {
-        if (root.monitorName !== "") {
-            // The overlay is bound to the monitor that was hovered; drop it
-            // before the new monitor's fetch takes over.
-            root.clearPreview();
-            restartCurrentFetch();
-        }
-    }
-
-    // Keep the selected workspace synced to whatever's focused when the
-    // switcher opens.
-    Connections {
-        target: Hyprland
-        function onFocusedWorkspaceChanged() {
-            const ws = Hyprland.focusedWorkspace;
-            if (ws)
-                root.selectedWorkspaceId = ws.id;
-        }
     }
 
     function notifyError(context, err) {
@@ -329,72 +289,9 @@ Item {
     }
 
     // ---------------------------------------------------------- data fetch
-    // Category map + thumbs come from WallpaperService (boot); this body keeps only --current.
+    // Category map + thumbs come from WallpaperService (boot); this body keeps only the current path.
     function fetchWallpapers() {
         WallpaperService.refresh();
-    }
-
-    Process {
-        id: fetchCurrentProc
-        // Compat flag: bodies bind `fetchCurrentProc.running` for readiness. No declarative
-        // command — launcher functions assign it explicitly (see restartCurrentFetch).
-        property bool running: false
-    }
-    // --current, QML-native: reads defaults.conf (`key=path`) via a one-shot FileView — one
-    // reader per fetch (a reused one fires loaded only once); _currentSeq drops stale deliveries.
-    property var _currentReader: null
-    property int _currentSeq: 0
-    function _parseCurrentDefaults(text) {
-        // Mirrors the shell `while read` + sed + xargs: split at the first '=', expand a literal
-        // $HOME prefix, trim whitespace. The trailing-newline artifact yields no iteration.
-        const out = [];
-        const raw = String(text || "").split("\n");
-        if (raw.length > 0 && raw[raw.length - 1] === "")
-            raw.pop();
-        for (let i = 0; i < raw.length; i++) {
-            const eq = raw[i].indexOf("=");
-            let p = eq === -1 ? "" : raw[i].slice(eq + 1);
-            if (p.indexOf("$HOME") === 0)
-                p = root.home + p.slice(5);
-            out.push(p.trim().split(/\s+/).join(" "));
-        }
-        return out;
-    }
-    function _adoptCurrent(seq, text) {
-        if (seq !== root._currentSeq)
-            return;
-        try {
-            root.currentWallpapers = root._parseCurrentDefaults(text).map(String);
-        } catch (e) {
-            root.notifyError("fetching current wallpapers", e);
-        }
-    }
-    function _readCurrentFor(monitor) {
-        if (root._currentReader) {
-            root._currentReader.destroy();
-            root._currentReader = null;
-        }
-        root._currentSeq++;
-        if (!monitor) {
-            root.currentWallpapers = [];
-            return;
-        }
-        const seq = root._currentSeq;
-        const p = root.home + "/.config/walleclipse/config/" + monitor + "/defaults.conf";
-        const esc = p.split("\\").join("\\\\").split('"').join('\\"');
-        try {
-            root._currentReader = Qt.createQmlObject('import Quickshell.Io; FileView { path: "' + esc + '"; watchChanges: false; printErrors: false;' + ' onLoaded: root._adoptCurrent(' + seq + ', text());' + ' onLoadFailed: root._adoptCurrent(' + seq + ', "") }', root);
-        } catch (e) {
-            root._adoptCurrent(seq, "");
-        }
-    }
-    function fetchCurrentWallpapers() {
-        root._readCurrentFor(root.effectiveMonitor);
-    }
-    // Superseding restart: a boot-prime run may still be in flight and running=true is a no-op.
-    // Build the command from root.monitorName, NOT effectiveMonitor (still stale in the handler).
-    function restartCurrentFetch() {
-        root._readCurrentFor(root.monitorName);
     }
 
     // ------------------------------------------------- wallhaven provider
@@ -486,13 +383,13 @@ Item {
         }
     }
 
-    // Save + apply: download the full-res file into wallhaven/ (a permanent local category),
-    // then reuse applyWallpaper so theme regen, badges and delete behave identically.
+    // Save + apply: download the full-res file into wallpapersDir (a permanent local category),
+    // then reuse applyWallpaper so the badge and delete behave identically.
     function whSaveApply(item, apply) {
         if (!item || whDownloadProc.running)
             return;
         const base = ((item.full !== "" ? item.full : item.id).split("/").pop().split("?")[0]) || (item.id + ".jpg");
-        const dest = root.wallhavenDir + "/" + base;
+        const dest = root.wallpapersDir + "/" + base;
         setProgress("downloading");
         root._pendingWhApply = apply ? "apply" : "";
         root._whDownloadedPath = "";
@@ -526,15 +423,15 @@ Item {
             const path = root._whDownloadedPath;
             root._pendingWhApply = "";
             if (code === 0 && path !== "") {
-                // The wallhaven/ dir shows up as a local category; the
-                // apply path below owns progress from here (theme regen).
+                // The file shows up in the Pictures category; the
+                // apply path below owns progress from here.
                 root.fetchWallpapers();
                 if (doApply) {
                     root.applyWallpaper(path);
                 } else {
                     Notifications.notify({
                         summary: "Success",
-                        body: "Wallpaper saved to wallhaven."
+                        body: "Wallpaper saved to Pictures/Wallpapers."
                     });
                     root.setProgress("success");
                 }
@@ -550,231 +447,27 @@ Item {
 
     // ----------------------------------------------------------- set/apply
 
+    // set-wallpaper.sh sets one wallpaper on every monitor, regenerates the colours with
+    // matugen and records the choice in the state file read above.
     Process {
         id: setProc
         onExited: code => {
             if (code === 0) {
-                root.fetchCurrentWallpapers();
-                // The greeter path is overwritten in place: re-read it so
-                // the indicator tile shows the wallpaper just installed.
-                if (root._pendingTarget === "greeter")
-                    root.refreshGreeterTile();
-                const target = root._pendingTarget;
-                root._pendingTarget = "";
-                if (target === "greeter") {
-                    const wallpaper = root._pendingGreeterThemePath;
-                    root._pendingGreeterThemePath = "";
-                    root.regenGreeterTheme(wallpaper);
-                    return;
-                }
-                // Share the global theme: regenerate cwal colors from the wallpaper (coloreclipse
-                // wal honors autocolor), only for a workspace target with dynamicThemeColors.
-                if (root._pendingThemeRegen !== "")
-                    root.regenTheme(root._pendingThemeRegen);
-                else
-                    root.setProgress("success");
+                currentFile.reload();
+                root.setProgress("success");
             } else {
-                root._pendingThemeRegen = "";
-                root._pendingTarget = "";
-                root._pendingGreeterThemePath = "";
-                root.setProgress("error");
+                root.notifyError("setting wallpaper", "set-wallpaper.sh failed (exit " + code + ")");
             }
-        }
-    }
-
-    // Single-quote a shell arg (wallpaper dirs contain spaces/apostrophes).
-    function shq(s) {
-        return "'" + String(s).replace(/'/g, "'\\''") + "'";
-    }
-    function commandFor(target, path) {
-        switch (target) {
-        case "greeter":
-            // Fixed filename the greeter reads (Ready-gated Image): copy + world-read bit via
-            // pkexec since the mirror is root-managed; excluded from sync --delete.
-            return ["pkexec", "bash", "-c", `cp ${shq(path)} /etc/xdg/quickshell/archeclipse-greeter/greeter-wallpaper && chmod a+r /etc/xdg/quickshell/archeclipse-greeter/greeter-wallpaper`];
-        default:
-            // workspace (WallEclipse arg order: set <monitor> <ws> <path>)
-            return [root.walleclipseBin, "set", root.effectiveMonitor, String(root.selectedWorkspaceId), path];
         }
     }
 
     function applyWallpaper(path) {
-        // One at a time: setProc consumes the pending-_ values from the last
-        // call, so a second apply mid-flight would overwrite the first's.
+        // One at a time: a second apply mid-flight would race the state file.
         if (setProc.running)
             return;
-        // A set supersedes any live hover preview: the daemon cuts it too, but clearing first
-        // leaves no frame of stale preview over the incoming wallpaper.
-        root.clearPreview();
         setProgress("setting");
-        root._pendingTarget = root.targetType;
-        root._pendingThemeRegen = (root.targetType === "workspace" && Settings.dynamicThemeColors) ? path : "";
-        root._pendingGreeterThemePath = root.targetType === "greeter" ? String(path) : "";
-        setProc.command = commandFor(root.targetType, path);
+        setProc.command = [root.dotfilesDir + "/scripts/set-wallpaper.sh", String(path)];
         setProc.running = true;
-    }
-
-    // Fullscreen hover previews clear on leave: WallEclipse for stills, WallpaperAnimatedPreview
-    // for GIFs/videos. A daemon-down ERR is ignored; show/clear requests are serialized.
-    property int _previewSeq: 0
-    property string _previewPath: ""
-    property string _previewMonitor: ""
-    readonly property string animatedPreviewPath: BarState.stateFor(root.monitorName) === "wallpaper" && root.isAnimatedPreviewFile(root._previewPath) ? root._previewPath : ""
-    property string _previewCommandPath: ""
-    property string _previewCommandMonitor: ""
-    property string _previewSentPath: ""
-    property string _previewSentMonitor: ""
-    property bool _previewCommandSent: false
-    // Hover dwell: preview only once the cursor settles, so sweeping the strip fires nothing and
-    // no per-tile fade is allocated. Raise previewDwellMs to make it lazier.
-    readonly property int previewDwellMs: 1000
-    property string _dwellPath: ""
-    function hoverPreview(path) {
-        if (!path || !root.effectiveMonitor)
-            return;
-        root._dwellPath = String(path);
-        previewDwell.restart();
-    }
-    function leavePreview(path) {
-        if (root._dwellPath === String(path)) {
-            previewDwell.stop();
-            root._dwellPath = "";
-        }
-        if (root._previewPath === String(path))
-            root.clearPreview(false);
-    }
-    Timer {
-        id: previewDwell
-        interval: root.previewDwellMs
-        onTriggered: {
-            const p = root._dwellPath;
-            root._dwellPath = "";
-            if (p !== "")
-                root.previewWallpaper(p);
-        }
-    }
-    function previewWallpaper(path) {
-        const monitor = root.effectiveMonitor;
-        if (!path || !monitor || BarState.stateFor(root.monitorName) !== "wallpaper")
-            return;
-        root._previewSeq += 1;
-        root._previewPath = String(path);
-        root._previewMonitor = monitor;
-        // WallEclipse previews static wallpapers as a still; animated files use the per-monitor
-        // QML overlay instead, clearing any static preview underneath it.
-        root.requestPreviewCommand(root.isAnimatedPreviewFile(root._previewPath) ? "" : root._previewPath, monitor);
-    }
-
-    // Serialize preview/clear CLI requests: separate short-lived clients can otherwise reach the
-    // daemon out of order when the pointer leaves mid-request.
-    function requestPreviewCommand(path, monitor) {
-        root._previewCommandPath = String(path);
-        root._previewCommandMonitor = String(monitor);
-        root.pumpPreviewCommand();
-    }
-    function pumpPreviewCommand() {
-        if (previewCommand.running || root._previewCommandMonitor === "")
-            return;
-        if (root._previewCommandSent && root._previewCommandPath === root._previewSentPath && root._previewCommandMonitor === root._previewSentMonitor)
-            return;
-
-        root._previewSentPath = root._previewCommandPath;
-        root._previewSentMonitor = root._previewCommandMonitor;
-        root._previewCommandSent = true;
-        previewCommand.command = root._previewCommandPath === "" ? [root.walleclipseBin, "preview-clear", root._previewCommandMonitor] : [root.walleclipseBin, "preview", root._previewCommandMonitor, root._previewCommandPath];
-        previewCommand.running = true;
-    }
-    Process {
-        id: previewCommand
-        onExited: root.pumpPreviewCommand()
-    }
-
-    function clearPreview(cancelDwell) {
-        if (cancelDwell !== false) {
-            previewDwell.stop();
-            root._dwellPath = "";
-        }
-        root._previewSeq += 1;
-        root._previewPath = "";
-        const monitor = root._previewMonitor || root._previewCommandMonitor || root.effectiveMonitor;
-        root._previewMonitor = "";
-        if (monitor)
-            root.requestPreviewCommand("", monitor);
-    }
-    function clearPreviewIfInactive() {
-        if (BarState.stateFor(root.monitorName) !== "wallpaper")
-            root.clearPreview();
-    }
-    Connections {
-        target: BarState
-        function onPanelStatesByMonitorChanged() {
-            root.clearPreviewIfInactive();
-        }
-        function onActiveStatesChanged() {
-            root.clearPreviewIfInactive();
-        }
-    }
-
-    // ---- global theme sharing (coloreclipse wal -> cwal colors.scss -> Theme) ----
-    property string _pendingThemeRegen: ""
-    property string _pendingTarget: ""
-    Process {
-        id: themeProc
-        onExited: code => {
-            // Variant may have auto-switched (autovariant) — re-read it so
-            // the ControlPanel toggle and GlobalTheme state stay correct.
-            GlobalTheme.refresh();
-            if (code === 0)
-                root.setProgress("success");
-            else
-                root.notifyError("updating theme colors", "coloreclipse wal failed");
-        }
-    }
-    function regenTheme(path) {
-        root._pendingThemeRegen = "";
-        themeProc.command = ["coloreclipse", "wal", path];
-        themeProc.running = true;
-    }
-
-    Process {
-        id: greeterThemeProc
-        onExited: code => {
-            if (code === 0) {
-                greeterPaletteNormalizeProc.command = ["python3", root.greeterPaletteNormalizer, root._greeterThemeWallpaper, root.greeterThemeCache + "/coloreclipse/colors.scss"];
-                greeterPaletteNormalizeProc.running = true;
-            } else {
-                root.notifyError("generating greeter theme", "coloreclipse wal failed (exit " + code + ")");
-            }
-        }
-    }
-    Process {
-        id: greeterPaletteNormalizeProc
-        onExited: code => {
-            if (code === 0) {
-                greeterPaletteInstallProc.command = ["pkexec", "install", "-m", "0644", root.greeterThemeCache + "/coloreclipse/colors.scss", root.greeterThemePath];
-                greeterPaletteInstallProc.running = true;
-            } else {
-                root.notifyError("normalizing greeter theme", "could not match the palette to the wallpaper (exit " + code + ")");
-            }
-        }
-    }
-    Process {
-        id: greeterPaletteInstallProc
-        onExited: code => {
-            if (code === 0)
-                root.setProgress("success");
-            else
-                root.notifyError("installing greeter theme", "could not update the greeter palette (exit " + code + ")");
-        }
-    }
-    function regenGreeterTheme(path) {
-        if (!path) {
-            root.notifyError("generating greeter theme", "no wallpaper path was provided");
-            return;
-        }
-        root._greeterThemeWallpaper = String(path);
-        greeterThemeProc.command = ["env", "XDG_CONFIG_HOME=" + root.greeterThemeConfig, "XDG_CACHE_HOME=" + root.greeterThemeCache, "coloreclipse", "wal", path];
-        greeterThemeProc.running = true;
     }
 
     function setRandomWallpaper() {
@@ -828,66 +521,6 @@ Item {
         });
     }
 
-    // ----------------------------------------------------------- daemon reload
-
-    property int _reloadAttempts: 0
-    Process {
-        id: reloadProc
-        onExited: code => {
-            if (code === 0) {
-                root._reloadAttempts = 0;
-                root.fetchWallpapers();
-                root.setProgress("success");
-            } else if (root._reloadAttempts < 1) {
-                // Daemon may be dead: start it, then retry once.
-                root._reloadAttempts += 1;
-                startProc.running = true;
-            } else {
-                root._reloadAttempts = 0;
-                root.setProgress("error");
-            }
-        }
-    }
-    Process {
-        id: startProc
-        command: ["bash", "-c", "nohup walleclipse >/tmp/walleclipse-daemon-out.log 2>&1 & sleep 3"]
-        onExited: code => {
-            if (code === 0)
-                reloadProc.running = true;
-            else {
-                root._reloadAttempts = 0;
-                root.setProgress("error");
-            }
-        }
-    }
-    function reloadDaemon() {
-        // WallEclipse re-reads config + re-applies current on reload.
-        root._reloadAttempts = 0;
-        setProgress("reloading");
-        reloadProc.command = [root.walleclipseBin, "reload"];
-        reloadProc.running = true;
-    }
-
-    // Persist UI-side (settings.json) and daemon-side (`walleclipse transition`, durable), then
-    // reload so the change takes effect immediately — the reload applies with a fade.
-    Process {
-        id: transitionProc
-        onExited: code => {
-            if (code === 0)
-                root.reloadDaemon();
-            else
-                root.setProgress("error");
-        }
-    }
-    function setTransition(name) {
-        if (name !== "slide" && name !== "fade")
-            return;
-        Settings.updateSetting("wallpaperSwitcher.transition", name);
-        setProgress("reloading");
-        transitionProc.command = [root.walleclipseBin, "transition", name];
-        transitionProc.running = true;
-    }
-
     // --------------------------------------------------------- add wallpaper
 
     Process {
@@ -931,7 +564,7 @@ Item {
         if (importProc.running)
             return;
         setProgress("adding");
-        const targetDir = root.home + "/.config/wallpapers/custom";
+        const targetDir = root.wallpapersDir;
         const basename = sourcePath.split("/").pop();
         const targetPath = targetDir + "/" + basename;
 
@@ -985,136 +618,6 @@ Item {
             // adding one here stacks a second (this body used to add 12).
             spacing: Theme.spacing
 
-            // per-workspace current wallpaper strip — tiles scroll so 11+ workspaces glide
-            // instead of overflowing; greeter + separator stay fixed outside the flickable.
-            RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: Theme.spacing
-                // Greeter (login) wallpaper indicator — first tile, lock in center.
-                Rectangle {
-                    id: greeterTile
-                    width: 100
-                    height: 66
-                    radius: Theme.radius
-                    color: Theme.onMediaBg
-                    border.width: root.targetType === "greeter" ? 2 : 0
-                    border.color: Theme.accent
-
-                    AppImage {
-                        id: greeterImg
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        cache: false
-                        source: root.greeterSource
-                        sourceWidth: greeterTile.width
-                    }
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 28
-                        height: 28
-                        radius: width / 2
-                        color: Theme.muted
-                        opacity: Theme.opacity.soft
-                        Text {
-                            anchors.centerIn: parent
-                            text: Icons.lock
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSizeLarge
-                            color: Theme.onMediaInk
-                        }
-                    }
-                    MouseArea {
-                        id: greeterMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.targetType = "greeter"
-                    }
-                    AppTooltip {
-                        visible: greeterMa.containsMouse
-                        delay: 400
-                        text: "Greeter wallpaper.\nClick to target greeter."
-                    }
-                }
-                // Separator between the greeter tile and the workspace tiles.
-                Rectangle {
-                    Layout.preferredWidth: 2
-                    Layout.preferredHeight: 48
-                    Layout.alignment: Qt.AlignVCenter
-                    color: Theme.border
-                }
-                // Workspace tiles only — the scrollable part.
-                SmoothFlickable {
-                    id: wsStripScroll
-                    // Content-sized when narrow (group stays centered), capped at the leftover
-                    // island width when wide (greeter 100 + separator 2 + 2x spacing 10).
-                    Layout.preferredWidth: Math.max(0, Math.min(wsStripRow.width, mainCol.width - 122))
-                    Layout.preferredHeight: 66
-                    flickableDirection: Flickable.HorizontalFlick
-                    contentWidth: wsStripRow.width
-                    contentHeight: height
-                    ScrollBar.horizontal: ScrollBar {
-                        policy: ScrollBar.AsNeeded
-                    }
-
-                    Row {
-                        id: wsStripRow
-                        height: wsStripScroll.height
-                        spacing: Theme.spacing
-                        // Content-driven width, never bound to the viewport (polish-loop pitfall);
-                        // left-origin so tiles hug the separator instead of centering.
-                        Repeater {
-                            model: root.currentWallpapers
-                            delegate: Rectangle {
-                                id: wsTile
-                                required property string modelData
-                                required property int index
-                                readonly property bool isFocused: Hyprland.focusedWorkspace?.id === index + 1
-                                // Original for images, first-frame thumb for videos: a live AppVideo here
-                                // decoded every workspace video forever (~10% CPU and ~1GB RSS each).
-                                readonly property string wsSource: wsTile.modelData === "" ? "" : (root.isVideoFile(wsTile.modelData) ? root.thumbFor(wsTile.modelData) : wsTile.modelData)
-
-                                width: 100
-                                height: 66
-                                radius: Theme.radius
-                                color: modelData === "" ? "black" : "transparent"
-                                border.width: isFocused ? 1 : 0
-                                border.color: Theme.muted
-
-                                AppImage {
-                                    visible: wsTile.modelData !== ""
-                                    anchors.fill: parent
-                                    anchors.margins: 2
-                                    // Native preview: original file decoded near tile size (async +
-                                    // cached in AppImage). Videos use the first-frame thumb, no decoder.
-                                    source: wsTile.wsSource === "" ? "" : "file://" + wsTile.wsSource
-                                    sourceWidth: wsTile.width
-                                    badges: [(wsTile.index + 1).toString()]
-                                }
-                                Text {
-                                    // Video icon until the background thumb run delivers a frame (or
-                                    // permanently when no thumb exists).
-                                    visible: wsTile.modelData !== "" && root.isVideoFile(wsTile.modelData) && wsTile.wsSource === ""
-                                    anchors.centerIn: parent
-                                    text: Icons.video
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fs(1.67)
-                                    color: Theme.fgDim
-                                }
-                                Text {
-                                    visible: wsTile.modelData === ""
-                                    anchors.centerIn: parent
-                                    text: "No Wallpaper"
-                                    color: Theme.muted
-                                    font.family: Theme.fontFamily
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             // action bar — wrapped so radius / bg / border apply as one pill
             Rectangle {
                 Layout.alignment: Qt.AlignHCenter
@@ -1139,25 +642,6 @@ Item {
                         onActivated: (i, v) => Settings.updateSetting("wallpaperSwitcher.provider", v)
                     }
 
-                    AppSegmentedControl {
-                        model: root.targetTypes
-                        currentIndex: root.targetTypes.indexOf(root.targetType)
-                        cellHPadding: 8
-                        cellVPadding: 4
-                        onActivated: (i, v) => root.targetType = v
-                    }
-
-                    // Workspace-switch transition: slide (default) or fade, persisted daemon-side
-                    // and followed by a reload so it applies with a fade right away.
-                    AppSegmentedControl {
-                        model: root.transitionTypes
-                        currentIndex: root.transitionTypes.indexOf(root.transition)
-                        cellHPadding: 8
-                        cellVPadding: 4
-                        onActivated: (i, v) => root.setTransition(v)
-                    }
-
-
                     AppComboBox {
                         id: categoryCombo
                         objectName: "categoryCombo"
@@ -1174,12 +658,6 @@ Item {
                         visible: !root.isWallhaven
                         Layout.preferredHeight: 26
                         onClicked: root.setRandomWallpaper()
-                    }
-                    AppButton {
-                        tooltipText: "Reload the wallpaper daemon"
-                        text: "Reload"
-                        Layout.preferredHeight: 26
-                        onClicked: root.reloadDaemon()
                     }
                     AppButton {
                         tooltipText: "Pick a wallpaper image to add"
@@ -1452,17 +930,9 @@ Item {
                         // modelData arrives via Loader push after creation, so every access is guarded.
                         readonly property string tileThumb: root.thumbFor(tile.modelData)
                         readonly property bool thumbSettled: (tile.modelData !== undefined && root.isVideoFile(tile.modelData)) ? (tile.previewing ? tileVideo.ready : (tile.tileThumb === "" || tileImg.status === Image.Ready || tileImg.status === Image.Error)) : (tileImg.status === Image.Ready || tileImg.status === Image.Error)
-                        // Workspace badges: which workspaces use this wallpaper (top-right), shared
-                        // by the still preview and the live video (only one is visible).
-                        readonly property var badgeIds: {
-                            const ids = [];
-                            const cur = root.currentWallpapers;
-                            for (let i = 0; i < cur.length; i++) {
-                                if (cur[i] !== "" && cur[i] === tile.modelData)
-                                    ids.push(String(i + 1));
-                            }
-                            return ids;
-                        }
+                        // Current-wallpaper badge (top-right), shared by the still preview and
+                        // the live video (only one is visible).
+                        readonly property var badgeIds: root.isCurrentWallpaper(tile.modelData) ? ["current"] : []
                         opacity: tile.thumbSettled ? 1 : 0
                         Behavior on opacity {
                             NumberAnimation {
@@ -1554,7 +1024,7 @@ Item {
                         AppTooltip {
                             visible: tileMa.containsMouse && !wallScroll.moving
                             delay: 400
-                            text: `Click to set as ${root.targetType} wallpaper.\nRight-click to delete.\n${(tile.modelData !== undefined && root.isAnimatedPreviewFile(tile.modelData)) ? "Hover to preview.\n" : ""}${tile.fileName}\nSize: ${root.formatBytes(root.getFileSize(tile.modelData ?? ""))}`
+                            text: `Click to set as wallpaper.\nRight-click to delete.\n${(tile.modelData !== undefined && root.isAnimatedPreviewFile(tile.modelData)) ? "Hover to preview.\n" : ""}${tile.fileName}\nSize: ${root.formatBytes(root.getFileSize(tile.modelData ?? ""))}`
                         }
 
                         MouseArea {
@@ -1569,10 +1039,6 @@ Item {
                             onContainsMouseChanged: {
                                 if (!containsMouse && !copyMa.containsMouse && !delMa.containsMouse)
                                     tile.deleteArmed = false;
-                                if (containsMouse)
-                                    root.hoverPreview(tile.modelData);
-                                else
-                                    root.leavePreview(tile.modelData);
                             }
                             onClicked: mouse => {
                                 if (mouse.button === Qt.RightButton)
@@ -1666,7 +1132,7 @@ Item {
             }
 
             // wallhaven results — remote thumbs with the same tile chrome: click downloads the
-            // full-res file into wallhaven/ and applies it, right-click saves only.
+            // full-res file into Pictures/Wallpapers and applies it, right-click saves only.
             SmoothFlickable {
                 id: whScroll
                 visible: root.isWallhaven

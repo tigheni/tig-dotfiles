@@ -56,10 +56,4 @@ Column {
             monitorName: root.monitorName
         }
     }
-
-    WallpaperAnimatedPreview {
-        screen: root.screen
-        monitorName: root.monitorName
-        source: body.animatedPreviewPath
-    }
 }
