@@ -9,7 +9,7 @@ QtObject {
 
     readonly property var map: [
         { pattern: /cord$|vesktop/i, icon: Icons.discordApp },
-        { pattern: /foot|kitty|alacritty|xterm|gnome-terminal|konsole/i, icon: Icons.terminal },
+        { pattern: /wezterm|foot|kitty|alacritty|xterm|gnome-terminal|konsole/i, icon: Icons.terminal },
         { pattern: /thunar|nautilus|dolphin|ranger/i, icon: Icons.folder },
         { pattern: /loupe|eog|gwenview/i, icon: Icons.image },
         { pattern: /chrome|chromium|brave/i, icon: Icons.chrome },

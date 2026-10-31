@@ -234,35 +234,8 @@ Item {
                     tooltipText: Settings.notifDnd ? "Disable Do Not Disturb" : "Enable Do Not Disturb"
                     onClicked: Settings.updateSetting("notifications.dnd", !Settings.notifDnd)
                 }
-                // Game Mode: always applies the Hyprland preset; gamemoded and
-                // powerprofilesctl are optional integrations.
-                AppButton {
-                    width: (parent.width - parent.columnSpacing) / 2
-                    height: 46
-                    cornerRadius: Theme.radius
-                    idleBg: Theme.surface
-                    icon: Icons.game
-                    pixelSize: Theme.fontSize + 2
-                    toggle: true
-                    checked: Settings.gameModeEnabled
-                    tooltipText: Settings.gameModeEnabled ? "Disable Game Mode" : "Enable Game Mode"
-                    onClicked: Settings.applyGameMode(!Settings.gameModeEnabled)
-                }
-                // Blue light filter (hyprsunset). Temperature lives in
-                // Settings.blueLightTemperature (settings key blueLight.temperature).
-                AppButton {
-                    width: (parent.width - parent.columnSpacing) / 2
-                    height: 46
-                    cornerRadius: Theme.radius
-                    idleBg: Theme.surface
-                    icon: Icons.lightbulb
-                    pixelSize: Theme.fontSize + 2
-                    toggle: true
-                    checked: Settings.blueLightEnabled
-                    tooltipText: (Settings.blueLightEnabled ? "Disable Blue Light Filter" : "Enable Blue Light Filter (" + Settings.blueLightTemperature + "K)")
-                        + (Settings.blueLightAuto ? "\nAuto: " + Settings.blueLightStart + " \u2013 " + Settings.blueLightEnd : "")
-                    onClicked: Settings.applyBlueLight(!Settings.blueLightEnabled)
-                }
+                // Game Mode and the hyprsunset blue light filter are left out: this
+                // Hyprland has no Lua eval, and night-light.sh owns the temperature.
                 // Keyboard layout — shows the current layout code, click cycles
                 AppButton {
                     width: (parent.width - parent.columnSpacing) / 2

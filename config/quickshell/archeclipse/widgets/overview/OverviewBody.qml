@@ -7,7 +7,7 @@ import qs.theme
 import qs.services
 
 // OverviewBody — live workspace overview: 5×2 monitor-proportioned cards with ScreencopyView
-// thumbnails; windows drag between cards (hl.dsp.* only), click focuses, middle-click closes.
+// thumbnails; windows drag between cards (hyprlang dispatchers), click focuses, middle-click closes.
 Item {
     id: body
 
@@ -141,25 +141,24 @@ Item {
         return false;
     }
 
-    // ---- actions go through the Lua dispatchers (`hl.dsp.focus({workspace = N})`): hyprctl
-    // wraps args as hl.dispatch(...) evaluated as Lua, so `workspace 3` is a syntax error.
+    // ---- actions use plain hyprlang dispatchers (this Hyprland has no Lua config).
     function dsp(expr) {
         Hyprland.dispatch(expr);
     }
     function focusWorkspace(id) {
-        body.dsp(`hl.dsp.focus({workspace = ${id}})`);
+        body.dsp(`workspace ${id}`);
         BarState.deactivate("overview", root.monitorName);
     }
     function focusWindow(addr) {
-        body.dsp(`hl.dsp.focus({window = "address:0x${body.normAddr(addr)}"})`);
+        body.dsp(`focuswindow address:0x${body.normAddr(addr)}`);
     }
     function closeWindow(addr) {
-        body.dsp(`hl.dsp.window.close({window = "address:0x${body.normAddr(addr)}"})`);
+        body.dsp(`closewindow address:0x${body.normAddr(addr)}`);
     }
     function moveWindow(fromWs, addr, targetWs) {
         if (targetWs === fromWs || targetWs < 1 || targetWs > 10)
             return;
-        body.dsp(`hl.dsp.window.move({workspace = ${targetWs}, follow = false, window = "address:0x${body.normAddr(addr)}"})`);
+        body.dsp(`movetoworkspacesilent ${targetWs},address:0x${body.normAddr(addr)}`);
     }
 
     Column {

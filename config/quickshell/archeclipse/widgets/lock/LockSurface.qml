@@ -167,7 +167,7 @@ MouseArea {
                 onEscapePressed: root.context.handleEscape()
                 onAction: index => {
                     if (index === 0)
-                        Hyprland.dispatch("hl.dsp.exit()")
+                        Hyprland.dispatch("exit")
                     else if (index === 1)
                         Quickshell.execDetached(["shutdown", "now"])
                     else if (index === 2)

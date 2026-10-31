@@ -448,7 +448,7 @@ Item {
                 height: slot.reveal
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Hyprland.dispatch(`hl.dsp.focus({workspace=${slot.wid}})`)
+                onClicked: Hyprland.dispatch(`workspace ${slot.wid}`)
                 onEntered: root.hoverAnchor = root.slotIndex(slot.wid)
             }
         }
@@ -610,7 +610,7 @@ Item {
                 height: specialSlot.reveal
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Hyprland.dispatch("hl.dsp.workspace.toggle_special()")
+                onClicked: Hyprland.dispatch("togglespecialworkspace")
                 onEntered: root.hoverAnchor = 5
             }
         }

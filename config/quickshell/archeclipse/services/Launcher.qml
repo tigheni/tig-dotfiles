@@ -126,7 +126,7 @@ QtObject {
                 }));
             } else {
                 entries.push(mkResult(name, Icons.terminal, "Run as shell command", () => {
-                    Quickshell.execDetached(["foot", "bash", "-c", name]);
+                    Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", name]);
                     touchHistory(name);
                 }));
             }
@@ -227,7 +227,7 @@ QtObject {
     }
 
     // follow_mouse=1 leaves focus on the bar pill after a launch, so each launch arms
-    // an expectation and the next openwindow gets hl.dsp.focus (plain verbs are Lua errors).
+    // an expectation and the next openwindow gets focuswindow.
     property int _expectWindows: 0
     property Timer _expectTimer: Timer {
         interval: 4000
@@ -258,7 +258,7 @@ QtObject {
             root._expectWindows = Math.max(0, root._expectWindows - 1);
             if (root._expectWindows === 0)
                 root._expectTimer.stop();
-            Hyprland.dispatch(`hl.dsp.focus({window = "address:0x${addr}"})`);
+            Hyprland.dispatch(`focuswindow address:0x${addr}`);
         }
     }
 
@@ -407,7 +407,7 @@ QtObject {
         if (!c)
             return [mkResult("Usage: term <command>", Icons.terminalAlt, "e.g. term cava", null)];
         return [mkResult(`Run ${c} in terminal`, Icons.terminalAlt, "Run as shell command", () => {
-            Quickshell.execDetached(["foot", "bash", "-c", c]);
+            Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", c]);
             touchHistory(c);
         })];
     }
@@ -893,7 +893,7 @@ QtObject {
         let r = appResults(head, rest);
         if (r.length === 0 && rest.length === 0) {
             r = [mkResult(`Try ${t} in terminal`, Icons.terminalAlt, "Run as shell command", () => {
-                Quickshell.execDetached(["foot", "bash", "-c", t]);
+                Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", t]);
                 touchHistory(t);
             })];
         }

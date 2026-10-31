@@ -120,7 +120,7 @@ Scope {
         root.page = 0;
         root.neverShow = root.completed;
         if (auto)
-            Hyprland.dispatch("hl.dsp.focus({workspace = 1})");
+            Hyprland.dispatch("workspace 1");
         root.shown = true;
         return true;
     }

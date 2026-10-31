@@ -37,13 +37,13 @@ Item {
             description: "Change Resolution",
             app: "nwg-displays",
             package: "nwg-displays",
-            command: "foot nwg-displays -m ~/.config/hypr/config/custom/monitors.conf"
+            command: "wezterm start -- nwg-displays -m ~/.config/hypr/config/custom/monitors.conf"
         },
         {
             name: "Update Packages",
             icon: Icons.packages,
             description: "Update Packages (pacman)",
-            command: "foot sudo pacman -Syu"
+            command: "wezterm start -- sudo pacman -Syu"
         },
         {
             name: "Clear Clipboard",
@@ -98,13 +98,13 @@ Item {
             icon: Icons.btop,
             description: "Open system monitor",
             app: "btop",
-            command: "foot btop"
+            command: "wezterm start -- btop"
         },
         {
             name: "Quickspeed",
             icon: Icons.speed,
             description: "Bandwidth speed test via Cloudflare",
-            command: "foot bash -c \"python3 <(curl -fsSL https://raw.githubusercontent.com/AymanLyesri/quickspeed/refs/heads/master/quickspeed.py); echo; read -n 1 -s -r -p 'Press any key to close...'\""
+            command: "wezterm start -- bash -c \"python3 <(curl -fsSL https://raw.githubusercontent.com/AymanLyesri/quickspeed/refs/heads/master/quickspeed.py); echo; read -n 1 -s -r -p 'Press any key to close...'\""
         },
         {
             name: "Volume Control",
@@ -154,35 +154,35 @@ Item {
             icon: Icons.pipes,
             description: "Pipes Animation",
             app: "pipes.sh",
-            command: "foot pipes.sh"
+            command: "wezterm start -- pipes.sh"
         },
         {
             name: "Cava",
             icon: Icons.cava,
             description: "Audio Visualizer",
             app: "cava",
-            command: "foot cava"
+            command: "wezterm start -- cava"
         },
         {
             name: "CMatrix",
             icon: Icons.cmatrix,
             description: "Matrix Digital Rain",
             app: "cmatrix",
-            command: "foot cmatrix"
+            command: "wezterm start -- cmatrix"
         },
         {
             name: "Asciiquarium",
             icon: Icons.asciiquarium,
             description: "Aquarium Animation",
             app: "asciiquarium",
-            command: "foot asciiquarium"
+            command: "wezterm start -- asciiquarium"
         },
         {
             name: "Pacgraph",
             icon: Icons.packages,
             description: "Visualize package sizes (pacgraph -c)",
             app: "pacgraph",
-            command: "foot bash -c \"pacgraph -c; read -n 1 -s -r -p 'Press any key to continue...'\""
+            command: "wezterm start -- bash -c \"pacgraph -c; read -n 1 -s -r -p 'Press any key to continue...'\""
         },
         {
             name: "Reset Settings",
@@ -256,13 +256,13 @@ Item {
     }
 
     property Component installProcComp: Component {
-        // Spawn through `foot` so sudo pacman can prompt in a terminal — headless pacman hangs
-        // on the prompt forever. foot runs the bash branch inline so progress shows.
+        // Spawn through wezterm so sudo pacman can prompt in a terminal — headless pacman hangs
+        // on the prompt forever. wezterm runs the bash branch inline so progress shows.
         Process {
             id: _instProc
             property string pkgName: ""
-            // foot takes the command directly (no -e flag), so wrap in bash -c
-            command: ["foot", "bash", "-c", "if command -v yay >/dev/null 2>&1; then yay -S " + pkgName + "; elif command -v paru >/dev/null 2>&1; then paru -S " + pkgName + "; else sudo pacman -S " + pkgName + "; fi; echo; " + "echo 'Press any key to close...'; read -n 1 -s -r"]
+            // `wezterm start --` takes the command directly, so wrap in bash -c
+            command: ["wezterm", "start", "--", "bash", "-c", "if command -v yay >/dev/null 2>&1; then yay -S " + pkgName + "; elif command -v paru >/dev/null 2>&1; then paru -S " + pkgName + "; else sudo pacman -S " + pkgName + "; fi; echo; " + "echo 'Press any key to close...'; read -n 1 -s -r"]
             onExited: code => {
                 if (code === 0)
                     root.refreshAppStatus();

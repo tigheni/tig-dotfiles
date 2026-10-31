@@ -25,7 +25,7 @@ Item {
         { key: "animations", title: "Animations" },
         { key: "user-agents", title: "User Agents" },
         { key: "api-keys", title: "API Keys" },
-        { key: "hyprland", title: "Hyprland" },
+        { key: "reset", title: "Reset" },
         { key: "lockscreen", title: "Lockscreen" },
         { key: "recording", title: "Recording" },
         { key: "screenshots", title: "Screenshots" },
@@ -680,229 +680,16 @@ Item {
                         }
                     }
 
-                    // ============ HYPRLAND ============
+                    // ============ RESET ============
+                    // (ArchEclipse's Hyprland look controls are left out: window
+                    // gaps, rounding and blur stay owned by config/hypr.)
                     CategorySection {
                         nav: nav
                         categoryIndex: 7
 
-                        // Game Mode
-                        SettingRow {
-                            text: "Game Mode"
-                            tip: "Disable blur and animations for performance."
-                            AppToggle {
-                                checked: Settings.gameModeEnabled
-                                onToggled: Settings.applyGameMode(checked)
-                            }
-                        }
-
-                        // Blue light filter (hyprsunset)
-                        SettingRow {
-                            text: "Blue Light Filter"
-                            tip: "Warm tint for eyes via hyprsunset."
-                            AppToggle {
-                                checked: Settings.blueLightEnabled
-                                onToggled: Settings.applyBlueLight(checked)
-                            }
-                        }
-
-                        // Blue light: temperature (Kelvin, lower = warmer)
-                        SettingRow {
-                            text: "Blue Light: Temperature (K)"
-                            tip: "Tint warmth in Kelvin; lower is warmer."
-                            AppSpinBox {
-                                from: 1000
-                                to: 6500
-                                stepSize: 100
-                                value: Settings.blueLightTemperature
-                                Layout.preferredWidth: 160
-                                onValueModified: Settings.blueLightTemperature = value
-                            }
-                        }
-
-                        // Blue light auto mode: toggle + "from – to" in one row;
-                        // the times stay editable while it is off.
-                        SettingRow {
-                            text: "Blue Light: Auto Mode"
-                            tip: "Run the blue-light filter on a schedule."
-                            AppToggle {
-                                checked: Settings.blueLightAuto
-                                onToggled: Settings.blueLightAuto = checked
-                            }
-                            AppTextField {
-                                id: blStartField
-                                Layout.preferredWidth: 64
-                                Layout.preferredHeight: 30
-                                horizontalAlignment: Text.AlignHCenter
-                                leftPadding: 4
-                                rightPadding: 4
-                                maximumLength: 5
-                                inputMethodHints: Qt.ImhPreferNumbers
-                                validator: RegularExpressionValidator {
-                                    regularExpression: /^\d{0,2}:?\d{0,2}$/
-                                }
-                                placeholderText: "21:00"
-                                text: Settings.blueLightStart
-                                opacity: Settings.blueLightAuto ? 1 : 0.5
-                                // "7:30" -> "07:30"; invalid input reverts to the saved value
-                                onEditingFinished: {
-                                    Settings.blueLightStart = Settings.normalizeTime(text, Settings.blueLightStart);
-                                    text = Qt.binding(() => Settings.blueLightStart);
-                                }
-                            }
-                            Label {
-                                text: "–"
-                                color: Theme.fg
-                                font.pixelSize: Theme.fontSize
-                            }
-                            AppTextField {
-                                id: blEndField
-                                Layout.preferredWidth: 64
-                                Layout.preferredHeight: 30
-                                horizontalAlignment: Text.AlignHCenter
-                                leftPadding: 4
-                                rightPadding: 4
-                                maximumLength: 5
-                                inputMethodHints: Qt.ImhPreferNumbers
-                                validator: RegularExpressionValidator {
-                                    regularExpression: /^\d{0,2}:?\d{0,2}$/
-                                }
-                                placeholderText: "07:00"
-                                text: Settings.blueLightEnd
-                                opacity: Settings.blueLightAuto ? 1 : 0.5
-                                // "7:30" -> "07:30"; invalid input reverts to the saved value
-                                onEditingFinished: {
-                                    Settings.blueLightEnd = Settings.normalizeTime(text, Settings.blueLightEnd);
-                                    text = Qt.binding(() => Settings.blueLightEnd);
-                                }
-                            }
-                        }
-
-                        // Blue light: schedule summary (shows wrap-around / typos)
-                        Label {
-                            width: parent.width
-                            visible: Settings.blueLightAuto
-                            text: Settings.blueLightHint()
-                            wrapMode: Text.WordWrap
-                            color: Theme.muted
-                            font.pixelSize: Theme.fontSize - 2
-                        }
-
-
-                        // One row component per Hyprland leaf type; `value` is the
-                        // read-back, writes go through Settings.hyprSet + live push.
-                        HyprSliderRow {
-                            text: "Decoration: Rounding"
-                            tip: "Window corner radius in px."
-                            settingKey: "decoration.rounding"
-                            from: 0
-                            to: 50
-                            value: Settings.hyprGet("decoration.rounding")
-                        }
-                        HyprToggleRow {
-                            text: "Decoration: Blur Enabled"
-                            tip: "Hyprland blur behind windows."
-                            settingKey: "decoration.blur.enabled"
-                            value: Settings.hyprGet("decoration.blur.enabled")
-                        }
-                        HyprSliderRow {
-                            text: "Decoration: Blur Size"
-                            tip: "Hyprland blur radius."
-                            settingKey: "decoration.blur.size"
-                            from: 0
-                            to: 10
-                            value: Settings.hyprGet("decoration.blur.size")
-                        }
-                        HyprSliderRow {
-                            text: "Decoration: Blur Passes"
-                            tip: "Hyprland blur quality passes."
-                            settingKey: "decoration.blur.passes"
-                            from: 0
-                            to: 10
-                            value: Settings.hyprGet("decoration.blur.passes")
-                        }
-                        HyprToggleRow {
-                            text: "Decoration: Blur Xray"
-                            tip: "Blur behind windows even when fullscreen."
-                            settingKey: "decoration.blur.xray"
-                            value: Settings.hyprGet("decoration.blur.xray")
-                        }
-                        HyprToggleRow {
-                            text: "Decoration: Shadow Enabled"
-                            tip: "Draw Hyprland window shadows."
-                            settingKey: "decoration.shadow.enabled"
-                            value: Settings.hyprGet("decoration.shadow.enabled")
-                        }
-                        HyprSliderRow {
-                            text: "Decoration: Shadow Range"
-                            tip: "Shadow spread distance in px."
-                            settingKey: "decoration.shadow.range"
-                            from: 0
-                            to: 20
-                            value: Settings.hyprGet("decoration.shadow.range")
-                        }
-                        HyprSliderRow {
-                            text: "Shadow Render Power"
-                            tip: "Shadow softness and strength."
-                            settingKey: "decoration.shadow.render_power"
-                            from: 1
-                            to: 4
-                            value: Settings.hyprGet("decoration.shadow.render_power")
-                        }
-                        HyprSliderRow {
-                            text: "General: Border Size"
-                            tip: "Window border thickness in px."
-                            settingKey: "general.border_size"
-                            from: 0
-                            to: 10
-                            value: Settings.hyprGet("general.border_size")
-                        }
-                        HyprSliderRow {
-                            text: "General: Gaps In"
-                            tip: "Gap between windows in px."
-                            settingKey: "general.gaps_in"
-                            from: 0
-                            to: 20
-                            value: Settings.hyprGet("general.gaps_in")
-                        }
-                        HyprSliderRow {
-                            text: "General: Gaps Out"
-                            tip: "Gap between windows and screen edge."
-                            settingKey: "general.gaps_out"
-                            from: 0
-                            to: 40
-                            value: Settings.hyprGet("general.gaps_out")
-                        }
-                        HyprSliderRow {
-                            text: "Decoration: Active Opacity"
-                            tip: "Opacity of the focused window."
-                            settingKey: "decoration.active_opacity"
-                            stepSize: 0.01
-                            decimals: 2
-                            from: 0
-                            to: 1
-                            value: Settings.hyprGet("decoration.active_opacity")
-                        }
-                        HyprSliderRow {
-                            text: "Decoration: Inactive Opacity"
-                            tip: "Opacity of unfocused windows."
-                            settingKey: "decoration.inactive_opacity"
-                            stepSize: 0.01
-                            decimals: 2
-                            from: 0
-                            to: 1
-                            value: Settings.hyprGet("decoration.inactive_opacity")
-                        }
-                        // Stacked: the two labels no longer fit side by side once
-                        // the rail takes its width.
                         Column {
                             width: parent.width
                             spacing: Theme.spacing
-                            AppButton {
-                                width: parent.width
-                                text: "Apply Hyprland Settings"
-                                tooltipText: "Write settings to Hyprland and reload."
-                                onClicked: root.applyHyprlandSettings()
-                            }
                             AppButton {
                                 width: parent.width
                                 text: "Reset to Default"
@@ -1656,35 +1443,6 @@ Item {
         });
     }
 
-    function applyHyprlandSettings() {
-        // One nested-table lua file per leaf + reload: JSON.stringify is not
-        // valid lua (keys need `=`, nesting needs tables).
-        try {
-            const leaves = [];
-            const walk = (o, prefix) => {
-                for (const k of Object.keys(o)) {
-                    const v = o[k];
-                    const full = prefix ? prefix + "." + k : k;
-                    if (v !== null && typeof v === "object" && !Array.isArray(v))
-                        walk(v, full);
-                    else
-                        leaves.push([full, v]);
-                }
-            };
-            walk(Settings.hyprland || {}, "");
-            let script = "mkdir -p $HOME/.config/hypr/config/custom";
-            for (const [full, v] of leaves) {
-                const keyword = full.replace(/\./g, ":");
-                const lua = Settings.buildLuaConfig(keyword, v);
-                script += ` && cat > $HOME/.config/hypr/config/custom/${full.replace(/\./g, "_")}.lua <<'EOF'\n${lua}\nEOF\n`;
-            }
-            script += " && hyprctl reload";
-            Quickshell.execDetached(["bash", "-c", script]);
-        } catch (e) {
-            console.warn("[Settings] apply hyprland:", e);
-        }
-    }
-
     function resetToDefaults() {
         // Leaving the focused-navigation state with the old values would
         // strand the fade over freshly reset sections.
@@ -1714,20 +1472,6 @@ Item {
         Settings.islandAnimStyle = "Emphasized";
         Settings.screenshot = Settings.defaultScreenshotSettings();
         Settings.recording = Settings.defaultRecordingSettings();
-        // Hyprland defaults
-        Settings.hyprSet("general.border_size", 0);
-        Settings.hyprSet("general.gaps_in", 7);
-        Settings.hyprSet("general.gaps_out", 10);
-        Settings.hyprSet("decoration.rounding", 16);
-        Settings.hyprSet("decoration.active_opacity", 0.9);
-        Settings.hyprSet("decoration.inactive_opacity", 0.8);
-        Settings.hyprSet("decoration.blur.enabled", true);
-        Settings.hyprSet("decoration.blur.size", 4);
-        Settings.hyprSet("decoration.blur.passes", 4);
-        Settings.hyprSet("decoration.blur.xray", false);
-        Settings.hyprSet("decoration.shadow.enabled", true);
-        Settings.hyprSet("decoration.shadow.range", 15);
-        Settings.hyprSet("decoration.shadow.render_power", 3);
         Settings.schedulePersist();
     }
 }
