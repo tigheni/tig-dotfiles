@@ -7,15 +7,15 @@ import qs.theme
 import qs.widgets.shared
 import qs.services
 
-// Custom Scripts widget — scrollable list of utility scripts: record entries route through
-// ScreenRecorder, everything else spawns via execDetached; a missing binary offers install.
+// Custom Scripts widget — scrollable list of utility scripts: screenshot entries route through
+// the Screenshot service, everything else spawns via execDetached; a missing binary offers install.
 Item {
     id: root
 
     property string monitorName: ""
 
     // Utility script definitions — icons are Nerd Font codepoints. kind marks entries whose
-    // callback does more than a plain exec (record toggle, file manager, reset confirmation).
+    // callback does more than a plain exec (screenshot, file manager, reset confirmation).
     property var scriptDefs: [
         {
             name: "Restart Bar",
@@ -57,35 +57,19 @@ Item {
             name: "Screenshot Screen",
             icon: Icons.screenshotScreen,
             description: "Screenshot entire screen",
-            keybind: ["SUPER", "SHIFT", "S"],
-            app: "grimblast",
-            package: "grimblast-git",
+            keybind: [],
+            app: "flameshot",
+            package: "flameshot",
             kind: "screenshot-now"
         },
         {
             name: "Screenshot Area",
             icon: Icons.screenshotScreen,
             description: "Select area to screenshot",
-            keybind: ["SUPER", "CTRL", "SHIFT", "S"],
-            app: "grimblast",
-            package: "grimblast-git",
+            keybind: ["Print"],
+            app: "flameshot",
+            package: "flameshot",
             kind: "screenshot-area"
-        },
-        {
-            name: "Record Screen",
-            icon: Icons.screenshotWindow,
-            description: "Record entire screen",
-            keybind: ["SUPER", "SHIFT", "R"],
-            app: "gpu-screen-recorder",
-            kind: "record-now"
-        },
-        {
-            name: "Record Area",
-            icon: Icons.screenshotWindow,
-            description: "Record selected area",
-            keybind: ["SUPER", "CTRL", "SHIFT", "R"],
-            app: "gpu-screen-recorder",
-            kind: "record-area"
         },
         {
             name: "Refresh Hyprland",
@@ -300,19 +284,11 @@ Item {
     function runScript(def) {
         // Special-kind callbacks that are more than a plain exec
         if (def.kind === "screenshot-now") {
-            Quickshell.execDetached([Quickshell.env("HOME") + "/.config/hypr/scripts/screenshot.sh", "--now", "--monitor", root.monitorName]);
+            Screenshot.capture("now", root.monitorName);
             return;
         }
         if (def.kind === "screenshot-area") {
-            Quickshell.execDetached([Quickshell.env("HOME") + "/.config/hypr/scripts/screenshot.sh", "--area", "--monitor", root.monitorName]);
-            return;
-        }
-        if (def.kind === "record-now") {
-            ScreenRecorder.toggleRecording("now", root.monitorName);
-            return;
-        }
-        if (def.kind === "record-area") {
-            ScreenRecorder.toggleRecording("area", root.monitorName);
+            Screenshot.capture("area", root.monitorName);
             return;
         }
         // Spawn via Quickshell.execDetached, NOT Hyprland.dispatch("exec ..."): Hyprland >= 0.55

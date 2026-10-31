@@ -801,7 +801,7 @@ PanelWindow {
             width: rightSideContents.implicitWidth
             // Read the contents' OWN inputs, never a child's `visible`: Qt propagates false
             // into descendants, so such a binding latches off (media stayed invisible for good).
-            visible: root.barVisible && (mediaPiece.hasPlayable || recordingPiece.shown)
+            visible: root.barVisible && (mediaPiece.hasPlayable || recordingPiece.shown || screenshotPiece.shown)
             Row {
                 id: rightSideContents
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -890,10 +890,9 @@ PanelWindow {
                     // `starting` pins it open through the ~2s pgrep lag before gsr is up.
                     readonly property bool recFlag: (ScreenRecorder.isRecording || ScreenRecorder.starting) && ScreenRecorder.targetMonitors.includes(root.monitorName)
                     property bool shown: false
-                    // Revealed on the empty-right hover, on an actual recording/start, or while
-                    // the launcher island is open (expansion moment, weather-pill recipe)
-                    property bool flag: recHover.hovered || recFlag
-                        || BarState.isOpenFor("search", root.monitorName)
+                    // Screen recording is hidden in this setup (no gpu-screen-recorder or
+                    // screenrecord.sh), so the record circle never reveals.
+                    property bool flag: false
                     onFlagChanged: {
                         if (recordingPiece.flag) {
                             recCloseConfirm.stop();
