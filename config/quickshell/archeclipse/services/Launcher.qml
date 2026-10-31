@@ -413,8 +413,9 @@ QtObject {
     }
 
     // ---- custom commands ----
+    // hypridle's before_sleep_cmd locks with hyprlock, so suspend needs no lock call here.
     function customCommandsList() {
-        return [mkResult("System Sleep", Icons.themeDark, "Suspend system", () => Quickshell.execDetached(["bash", "-c", `qs -p ${Quickshell.env("HOME")}/.config/quickshell/archeclipse ipc call lock activate && sleep 1 && systemctl suspend`])), mkResult("System Restart", Icons.restart, "Reboot system", () => Quickshell.execDetached(["reboot"])), mkResult("System Shutdown", Icons.shutdown, "Power off system", () => Quickshell.execDetached(["shutdown", "now"]))];
+        return [mkResult("System Sleep", Icons.themeDark, "Suspend system", () => Quickshell.execDetached(["systemctl", "suspend"])), mkResult("System Restart", Icons.restart, "Reboot system", () => Quickshell.execDetached(["reboot"])), mkResult("System Shutdown", Icons.shutdown, "Power off system", () => Quickshell.execDetached(["shutdown", "now"]))];
     }
 
     // ">" command palette (quickapps / recent / commands as results); bare ">" and
