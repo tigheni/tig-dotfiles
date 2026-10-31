@@ -210,17 +210,8 @@ Item {
                 columns: 2
                 columnSpacing: Theme.spacing
                 rowSpacing: Theme.spacing
-                // Theme toggle
-                AppButton {
-                    width: (parent.width - parent.columnSpacing) / 2
-                    height: 46
-                    cornerRadius: Theme.radius
-                    idleBg: Theme.surface
-                    icon: GlobalTheme.currentTheme ? Icons.sun : Icons.moon
-                    pixelSize: Theme.fontSize + 2
-                    tooltipText: GlobalTheme.currentTheme ? "Switch to Light Theme" : "Switch to Dark Theme"
-                    onClicked: GlobalTheme.setTheme(!GlobalTheme.currentTheme)
-                }
+                // The light/dark toggle is left out: it needs coloreclipse, and
+                // matugen (set-wallpaper.sh) owns the palette here.
                 // DND toggle
                 AppButton {
                     width: (parent.width - parent.columnSpacing) / 2

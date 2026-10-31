@@ -414,7 +414,7 @@ QtObject {
 
     // ---- custom commands ----
     function customCommandsList() {
-        return [mkResult("Light Theme", Icons.themeLight, "Switch to light theme", () => Quickshell.execDetached(["coloreclipse", "switch", "light"])), mkResult("Dark Theme", Icons.themeDark, "Switch to dark theme", () => Quickshell.execDetached(["coloreclipse", "switch", "dark"])), mkResult("System Sleep", Icons.themeDark, "Suspend system", () => Quickshell.execDetached(["bash", "-c", `qs -p ${Quickshell.env("HOME")}/.config/quickshell/archeclipse ipc call lock activate && sleep 1 && systemctl suspend`])), mkResult("System Restart", Icons.restart, "Reboot system", () => Quickshell.execDetached(["reboot"])), mkResult("System Shutdown", Icons.shutdown, "Power off system", () => Quickshell.execDetached(["shutdown", "now"]))];
+        return [mkResult("System Sleep", Icons.themeDark, "Suspend system", () => Quickshell.execDetached(["bash", "-c", `qs -p ${Quickshell.env("HOME")}/.config/quickshell/archeclipse ipc call lock activate && sleep 1 && systemctl suspend`])), mkResult("System Restart", Icons.restart, "Reboot system", () => Quickshell.execDetached(["reboot"])), mkResult("System Shutdown", Icons.shutdown, "Power off system", () => Quickshell.execDetached(["shutdown", "now"]))];
     }
 
     // ">" command palette (quickapps / recent / commands as results); bare ">" and
