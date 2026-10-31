@@ -12,6 +12,7 @@ NORMAL_TEMP=6500
 
 # Hyprland starts this script at login, often before wl-gammarelay-rs has
 # registered its D-Bus name. Wait for the relay instead of silently failing.
+# The night-light systemd user timer re-runs it at 07:00 and 20:00.
 for _ in {1..30}; do
     if busctl --user list | awk '$1 == "rs.wl-gammarelay" { found=1 } END { exit !found }'; then
         break

@@ -2,15 +2,15 @@
 
 tmux start-server
 
-dotfiles_dir="${DOTFILES_DIR:?DOTFILES_DIR is not set}"
+projects_dir="$HOME/repos"
 
-selected="$(fd . "$dotfiles_dir" --min-depth 1 --maxdepth 1 --type d --format '{/}' | fzf --bind=enter:replace-query+print-query)"
+selected="$(fd . "$projects_dir" --min-depth 1 --maxdepth 1 --type d --format '{/}' | fzf --bind=enter:replace-query+print-query)"
 
 if [[ -z $selected ]]; then
     exit 0
 fi
 
-selected="$dotfiles_dir/$selected"
+selected="$projects_dir/$selected"
 
 if [ ! -d "$selected" ]; then
     mkdir "$selected"

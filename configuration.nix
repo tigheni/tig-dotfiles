@@ -81,7 +81,7 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${username} = {
     isNormalUser = true;
-    extraGroups = ["networkmanager" "wheel" "input"];
+    extraGroups = ["networkmanager" "wheel"];
   };
 
   programs = {
@@ -135,19 +135,41 @@
     };
   };
 
-  # Voxtype voice-to-text daemon. Hyprland keybindings provide the
-  # push-to-talk start/stop events, so the evdev hotkey is disabled.
-  systemd.user.services.voxtype = {
-    description = "Voxtype voice-to-text daemon";
-    wantedBy = ["graphical-session.target"];
-    after = ["graphical-session.target" "pipewire.service"];
-    partOf = ["graphical-session.target"];
-    unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
-    path = with pkgs; [wtype wl-clipboard libnotify];
-    serviceConfig = {
-      ExecStart = "${pkgs.voxtype-vulkan}/bin/voxtype daemon";
-      Restart = "on-failure";
-      RestartSec = 3;
+  systemd.user = {
+    # Voxtype voice-to-text daemon. Hyprland keybindings provide the
+    # push-to-talk start/stop events, so the evdev hotkey is disabled.
+    services.voxtype = {
+      description = "Voxtype voice-to-text daemon";
+      wantedBy = ["graphical-session.target"];
+      after = ["graphical-session.target" "pipewire.service"];
+      partOf = ["graphical-session.target"];
+      unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
+      path = with pkgs; [wtype wl-clipboard libnotify];
+      serviceConfig = {
+        ExecStart = "${pkgs.voxtype-vulkan}/bin/voxtype daemon";
+        Restart = "on-failure";
+        RestartSec = 3;
+      };
+    };
+
+    # night-light.sh picks the temperature for the current hour. Hyprland runs
+    # it at login; this timer re-runs it when the hour crosses 07:00 or 20:00.
+    # Persistent catches a switch that was missed while suspended.
+    services.night-light = {
+      description = "Set screen temperature for the time of day";
+      unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
+      path = with pkgs; [systemd gawk coreutils];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${dotfilesDir}/scripts/night-light.sh";
+      };
+    };
+    timers.night-light = {
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnCalendar = ["*-*-* 07:00:00" "*-*-* 20:00:00"];
+        Persistent = true;
+      };
     };
   };
 

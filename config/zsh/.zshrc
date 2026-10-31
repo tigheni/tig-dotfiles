@@ -18,10 +18,6 @@ alias gsd="git stash drop"
 alias gco="git checkout"
 alias gcob="git checkout -b"
 alias gcom="git checkout master"
-alias gcop="git checkout production"
-alias yd="yarn dev"
-alias yj="yarn test"
-alias ygt="gac wip && yarn generate-types && grp"
 alias gprm="git fetch origin master:master --update-head-ok && git rebase master"
 alias grc="git rebase --continue"
 alias gra="git rebase --abort"
@@ -31,11 +27,9 @@ alias gbb="git bisect bad"
 alias gbr="git bisect reset"
 alias gm="git merge"
 alias gmm="git merge master"
-alias gmp="git merge production"
 alias gmc="git merge --continue"
 alias gma="git merge --abort"
 alias gpmm="git fetch origin master:master --update-head-ok && gmm"
-alias gpmp="git fetch origin production:production --update-head-ok && gmp"
 alias gmpr="gh pr review --comment -b 'SR' && gh pr merge --squash --delete-branch"
 alias rm="rm -I"
 alias ls="eza --group-directories-first --icons=auto"
@@ -108,7 +102,6 @@ open_issue() {
   git config branch.$BRANCH_NAME.description $BASE_BRANCH
 }
 goi() { open_issue $1 master; }
-gopi() { open_issue $1 production; }
 release_branch() {
   gh pr list --search Release --json headRefName | jq '.[0].headRefName' | tr -d '"'
 }
@@ -129,9 +122,5 @@ export MANWIDTH=999
 eval "$(zoxide init zsh)"
 source <(fzf --zsh)
 eval "$(atuin init zsh --disable-up-arrow)"
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 alias daytrack='$DOTFILES_DIR/scripts/daytrack.sh'

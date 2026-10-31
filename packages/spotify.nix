@@ -7,7 +7,8 @@
   };
 in
   pkgs.spotify.overrideAttrs (prev: {
-    buildInputs = [pkgs.perl pkgs.unzip pkgs.zip pkgs.util-linux pkgs.curl];
+    # Tools spotx.sh runs while patching; build-time only.
+    nativeBuildInputs = prev.nativeBuildInputs ++ [pkgs.perl pkgs.unzip pkgs.zip pkgs.util-linux pkgs.curl];
     postInstall =
       (prev.postInstall or "")
       + ''
