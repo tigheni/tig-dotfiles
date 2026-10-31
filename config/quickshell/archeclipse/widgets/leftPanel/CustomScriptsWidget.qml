@@ -8,7 +8,7 @@ import qs.widgets.shared
 import qs.services
 
 // Custom Scripts widget — scrollable list of utility scripts: screenshot entries route through
-// the Screenshot service, everything else spawns via execDetached; a missing binary offers install.
+// the Screenshot service, everything else spawns via execDetached; a missing binary greys its row out.
 Item {
     id: root
 
@@ -32,25 +32,10 @@ Item {
             command: "hyprpicker"
         },
         {
-            name: "Change Resolution",
-            icon: Icons.display,
-            description: "Change Resolution",
-            app: "nwg-displays",
-            package: "nwg-displays",
-            command: "wezterm start -- nwg-displays -m ~/.config/hypr/config/custom/monitors.conf"
-        },
-        {
-            name: "Update Packages",
-            icon: Icons.packages,
-            description: "Update Packages (pacman)",
-            command: "wezterm start -- sudo pacman -Syu"
-        },
-        {
             name: "Clear Clipboard",
             icon: Icons.clearClipboard,
             description: "Clear clipboard history",
             app: "wl-copy",
-            package: "wl-clipboard",
             command: "wl-copy --clear"
         },
         {
@@ -59,7 +44,6 @@ Item {
             description: "Screenshot entire screen",
             keybind: [],
             app: "flameshot",
-            package: "flameshot",
             kind: "screenshot-now"
         },
         {
@@ -68,7 +52,6 @@ Item {
             description: "Select area to screenshot",
             keybind: ["Print"],
             app: "flameshot",
-            package: "flameshot",
             kind: "screenshot-area"
         },
         {
@@ -83,12 +66,6 @@ Item {
             description: "Open system monitor",
             app: "btop",
             command: "wezterm start -- btop"
-        },
-        {
-            name: "Quickspeed",
-            icon: Icons.speed,
-            description: "Bandwidth speed test via Cloudflare",
-            command: "wezterm start -- bash -c \"python3 <(curl -fsSL https://raw.githubusercontent.com/AymanLyesri/quickspeed/refs/heads/master/quickspeed.py); echo; read -n 1 -s -r -p 'Press any key to close...'\""
         },
         {
             name: "Volume Control",
@@ -115,7 +92,6 @@ Item {
             icon: Icons.vscode,
             description: "Code Editor",
             app: "code",
-            package: "visual-studio-code-bin",
             command: "code"
         },
         {
@@ -123,7 +99,6 @@ Item {
             icon: Icons.spotify,
             description: "Spotify Client (lightweight - downloaded music)",
             app: "spotube",
-            package: "spotube-bin",
             command: "spotube"
         },
         {
@@ -160,13 +135,6 @@ Item {
             description: "Aquarium Animation",
             app: "asciiquarium",
             command: "wezterm start -- asciiquarium"
-        },
-        {
-            name: "Pacgraph",
-            icon: Icons.packages,
-            description: "Visualize package sizes (pacgraph -c)",
-            app: "pacgraph",
-            command: "wezterm start -- bash -c \"pacgraph -c; read -n 1 -s -r -p 'Press any key to continue...'\""
         },
         {
             name: "Reset Settings",
@@ -239,27 +207,6 @@ Item {
         }
     }
 
-    property Component installProcComp: Component {
-        // Spawn through wezterm so sudo pacman can prompt in a terminal — headless pacman hangs
-        // on the prompt forever. wezterm runs the bash branch inline so progress shows.
-        Process {
-            id: _instProc
-            property string pkgName: ""
-            // `wezterm start --` takes the command directly, so wrap in bash -c
-            command: ["wezterm", "start", "--", "bash", "-c", "if command -v yay >/dev/null 2>&1; then yay -S " + pkgName + "; elif command -v paru >/dev/null 2>&1; then paru -S " + pkgName + "; else sudo pacman -S " + pkgName + "; fi; echo; " + "echo 'Press any key to close...'; read -n 1 -s -r"]
-            onExited: code => {
-                if (code === 0)
-                    root.refreshAppStatus();
-                else
-                    Notifications.notify({
-                        summary: "Error",
-                        body: "Failed to install " + pkgName + ". Please install it manually."
-                    });
-                _instProc.destroy();
-            }
-        }
-    }
-
     property Component resetProcComp: Component {
         Process {
             id: _resetProc
@@ -307,14 +254,6 @@ Item {
             return true;
         const st = root.appStatus[def.app];
         return st === undefined ? true : st;
-    }
-
-    function installApp(def) {
-        const pkg = def.package || def.app;
-        const proc = installProcComp.createObject(root, {
-            pkgName: pkg
-        });
-        proc.running = true;
     }
 
     function doReset() {
@@ -439,17 +378,6 @@ Item {
                                 AppKeybind {
                                     keys: modelData.keybind || []
                                     Layout.alignment: Qt.AlignVCenter
-                                }
-
-                                // Install button (only when app missing)
-                                AppButton {
-                                    id: installBtn
-                                    visible: modelData.app !== undefined && !root.appInstalled(modelData)
-                                    Layout.preferredWidth: 32
-                                    Layout.alignment: Qt.AlignVCenter
-                                    text: Icons.download // download glyph (raw U+F019, kept as escape)
-                                    tooltipText: "Install " + (modelData.package || modelData.app)
-                                    onClicked: root.installApp(modelData)
                                 }
                             }
 

@@ -1,9 +1,7 @@
 module qs.widgets.leftPanel
 
 BooruViewer 1.0 BooruViewer/BooruViewer.qml
-CommitGrid 1.0 CommitGrid.qml
 CustomScriptsWidget 1.0 CustomScriptsWidget.qml
-GeneralTab 1.0 GeneralTab.qml
 KeyBindsWidget 1.0 KeyBindsWidget.qml
 MangaViewerWidget 1.0 MangaViewerWidget.qml
 SettingsWidget 1.0 SettingsWidget.qml
