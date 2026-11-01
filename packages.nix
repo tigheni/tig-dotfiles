@@ -52,7 +52,6 @@ in {
       lynx
 
       # Hyprland and desktop tools
-      mako
       wl-clipboard
       wl-gammarelay-rs
       rofi
@@ -64,7 +63,7 @@ in {
       bibata-cursors
       networkmanagerapplet
       pavucontrol
-      # Super+D dashboard (config/quickshell) and ArchEclipse (scripts/archeclipse.sh)
+      # ArchEclipse shell (config/quickshell/archeclipse, scripts/archeclipse.sh)
       (import ./packages/quickshell.nix {inherit pkgs;})
 
       # ArchEclipse Quickshell config (config/quickshell/archeclipse)

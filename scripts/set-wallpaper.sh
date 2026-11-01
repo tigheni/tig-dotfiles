@@ -1,7 +1,7 @@
 #!/bin/sh
 # Set the wallpaper on every monitor and recolour the desktop from it.
 #   set-wallpaper.sh        reuse the remembered wallpaper (login)
-#   set-wallpaper.sh FILE   switch to FILE and remember it (dashboard picker)
+#   set-wallpaper.sh FILE   switch to FILE and remember it (ArchEclipse picker)
 # Without a remembered choice, the first image in ~/.config/hypr/wallpaper
 # is used. Only runtime files are written; tracked configs stay untouched.
 
@@ -40,8 +40,7 @@ log "wallpaper: $wallpaper"
 # hyprlock reads the wallpaper through this link.
 ln -sfn "$wallpaper" "$runtime_dir/wallpaper"
 
-# Regenerate the colour tokens; config/matugen/config.toml's post_hook then
-# reloads mako. Quickshell watches the colour files itself.
+# Regenerate the colour palette; ArchEclipse watches the file itself.
 if command -v matugen >/dev/null; then
     matugen image --source-color-index 0 "$wallpaper" >>"$log_file" 2>&1 || log "matugen failed"
 fi

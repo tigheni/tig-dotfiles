@@ -1,13 +1,6 @@
 [config]
 reload_apps = false
 
-# GTK @define-color palette read by mako (scripts/mako-launch.sh) and the
-# Super+D dashboard (config/quickshell/Colors.qml).
-[templates.colors]
-input_path = "~/.config/matugen/templates/colors.css"
-output_path = "~/.cache/matugen/colors.css"
-post_hook = "$DOTFILES_DIR/scripts/mako-launch.sh render"
-
 # ArchEclipse's Theme.qml watches this file, so no reload hook is needed.
 [templates.archeclipse]
 input_path = "~/.config/matugen/templates/archeclipse-colors.scss"
