@@ -5,6 +5,7 @@
 #   archeclipse.sh toggle-bar    hide/show the bar on the focused monitor (Super+W)
 #   archeclipse.sh right-panel   open/close the right panel on the focused monitor (Super+D)
 #   archeclipse.sh search        open/close the launcher on the focused monitor (tap Super)
+#   archeclipse.sh clipboard     open/close the clipboard history popup (Super+Shift+V)
 #   archeclipse.sh dismiss       hide the newest notification popup (Super+Q)
 #   archeclipse.sh tour          reopen the welcome tour
 # It runs by path, so every call names the config directory explicitly.
@@ -35,6 +36,9 @@ right-panel)
 search)
     exec qs -p "$config" ipc call bar toggleSearch "$(focused_monitor)"
     ;;
+clipboard)
+    exec qs -p "$config" ipc call clipboardPopup toggle
+    ;;
 dismiss)
     exec qs -p "$config" ipc call bar dismissNotification
     ;;
@@ -42,7 +46,7 @@ tour)
     exec qs -p "$config" ipc call welcome open
     ;;
 *)
-    echo "usage: archeclipse.sh start|restart|toggle-bar|right-panel|search|dismiss|tour" >&2
+    echo "usage: archeclipse.sh start|restart|toggle-bar|right-panel|search|clipboard|dismiss|tour" >&2
     exit 2
     ;;
 esac

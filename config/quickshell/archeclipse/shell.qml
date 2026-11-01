@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 import qs.widgets.bar
+import qs.widgets.clipboard
 import qs.widgets.launcher
 import qs.widgets.lock
 import qs.widgets.media
@@ -39,6 +40,11 @@ ShellRoot {
     // The welcome tour is a single overlay window. It follows the focused
     // monitor by default and can target a specific output through its IPC.
     WelcomeScreen {
+    }
+
+    // Clipboard history (Super+Shift+V): one window centered on the focused
+    // monitor, separate from the bar.
+    ClipboardPopup {
     }
 
     // Selection rectangle used by SUPER + left-drag. Hyprland sends the

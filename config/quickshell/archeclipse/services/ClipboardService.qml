@@ -35,6 +35,20 @@ QtObject {
         p.running = true;
     }
 
+    // Drop one entry (the clipboard popup's Delete key), and its cached image.
+    function remove(id) {
+        root._loadHistory((list) => {
+            const gone = list.filter(e => e.id === id);
+            const kept = list.filter(e => e.id !== id);
+            for (const e of gone) {
+                if (e.type === "image")
+                    Quickshell.execDetached(["rm", "-f", String(e.content)]);
+            }
+            root._writeHistory(kept);
+            root.history = kept;
+        });
+    }
+
     function start() {
         if (root._started)
             return;

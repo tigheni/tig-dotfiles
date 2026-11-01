@@ -55,7 +55,6 @@ in {
       wl-clipboard
       wl-gammarelay-rs
       rofi
-      clipse
       grim
       hyprpicker
       hyprpaper
