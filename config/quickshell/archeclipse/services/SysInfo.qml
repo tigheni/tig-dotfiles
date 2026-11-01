@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 
 // System resources for the bar: one compiled Rust helper streams tagged JSON
-// (SYS every 5s, BW every 3s), built by AutoCompiling from scripts/sysmonitor.rs.
+// (SYS every 5s, BW every 3s), built by packages/archeclipse-sysmonitor.nix from scripts/sysmonitor.rs.
 QtObject {
     id: root
 
@@ -79,13 +79,10 @@ QtObject {
         root.resourceConsumers = Math.max(0, root.resourceConsumers - 1);
     }
 
+    // packages/archeclipse-sysmonitor.nix builds scripts/sysmonitor.rs onto PATH, so
+    // there is no runtime rustc compile (AutoCompiling) here.
     Component.onCompleted: {
-        AutoCompiling.build(
-            `${Quickshell.env("HOME")}/.config/quickshell/archeclipse/scripts/sysmonitor.rs`,
-            "sysmonitor",
-            p => {
-                root.binPath = p;
-                startLoop();
-            });
+        root.binPath = "archeclipse-sysmonitor";
+        startLoop();
     }
 }

@@ -69,6 +69,18 @@ in {
       wttrbar
       quickshell # Super+D dashboard, config in config/quickshell
 
+      # ArchEclipse Quickshell config (config/quickshell/archeclipse)
+      (python3.withPackages (ps: with ps; [requests pillow])) # launcher apps, wallhaven, booru, manga
+      zenity # wallpaper import picker
+      pulseaudio # pactl for the control panel volume section; PipeWire stays the server
+      bc # launcher calculator
+      translate-shell
+      swayimg
+      fastfetch
+      imagemagick
+      cava
+      (import ./packages/archeclipse-sysmonitor.nix {inherit pkgs;})
+
       # Voxtype voice-to-text and its Wayland typing backend
       voxtype-vulkan
       wtype
