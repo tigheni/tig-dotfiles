@@ -16,7 +16,7 @@ Search:
     total, last_page, seed}}.
 
 Download (save + apply flow: the panel downloads the full-res file into
-~/.config/wallpapers/wallhaven/ then reuses the local apply pipeline):
+~/Pictures/Wallpapers/ then reuses the local apply pipeline):
     wallhaven.py --download <id> --dest <path> [--full-url URL] [--api-key KEY]
 
     Prints {"path": dest, "id": id}. When --full-url is absent the file

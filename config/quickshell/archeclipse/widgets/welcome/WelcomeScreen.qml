@@ -655,7 +655,7 @@ Scope {
                                 font.pixelSize: Theme.fontSize + 14
                             }
                             BodyText {
-                                text: "ArchEclipse combines Arch Linux, Hyprland, and a custom Quickshell interface into one cohesive desktop: a configurable bar, launcher, side panels, and widgets. Set wallpapers per workspace and, with dynamic theming enabled, let their colors update the shell."
+                                text: "ArchEclipse combines Arch Linux, Hyprland, and a custom Quickshell interface into one cohesive desktop: a configurable bar, launcher, side panels, and widgets. Pick a wallpaper and its colors update the shell, bar and notifications."
                             }
                             BodyText {
                                 text: "Explore the main controls and widgets in both side panels. “Open it for me” previews a widget; your panel state returns when you close the tour."
@@ -897,7 +897,7 @@ Scope {
                         // 4 — wallpaper
                         LiveStep {
                             title: "Wallpaper switcher"
-                            text: "Choose static or video wallpapers (MP4, WebM, MKV, MOV) per workspace. Switch to Wallhaven to search and download images. Select the lock tile to set a picture for the custom ArcheEclipse Greeter on greetd; the image is copied to its system directory, while sync-greeter.sh mirrors the greeter files with rsync."
+                            text: "Choose a wallpaper from Pictures or Dotfiles; it is set on every monitor and the lock screen, and the colors follow it. Switch to Wallhaven to search and download images into ~/Pictures/Wallpapers."
                             keys: ["SUPER", "W"]
                             active: root.stepActive(4)
                             onToggleRequested: root.stepToggle(4)

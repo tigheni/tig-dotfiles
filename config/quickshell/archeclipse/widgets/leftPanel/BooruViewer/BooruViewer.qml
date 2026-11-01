@@ -539,7 +539,7 @@ Item {
         return BooruActions.setAsWaifu(img);
     }
 
-    // Copy the downloaded full image into ~/.config/wallpapers/custom
+    // Copy the downloaded full image into ~/Pictures/Wallpapers
     // (thumbnail included) so the Wallpaper switcher can apply it.
     function saveAsWallpaper(img) {
         return BooruActions.saveAsWallpaper(img);

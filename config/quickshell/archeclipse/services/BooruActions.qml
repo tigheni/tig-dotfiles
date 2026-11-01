@@ -192,7 +192,7 @@ QtObject {
             Quickshell.execDetached(["swayimg", "-w", "690,690", "--class", "preview-image", path]);
     }
 
-    // Copies the downloaded full image into ~/.config/wallpapers/custom so the switcher
+    // Copies the downloaded full image into ~/Pictures/Wallpapers so the switcher
     // can apply it; exit 3 (test -s) means the download has not landed yet.
     function saveAsWallpaper(img, after) {
         if (!img || img.id === undefined || img.id === null)
@@ -213,7 +213,7 @@ QtObject {
         const api = root.apiOf(img) || "danbooru";
         const basename = `booru-${api}-${img.id}.${ext}`;
         const home = Quickshell.env("HOME");
-        const targetDir = home + "/.config/wallpapers/custom";
+        const targetDir = home + "/Pictures/Wallpapers";
         const targetPath = targetDir + "/" + basename;
         const script = `test -s ${JSON.stringify(src)} || exit 3; ` + `mkdir -p ${JSON.stringify(targetDir)} && ` + `cp -- ${JSON.stringify(src)} ${JSON.stringify(targetPath)}`;
         const p = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
@@ -227,11 +227,11 @@ QtObject {
                 if (after)
                     after(false);
             } else if (code === 0) {
-                Notifications.notify({ summary: "Success", body: "Saved to wallpapers/custom — pick it in the Wallpaper switcher" });
+                Notifications.notify({ summary: "Success", body: "Saved to Pictures/Wallpapers — pick it in the Wallpaper switcher" });
                 if (after)
                     after(true);
             } else {
-                Notifications.notify({ summary: "Error", body: "Could not save to wallpapers folder" });
+                Notifications.notify({ summary: "Error", body: "Could not save to Pictures/Wallpapers" });
                 if (after)
                     after(false);
             }

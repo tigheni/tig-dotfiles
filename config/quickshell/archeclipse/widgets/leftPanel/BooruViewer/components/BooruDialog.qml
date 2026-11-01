@@ -625,7 +625,7 @@ Item {
                                 viewer.setAsWaifu(dlg);
                         }
                     }
-                    // Save the full file (plus thumbnail) into ~/.config/wallpapers/custom for the
+                    // Save the full file (plus thumbnail) into ~/Pictures/Wallpapers for the
                     // Wallpaper switcher; needs the auto-downloaded file, zips excluded.
                     AppButton {
                         width: parent.width
