@@ -8,7 +8,7 @@
 set -eu
 
 config="${XDG_CONFIG_HOME:-$HOME/.config}/mako/config"
-colors="${XDG_CONFIG_HOME:-$HOME/.config}/waybar/tokens/colors.css"
+colors="$HOME/.cache/matugen/colors.css" # written by matugen (config/matugen)
 runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/mako"
 runtime_config="$runtime_dir/config"
 

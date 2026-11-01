@@ -37,7 +37,7 @@ Singleton {
     }
 
     FileView {
-        path: Quickshell.env("HOME") + "/.config/waybar/tokens/colors.css"
+        path: Quickshell.env("HOME") + "/.cache/matugen/colors.css"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: root.parse(text())

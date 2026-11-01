@@ -41,7 +41,7 @@ log "wallpaper: $wallpaper"
 ln -sfn "$wallpaper" "$runtime_dir/wallpaper"
 
 # Regenerate the colour tokens; config/matugen/config.toml's post_hook then
-# reloads Waybar and mako. Quickshell watches the tokens file itself.
+# reloads mako. Quickshell watches the colour files itself.
 if command -v matugen >/dev/null; then
     matugen image --source-color-index 0 "$wallpaper" >>"$log_file" 2>&1 || log "matugen failed"
 fi
