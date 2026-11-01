@@ -1128,9 +1128,9 @@ Singleton {
                 const _bla = s.blueLight?.auto;
                 root.blueLightAuto = (typeof _bla === "object" && _bla !== null) ? (_bla.value ?? false) : (_bla ?? false);
                 const _bls = s.blueLight?.start;
-                root.blueLightStart = root._normTime((typeof _bls === "object" && _bls !== null) ? _bls.value : _bls, "21:00");
+                root.blueLightStart = String(((typeof _bls === "object" && _bls !== null) ? _bls.value : _bls) ?? "21:00");
                 const _ble = s.blueLight?.end;
-                root.blueLightEnd = root._normTime((typeof _ble === "object" && _ble !== null) ? _ble.value : _ble, "07:00");
+                root.blueLightEnd = String(((typeof _ble === "object" && _ble !== null) ? _ble.value : _ble) ?? "07:00");
 
                 // Rating tag leads, defaulting to -rating:explicit, done here (not viewer
                 // boot) so the file's tags are normalized the moment they are adopted.
