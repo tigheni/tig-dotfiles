@@ -48,8 +48,10 @@ PanelWindow {
     }
 
     // Exclusive grab while search is open: bound to search membership, not resolved state —
-    // the ~100ms resolve lag stole focus back from a freshly launched app.
-    WlrLayershell.keyboardFocus: BarState.isOpenFor("search", root.monitorName) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+    // the ~100ms resolve lag stole focus back from a freshly launched app. The wallpaper
+    // picker grabs too, so Esc closes it without clicking into it first — except while its
+    // zenity "Add" dialog is up: an exclusive layer blocks Hyprland from focusing that window.
+    WlrLayershell.keyboardFocus: (BarState.isOpenFor("search", root.monitorName) || (BarState.isOpenFor("wallpaper", root.monitorName) && !WallpaperService.filePickerOpen)) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
     WlrLayershell.exclusiveZone: root.barHeight
     // Toast breakthrough: while toasts are up the window jumps to the Overlay layer (above
     // fullscreen), dropping back to Top when they clear; notifPill resolves below.
@@ -683,7 +685,9 @@ PanelWindow {
         Item {
             id: leftSidePill
             x: pill.x - width - Theme.sidePillMargin
-            y: Settings.barOrientation ? Theme.sidePillMargin / 2 : parent.height - height - Theme.sidePillMargin / 2
+            // Flush with the bar edge like the main pill, so the 24px fill (inset (28 - 24) / 2)
+            // shares its vertical center instead of sitting 4px lower.
+            y: Settings.barOrientation ? 0 : parent.height - height
             // Grows (Behavior-free — the pill's own height Behavior drives it per frame) when
             // a side pill unfolds, so the click-mask Region tracks the expanded pill
             height: Math.max(root.barHeight, (root.barHeight - Theme.sidePillHeight) / 2 + weatherButton.height)
@@ -794,7 +798,9 @@ PanelWindow {
             id: rightSidePill
             // Rigid chain right of the main pill (no Behavior).
             x: pill.x + pill.width + Theme.sidePillMargin
-            y: Settings.barOrientation ? Theme.sidePillMargin / 2 : parent.height - height - Theme.sidePillMargin / 2
+            // Flush with the bar edge like the main pill, so the 24px fill (inset (28 - 24) / 2)
+            // shares its vertical center instead of sitting 4px lower.
+            y: Settings.barOrientation ? 0 : parent.height - height
             // grows per-frame (Behavior-free — media's own height Behavior
             // drives it) so the click-mask Region tracks the expanded pill
             height: Math.max(root.barHeight, mediaPiece.height, recordingPiece.height, screenshotPiece.height)

@@ -25,6 +25,9 @@ QtObject {
     property var _pendingAspect: ({})
     property bool _thumbPending: false
     property bool _started: false
+    // True while the "Add wallpaper" zenity dialog is up: the bar drops its exclusive
+    // keyboard grab so Hyprland can focus the dialog (else the whole session locks up).
+    property bool filePickerOpen: false
 
     function isVideoFile(file) {
         return /\.(mp4|webm|mkv|mov)$/i.test(file || "");
@@ -96,8 +99,9 @@ QtObject {
         const rootName = i === -1 ? category : category.slice(0, i);
         return root.wallpaperRoots[rootName] + (i === -1 ? "" : category.slice(i));
     }
-    // Same extension set as the old script's find -iname list.
-    readonly property var _scanExts: ["jpg", "jpeg", "png", "webp", "bmp", "gif", "svg", "mp4", "webm", "mkv", "mov"]
+    // Still images only: set-wallpaper.sh applies through hyprpaper, which cannot show
+    // video, gif, svg or bmp.
+    readonly property var _scanExts: ["jpg", "jpeg", "png", "webp"]
 
     function _isWallpaperFile(name) {
         const m = /\.([^.]+)$/.exec(name || "");

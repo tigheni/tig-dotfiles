@@ -23,7 +23,6 @@ Item {
         { key: "theme", title: "Theme" },
         { key: "interface", title: "Interface" },
         { key: "animations", title: "Animations" },
-        { key: "user-agents", title: "User Agents" },
         { key: "api-keys", title: "API Keys" },
         { key: "reset", title: "Reset" },
         { key: "lockscreen", title: "Lockscreen" },
@@ -489,104 +488,14 @@ Item {
                         }
                     }
 
-                    // ============ USER AGENTS ============
+                    // ============ API KEYS ============
                     CategorySection {
                         nav: nav
                         categoryIndex: 5
 
                         Repeater {
-                            model: [
-                                { key: "booru", label: "Booru" },
-                                { key: "mangaDex", label: "MangaDex" },
-                                { key: "mangaLib", label: "MangaLib" },
-                                { key: "waifu", label: "Waifu" },
-                                { key: "fastfetch", label: "Fastfetch" }
-                            ]
-                            delegate: Rectangle {
-                                width: parent.width
-                                height: uaRow.implicitHeight
-                                color: "transparent"
-
-                                property bool reveal: false
-
-                                RowLayout {
-                                    id: uaRow
-                                    width: parent.width
-                                    spacing: Theme.spacing
-                                    SettingLabel {
-                                        text: modelData.label
-                                        tip: "Custom User-Agent sent with " + modelData.label + " requests."
-                                        // Share the row with the field: a fixed 90
-                                        // left it ~30px once the rail took its width.
-                                        Layout.fillWidth: true
-                                    }
-                                    AppTextField {
-                                        id: uaField
-                                        text: Settings.userAgent(modelData.key)
-                                        placeholderText: "User-Agent"
-                                        echoMode: parent.parent.reveal ? TextField.Normal : TextField.Password
-                                        fillColor: "transparent"
-                                        Layout.fillWidth: true
-                                        onAccepted: {
-                                            const u = JSON.parse(JSON.stringify(Settings.userAgents || {}));
-                                            u[modelData.key] = uaField.text;
-                                            Settings.userAgents = u;
-                                            Settings.schedulePersist();
-                                        }
-                                    }
-                                    AppButton {
-                                        text: parent.parent.reveal ? "hide" : "show"
-                                        Layout.preferredWidth: 44
-                                        Layout.preferredHeight: 24
-                                        visible: uaField.text !== ""
-                                        tooltipText: "Show or hide the value"
-                                        onClicked: parent.parent.reveal = !parent.parent.reveal
-                                    }
-                                    AppButton {
-                                        text: "copy"
-                                        Layout.preferredWidth: 44
-                                        Layout.preferredHeight: 24
-                                        visible: uaField.text !== ""
-                                        tooltipText: "Copy the value to the clipboard"
-                                        onClicked: root.copyText(uaField.text)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // ============ API KEYS ============
-                    CategorySection {
-                        nav: nav
-                        categoryIndex: 6
-
-                        Repeater {
                             id: apiKeyRepeater
                             model: [
-                                {
-                                    path: "danbooru.user",
-                                    label: "Danbooru User"
-                                },
-                                {
-                                    path: "danbooru.key",
-                                    label: "Danbooru Key"
-                                },
-                                {
-                                    path: "gelbooru.user",
-                                    label: "Gelbooru User"
-                                },
-                                {
-                                    path: "gelbooru.key",
-                                    label: "Gelbooru Key"
-                                },
-                                {
-                                    path: "safebooru.user",
-                                    label: "Safebooru User"
-                                },
-                                {
-                                    path: "safebooru.key",
-                                    label: "Safebooru Key"
-                                },
                                 {
                                     path: "wallhaven.key",
                                     label: "Wallhaven Key (optional, unlocks NSFW)"
@@ -684,7 +593,7 @@ Item {
                     // gaps, rounding and blur stay owned by config/hypr.)
                     CategorySection {
                         nav: nav
-                        categoryIndex: 7
+                        categoryIndex: 6
 
                         Column {
                             width: parent.width
@@ -701,7 +610,7 @@ Item {
                     // ============ LOCKSCREEN ============
                     CategorySection {
                         nav: nav
-                        categoryIndex: 8
+                        categoryIndex: 7
 
                         SettingRow {
                             text: "Grace Period (seconds)"
@@ -730,7 +639,7 @@ Item {
                     // ============ SCREENSHOT SETTINGS ============
                     CategorySection {
                         nav: nav
-                        categoryIndex: 9
+                        categoryIndex: 8
 
                         SettingRow {
                             text: "Directory to save screenshots"
@@ -848,14 +757,14 @@ Item {
                     // ============ KEYBINDS ============
                     CategorySection {
                         nav: nav
-                        categoryIndex: 10
+                        categoryIndex: 9
 
                         SettingRow {
                             text: "Super key symbol"
                             tip: "Choose the glyph used for the Super / Windows modifier."
 
                             AppComboBox {
-                                model: [Icons.keySuperArch, Icons.keySuperManjaro, Icons.keySuperEndeavour, Icons.keySuperCachyOS, Icons.keySuperGaruda, Icons.keySuperArchcraft, Icons.keySuperArcoLinux, Icons.keySuperArtix, Icons.keySuperLinuxTerminal, Icons.keySuperLinux, Icons.keySuperGentoo, Icons.keySuperDebian, Icons.keySuperUbuntu, Icons.keySuperRedHat, Icons.keySuperFedora, Icons.keySuperSteam, Icons.keySuperApple, Icons.keySuperCommand, Icons.keySuperAndroid, Icons.keySuperAssistant, Icons.keySuperChrome, Icons.keySuperWindows11, Icons.keySuperWindowsClassic]
+                                model: [Icons.keySuperNixOS, Icons.keySuperArch, Icons.keySuperManjaro, Icons.keySuperEndeavour, Icons.keySuperCachyOS, Icons.keySuperGaruda, Icons.keySuperArchcraft, Icons.keySuperArcoLinux, Icons.keySuperArtix, Icons.keySuperLinuxTerminal, Icons.keySuperLinux, Icons.keySuperGentoo, Icons.keySuperDebian, Icons.keySuperUbuntu, Icons.keySuperRedHat, Icons.keySuperFedora, Icons.keySuperSteam, Icons.keySuperApple, Icons.keySuperCommand, Icons.keySuperAndroid, Icons.keySuperAssistant, Icons.keySuperChrome, Icons.keySuperWindows11, Icons.keySuperWindowsClassic]
                                 currentIndex: Math.max(0, model.indexOf(Settings.keybindsSuperKey))
                                 onActivated: Settings.keybindsSuperKey = model[index]
                                 Layout.preferredWidth: 120
@@ -1029,18 +938,6 @@ Item {
     // Concise tooltip per API-key row (shown via SettingLabel).
     function apiKeyTip(path, label) {
         switch (path) {
-        case "danbooru.user":
-            return "Your Danbooru login name.";
-        case "danbooru.key":
-            return "Key for Danbooru favorites and uploads.";
-        case "gelbooru.user":
-            return "Your Gelbooru login name.";
-        case "gelbooru.key":
-            return "Key for Gelbooru favorites.";
-        case "safebooru.user":
-            return "Your Safebooru login name.";
-        case "safebooru.key":
-            return "Key for Safebooru favorites.";
         case "wallhaven.key":
             return "Optional key; unlocks NSFW wallpapers.";
         default:

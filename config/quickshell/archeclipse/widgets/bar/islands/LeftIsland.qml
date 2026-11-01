@@ -16,8 +16,7 @@ Item {
 
     // Island owner passes the bar's monitor; body falls back to focused.
     property string monitorName: ""
-    // Monitor screen object (ShellScreen) passed by the bar owner — handed
-    // to the booru viewer for its full-screen float panel.
+    // Monitor screen object (ShellScreen) passed by the bar owner.
     property var screen: null
 
     // Full monitor height from the bar owner: side islands stretch the whole vertical screen
@@ -32,7 +31,7 @@ Item {
     property real expand: 0
     // Tab-name order for the rail index mapping; names keep the QS "Widget" suffix for IPC
     // showWidget/widgetState compat.
-    readonly property var tabOrder: ["BooruViewer", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds"]
+    readonly property var tabOrder: ["SettingsWidget", "CustomScripts", "KeyBinds"]
     function tabIndex(name) {
         const i = root.tabOrder.indexOf(name);
         return i >= 0 ? i : root.tabOrder.indexOf("SettingsWidget");
@@ -42,7 +41,6 @@ Item {
         Registry.register(root.registryKey(), root);
         Registry.register("left-island", root);
         // Prime the initially-selected tab so its Loader activates below.
-        // (The booru hostPanel back-reference is wired in its onLoaded.)
         var v = Object.assign({}, root._visited);
         v[root.selectedWidget] = true;
         root._visited = v;
@@ -79,7 +77,9 @@ Item {
         return root.selectedWidget === name || root._visited[name] === true;
     }
     onSelectedWidgetChanged: {
-        if (!root._restoringSelectedWidget)
+        // Skip no-op writes: each one replaces leftPanelByMonitor, which re-evaluates the
+        // selectedWidget binding from inside its own change handler (a binding loop).
+        if (!root._restoringSelectedWidget && Settings.leftPanelWidgetFor(root.monitorName) !== selectedWidget)
             Settings.setLeftPanelWidgetFor(root.monitorName, selectedWidget);
         if (root._visited[selectedWidget] !== true) {
             var v = Object.assign({}, root._visited);
@@ -104,40 +104,14 @@ Item {
     readonly property var activeWidget: {
         switch (widgetStack.currentIndex) {
         case 0:
-            return booruLoader.item;
-        case 1:
-            return mangaLoader.item;
-        case 2:
             return settingsLoader.item;
-        case 3:
+        case 1:
             return scriptsLoader.item;
-        case 4:
+        case 2:
             return keybindsLoader.item;
         default:
             return null;
         }
-    }
-
-    // Direct access to the booru viewer instance (null until primed).
-    readonly property var booruView: booruLoader.item
-    // Post waiting for the booru Loader: openDialog lands here when a
-    // caller (e.g. waifu) floats a dialog before first instantiation.
-    property var _pendingDialogImage: null
-
-    // Opens a post in the floating detail window without opening the island. Primes the Booru
-    // tab; if the viewer isn't instantiated this tick the post parks in _pendingDialogImage.
-    function openBooruDialog(img) {
-        if (!img)
-            return false;
-        root.primeTab("BooruViewer");
-        const v = root.booruView;
-        if (v && typeof v.openDialog === "function" && typeof v.detachDialog === "function") {
-            v.openDialog(img, null);
-            v.detachDialog();
-        } else {
-            root._pendingDialogImage = img;
-        }
-        return true;
     }
 
     // Build a tab's Loader without switching to it or opening the island
@@ -230,17 +204,9 @@ Item {
                     anchors.right: parent.right
                     anchors.margins: Theme.pad
                     highlightedName: BarState.tourHighlightMonitor === root.monitorName ? BarState.tourHighlightTab : ""
-                    // Tab order + icons: BooruViewer, MangaViewer, Settings,
-                    // CustomScripts, KeyBinds ("Widget" suffix for IPC).
+                    // Tab order + icons: Settings, CustomScripts,
+                    // KeyBinds ("Widget" suffix for IPC).
                     model: [
-                        {
-                            name: "BooruViewer",
-                            icon: Icons.image
-                        },
-                        {
-                            name: "MangaViewer",
-                            icon: Icons.manga
-                        },
                         {
                             name: "SettingsWidget",
                             icon: Icons.settings
@@ -293,51 +259,15 @@ Item {
                     anchors.margins: Theme.pad
                     currentIndex: {
                         switch (root.selectedWidget) {
-                        case "BooruViewer":
-                            return 0;
-                        case "MangaViewer":
-                            return 1;
                         case "SettingsWidget":
-                            return 2;
+                            return 0;
                         case "CustomScripts":
-                            return 3;
+                            return 1;
                         case "KeyBinds":
-                            return 4;
-                        default:
                             return 2;
+                        default:
+                            return 0;
                         }
-                    }
-                    Loader {
-                        id: booruLoader
-                        active: root.tabPrimed("BooruViewer")
-                        sourceComponent: booruComp
-                        // 1-2k-line tab: parse off the UI thread (first click hitch).
-                        asynchronous: true
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        onLoaded: {
-                            // Back-reference for popup-unhover hides; bind hostScreen reactively off
-                            // hostPanel.screen — a one-shot assign runs before the bar sets it.
-                            if (item) {
-                                item.hostPanel = root;
-                                // Flush a dialog parked by openBooruDialog
-                                // while this Loader was instantiating.
-                                if (root._pendingDialogImage) {
-                                    const p = root._pendingDialogImage;
-                                    root._pendingDialogImage = null;
-                                    item.openDialog(p, null);
-                                    item.detachDialog();
-                                }
-                            }
-                        }
-                    }
-                    Loader {
-                        id: mangaLoader
-                        active: root.tabPrimed("MangaViewer")
-                        sourceComponent: mangaComp
-                        asynchronous: true
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
                     }
                     Loader {
                         id: settingsLoader
@@ -360,16 +290,6 @@ Item {
                         sourceComponent: keybindsComp
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                    }
-                }
-                Component {
-                    id: booruComp
-                    BooruViewer {}
-                }
-                Component {
-                    id: mangaComp
-                    MangaViewerWidget {
-                        monitorName: root.monitorName
                     }
                 }
                 Component {

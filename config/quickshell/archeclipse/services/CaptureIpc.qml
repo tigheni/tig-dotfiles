@@ -129,8 +129,7 @@ Item {
         }
         function select(name: string): string {
             if (!root.active) return root.reply({ok: false, error: "No capture lease"});
-            const tabs = {"left-panel-settings": "SettingsWidget", "left-panel-keybinds": "KeyBinds",
-                "left-panel-booru-1": "BooruViewer"};
+            const tabs = {"left-panel-settings": "SettingsWidget", "left-panel-keybinds": "KeyBinds"};
             const states = {"app-launcher": "search", "control-panel": "control", "wallpaper-switcher": "wallpaper",
                 "workspace-overview": "overview", "right-panel-layout-1": "right", "right-panel-layout-2": "right",
                 "overview": "player"};
@@ -141,8 +140,8 @@ Item {
             BarState.panelStatesByMonitor = ({});
             BarState.searchMonitor = "";
             const layouts = {
-                "right-panel-layout-1": ["Waifu", "Media", "Calendar", "NotificationHistory"],
-                "right-panel-layout-2": ["Calendar", "Media", "Waifu", "SystemResources"]
+                "right-panel-layout-1": ["Media", "Calendar", "NotificationHistory"],
+                "right-panel-layout-2": ["Calendar", "Media", "SystemResources"]
             };
             const defs = Settings.defaultRightPanelWidgets();
             root.rightWidgets = layouts[name] ? layouts[name].map(n =>
@@ -150,7 +149,7 @@ Item {
             root.widget = tabs[name] || "";
             root.overviewMode = (name === "overview");
             if (root.widget) Settings.setLeftPanelWidgetFor(root.monitor, root.widget);
-            if (root.overviewMode) Settings.setLeftPanelWidgetFor(root.monitor, "BooruViewer");
+            if (root.overviewMode) Settings.setLeftPanelWidgetFor(root.monitor, "SettingsWidget");
             if (name === "wallpaper-switcher") {
                 // SFW set for the README shot: direct assignment, never updateSetting, so
                 // the detour is not persisted — restore() puts the user's values back.
@@ -165,7 +164,7 @@ Item {
             BarState.activate(root.desiredState, 0, root.monitor);
             if (root.overviewMode) {
                 // ArchEclipse Overview hero: player island on the main pill
-                // plus both side pills (BooruViewer left, default right).
+                // plus both side pills (Settings left, default right).
                 BarState.activate("left", 0, root.monitor);
                 BarState.activate("right", 0, root.monitor);
             }
@@ -201,19 +200,11 @@ Item {
                     const item = island.activeWidget;
                     ready = !item.loading && item.totalBinds > 0 && item.revealOpacity >= 1;
                 }
-                if (ready && root.widget === "BooruViewer") {
-                    const item = island.activeWidget;
-                    ready = item.progressStatus !== "loading" && item.progressStatus !== "error";
-                }
             }
             if (root.overviewMode) {
                 const island = Registry.get("left-island-" + root.monitor);
                 ready = ready && BarState.isOpenFor("left", root.monitor) && BarState.isOpenFor("right", root.monitor);
-                ready = ready && !!island && island.selectedWidget === "BooruViewer" && !!island.activeWidget;
-                if (ready) {
-                    const item = island.activeWidget;
-                    ready = item.progressStatus !== "loading" && item.progressStatus !== "error";
-                }
+                ready = ready && !!island && island.selectedWidget === "SettingsWidget" && !!island.activeWidget;
             }
             if (root.desiredState === "wallpaper") ready = ready && images.wallpaperFound && images.errors === 0;
             if (root.desiredState === "search") ready = ready && Launcher.results.length > 0;

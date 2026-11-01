@@ -143,15 +143,18 @@ Rectangle {
         id: dwellTimer
         interval: Settings.revealInPressure
         repeat: false
-        onTriggered: BarState.activate("weather", 3000, root.monitorName)
+        onTriggered: BarState.activate("weather", 0, root.monitorName)
     }
 
+    // A hover reveal has no hold timer: WeatherIsland's pin stays held while the button
+    // is hovered and closes it after the usual leave delay once the cursor is gone.
     HoverHandler {
         id: hover
         onHoveredChanged: {
+            BarState.setWeatherHover(root.monitorName, hover.hovered);
             if (hover.hovered) {
                 if (Settings.revealInPressure <= 0)
-                    BarState.activate("weather", 3000, root.monitorName);
+                    BarState.activate("weather", 0, root.monitorName);
                 else
                     dwellTimer.restart();
             } else {

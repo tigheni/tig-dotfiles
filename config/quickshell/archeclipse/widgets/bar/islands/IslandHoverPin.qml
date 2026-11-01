@@ -57,6 +57,9 @@ HoverHandler {
     // call it on every open so a grace that expired while idle is fresh again.
     function arm() {
         leaveTimer.interval = root.openGrace;
+        // Created already held (WeatherIsland under a hovered button): the release arms it.
+        if (root.holdOpen)
+            return;
         leaveTimer.restart();
     }
     // Arm at creation too (unless opted out): without a hover transition the island would stay

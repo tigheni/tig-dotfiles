@@ -261,7 +261,8 @@ Item {
                         anchors.fill: parent
                         visible: root.playing
                         function redrawRing() {
-                            if (!visible)
+                            // Hidden panels have no surface yet: getContext() would only log.
+                            if (!visible || !available)
                                 return;
                             const ctx = getContext("2d");
                             if (!ctx)
@@ -278,10 +279,12 @@ Item {
                         }
                         onVisibleChanged: if (visible)
                             redrawRing()
+                        onAvailableChanged: if (available)
+                            redrawRing()
                         // periodic repaint while playing (avoids null-player Connections)
                         Timer {
                             interval: 1000
-                            running: ringCanvas.visible
+                            running: ringCanvas.visible && ringCanvas.available
                             repeat: true
                             onTriggered: ringCanvas.redrawRing()
                         }

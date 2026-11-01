@@ -19,6 +19,8 @@ Column {
     property real expand: 0
     Component.onCompleted: {
         expand = 1;
+        // The bar grabs the keyboard while this is open; focus Esc right away.
+        Qt.callLater(() => escClose.forceActiveFocus());
         // NOTE: the registered handle is the *body*, not the island root — Ipc.wallpaperDiag
         // reads body probes off it; both entries die in onDestruction (`destroyed` not connectable).
         Registry.register(root.registryKey(), body);
@@ -36,8 +38,9 @@ Column {
         return `wallpaper-island-${root.monitorName || Registry.monitorName}`;
     }
 
-    // Esc dismiss once the surface has focus (click a control first).
+    // Esc dismiss: focused on open (see onCompleted), and again after clicking a control.
     IslandEscClose {
+        id: escClose
         states: ["wallpaper"]
         monitorName: root.monitorName
     }

@@ -67,16 +67,19 @@ in {
       (import ./packages/quickshell.nix {inherit pkgs;})
 
       # ArchEclipse Quickshell config (config/quickshell/archeclipse)
-      (python3.withPackages (ps: with ps; [requests pillow])) # launcher apps, wallhaven, booru, manga
+      (python3.withPackages (ps: with ps; [requests])) # launcher app list, wallhaven
       zenity # wallpaper import picker
       pulseaudio # pactl for the control panel volume section; PipeWire stays the server
       bc # launcher calculator
       translate-shell
-      swayimg
-      fastfetch
-      imagemagick
-      cava
       (import ./packages/archeclipse-sysmonitor.nix {inherit pkgs;})
+      # Apps launched from ArchEclipse's Custom scripts tab
+      lazygit
+      spotube
+      pipes # pipes.sh
+      cmatrix
+      asciiquarium
+      cava
 
       # Voxtype voice-to-text and its Wayland typing backend
       voxtype-vulkan

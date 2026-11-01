@@ -180,16 +180,6 @@ Scope {
     readonly property var _stepStates: ["", "search", "left", "right", "wallpaper", "control"]
     readonly property var _leftWidgetTour: [
         {
-            tab: "BooruViewer",
-            title: "Booru viewer",
-            description: "Search Danbooru, Gelbooru, or Safebooru with tags and browse the result grid. Open a post for details, then favorite, download, or pin it to a workspace."
-        },
-        {
-            tab: "MangaViewer",
-            title: "Manga reader",
-            description: "Search MangaDex or MangaLib, open a title to see its chapters, then open a chapter in the reader. Use page and chapter navigation to continue reading."
-        },
-        {
             tab: "SettingsWidget",
             title: "Settings",
             description: "Adjust appearance, bar and panel behavior, hot zones, and enabled widgets. Most controls save automatically as you change them."
@@ -206,10 +196,6 @@ Scope {
         }
     ]
     readonly property var _rightWidgetDescriptions: ({
-        Waifu: {
-            title: "Waifu media",
-            description: "Shows the image or video selected in Booru Viewer. Use the overlay actions to bookmark, open the media, pin supported images, copy the post ID, or upload your own image."
-        },
         Media: {
             title: "Media player",
             description: "Control the active player: play or pause, skip tracks, seek, and follow synced lyrics when the player provides them."
@@ -655,7 +641,7 @@ Scope {
                                 font.pixelSize: Theme.fontSize + 14
                             }
                             BodyText {
-                                text: "ArchEclipse combines Arch Linux, Hyprland, and a custom Quickshell interface into one cohesive desktop: a configurable bar, launcher, side panels, and widgets. Pick a wallpaper and its colors update the shell, bar and notifications."
+                                text: "ArchEclipse combines NixOS, Hyprland, and a custom Quickshell interface into one cohesive desktop: a configurable bar, launcher, side panels, and widgets. Pick a wallpaper and its colors update the shell, bar and notifications."
                             }
                             BodyText {
                                 text: "Explore the main controls and widgets in both side panels. “Open it for me” previews a widget; your panel state returns when you close the tour."
@@ -669,7 +655,7 @@ Scope {
                         LiveStep {
                             title: "Search & launcher"
                             text: "Launch apps, run commands, find emoji, do quick math or translate — all from one box in the bar."
-                            keys: ["SUPER", "SUPER_L"]
+                            keys: []
                             active: root.stepActive(1)
                             onToggleRequested: root.stepToggle(1)
                         }
@@ -708,13 +694,13 @@ Scope {
                                             Layout.fillWidth: true
                                         }
                                         Label {
-                                            text: "Open panel:"
+                                            text: "Open panel: hover the left screen edge"
                                             font.pixelSize: Theme.fontSizeSmall
                                             font.family: Theme.fontFamily
                                             color: Theme.muted
                                         }
                                         AppKeybind {
-                                            keys: ["SUPER", "L"]
+                                            keys: []
                                             Layout.alignment: Qt.AlignVCenter
                                         }
                                     }
@@ -824,7 +810,7 @@ Scope {
                                             color: Theme.muted
                                         }
                                         AppKeybind {
-                                            keys: ["SUPER", "R"]
+                                            keys: ["SUPER", "D"]
                                             Layout.alignment: Qt.AlignVCenter
                                         }
                                     }
@@ -898,7 +884,7 @@ Scope {
                         LiveStep {
                             title: "Wallpaper switcher"
                             text: "Choose a wallpaper from Pictures or Dotfiles; it is set on every monitor and the lock screen, and the colors follow it. Switch to Wallhaven to search and download images into ~/Pictures/Wallpapers."
-                            keys: ["SUPER", "W"]
+                            keys: []
                             active: root.stepActive(4)
                             onToggleRequested: root.stepToggle(4)
                         }
@@ -964,16 +950,7 @@ Scope {
                                 text: "Press <b>Get started</b> and the tour won't open again on startup."
                             }
                             BodyText {
-                                text: "To see it again at any time, press:"
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                AppKeybind {
-                                    keys: ["SUPER", "F1"]
-                                }
-                                Item {
-                                    Layout.fillWidth: true
-                                }
+                                text: "To see it again at any time, run <b>scripts/archeclipse.sh tour</b> from your dotfiles."
                             }
                             Item {
                                 Layout.fillHeight: true

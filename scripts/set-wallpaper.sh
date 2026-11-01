@@ -23,7 +23,16 @@ if [ $# -gt 0 ]; then
         exit 1
     fi
     wallpaper=$(realpath "$1")
-    printf '%s\n' "$wallpaper" >"$state_file"
+    # hyprpaper only shows still images; remembering anything else would
+    # leave the next login without a wallpaper.
+    case $(printf '%s' "$wallpaper" | tr '[:upper:]' '[:lower:]') in
+    *.png | *.jpg | *.jpeg | *.webp) ;;
+    *)
+        echo "not a png/jpg/webp image: $1" >&2
+        exit 1
+        ;;
+    esac
+    remember=1
 elif [ -r "$state_file" ] && [ -f "$(cat "$state_file")" ]; then
     wallpaper=$(cat "$state_file")
 else
@@ -63,9 +72,21 @@ until hyprctl hyprpaper listactive >/dev/null 2>&1; do
     sleep 0.2
 done
 
+failed=0
 for monitor in $(hyprctl monitors -j | jq -r '.[].name'); do
-    hyprctl hyprpaper wallpaper "$monitor,$wallpaper" >>"$log_file" 2>&1 || log "failed on $monitor"
+    if ! hyprctl hyprpaper wallpaper "$monitor,$wallpaper" >>"$log_file" 2>&1; then
+        log "failed on $monitor"
+        failed=1
+    fi
 done
+if [ "$failed" -ne 0 ]; then
+    echo "hyprpaper could not show $(basename "$wallpaper")" >&2
+    exit 1
+fi
 
+# Remember a new choice only once it is on screen.
+if [ "${remember:-0}" -eq 1 ]; then
+    printf '%s\n' "$wallpaper" >"$state_file"
+fi
 log "done"
 echo "wallpaper and lock screen now use: $(basename "$wallpaper")"

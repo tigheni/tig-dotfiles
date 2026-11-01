@@ -494,9 +494,21 @@ Item {
             }
         }
     }
+    // "Dotfiles" wallpapers are tracked in the dotfiles repo (~/.config/hypr is a
+    // symlink into it), so deleting them here would change the working tree.
+    function isTrackedWallpaper(path) {
+        return String(path || "").startsWith(WallpaperService.wallpaperRoots["Dotfiles"] + "/");
+    }
     function deleteWallpaper(path) {
         if (deleteProc.running)
             return;
+        if (root.isTrackedWallpaper(path)) {
+            Notifications.notify({
+                summary: "Not deleted",
+                body: "Dotfiles wallpapers are tracked in git; remove them from the repo instead."
+            });
+            return;
+        }
         setProgress("deleting");
         deleteProc.command = ["bash", "-c", `rm -f ${JSON.stringify(path)}`];
         deleteProc.running = true;
@@ -535,6 +547,7 @@ Item {
                     root.progressStatus = "idle";
             }
         }
+        onRunningChanged: WallpaperService.filePickerOpen = running
         onExited: code => {
             // zenity exits 1 on Cancel — that's not a real error.
             if (code !== 0 && code !== 1)
@@ -542,6 +555,8 @@ Item {
         }
     }
     function pickWallpaper() {
+        if (pickProc.running)
+            return;
         pickProc.running = true;
     }
 
@@ -1024,7 +1039,7 @@ Item {
                         AppTooltip {
                             visible: tileMa.containsMouse && !wallScroll.moving
                             delay: 400
-                            text: `Click to set as wallpaper.\nRight-click to delete.\n${(tile.modelData !== undefined && root.isAnimatedPreviewFile(tile.modelData)) ? "Hover to preview.\n" : ""}${tile.fileName}\nSize: ${root.formatBytes(root.getFileSize(tile.modelData ?? ""))}`
+                            text: `Click to set as wallpaper.\n${root.isTrackedWallpaper(tile.modelData) ? "" : "Right-click to delete.\n"}${(tile.modelData !== undefined && root.isAnimatedPreviewFile(tile.modelData)) ? "Hover to preview.\n" : ""}${tile.fileName}\nSize: ${root.formatBytes(root.getFileSize(tile.modelData ?? ""))}`
                         }
 
                         MouseArea {

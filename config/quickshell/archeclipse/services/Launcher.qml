@@ -143,7 +143,11 @@ QtObject {
     }
 
     function quickAppsList() {
-        return [mkResult("Keybinds", Icons.keyboard, "View or edit your Hyprland keybinds", () => openLeftIslandTab("KeyBinds")), mkResult("Browser", Icons.browser, "Open your default web browser", () => Quickshell.execDetached(["xdg-open", "http://www.google.com"])), mkResult("Terminal", Icons.terminal, "Open a new terminal window", () => Quickshell.execDetached(["foot"])), mkResult("Files", Icons.file, "Open your file manager", () => Quickshell.execDetached(["bash", "-c", `${Quickshell.env("HOME")}/.config/hypr/scripts/filemanager.sh || xdg-open .`])), mkResult("Calculator", Icons.calculator, "Open the calculator", () => Quickshell.execDetached(["foot", "bc"])), mkResult("Text Editor", Icons.textEditor, "Open your default text editor", () => Quickshell.execDetached(["code"])),];
+        return [mkResult("Keybinds", Icons.keyboard, "View or edit your Hyprland keybinds", () => openLeftIslandTab("KeyBinds")), mkResult("Browser", Icons.browser, "Open your default web browser", () => Quickshell.execDetached(["xdg-open", "http://www.google.com"])), mkResult("Terminal", Icons.terminal, "Open a new terminal window", () => Quickshell.execDetached(["wezterm"])), mkResult("Files", Icons.file, "Open your file manager", () => Quickshell.execDetached(["nautilus"])), mkResult("Calculator", Icons.calculator, "Open the calculator", () => Quickshell.execDetached(["wezterm", "start", "--", "bc", "-q"])), mkResult("Text Editor", Icons.textEditor, "Open your default text editor", () => Quickshell.execDetached(["code"])), mkResult("Wallpapers", Icons.image, "Pick a wallpaper (applied with set-wallpaper.sh)", () => openWallpaperPicker()),];
+    }
+    // The launcher row closes the search island before launching, so just open the picker.
+    function openWallpaperPicker() {
+        BarState.activate("wallpaper", 0, BarState.searchMonitor || Registry.monitorName);
     }
 
     // QuickApps ordered by quick-app-history (mirrors QuickApps.tsx sortQuickAppsByHistory)
@@ -282,6 +286,10 @@ QtObject {
         else
             // Nerd Font codepoint or emoji (incl. ZWJ/VS16 sequences)
             iconSrc = s;
+        // A bare absolute path (Icon=/path/app.png in a .desktop file) would resolve
+        // against qrc:/ inside IconImage; make it an explicit file URL.
+        if (iconSrc.startsWith("/"))
+            iconSrc = "file://" + iconSrc;
         return {
             name,
             icon: iconSrc,
@@ -493,10 +501,8 @@ QtObject {
                 a.launch();
         }));
     }
+    // Recent apps stay reachable through ">recent", but the empty launcher shows Quick Apps.
     function defaultResults() {
-        const recents = recentApps().slice(0, maxItems);
-        if (recents.length > 0)
-            return [mkHeader("Recent Apps"), ...recents];
         return [mkHeader("Quick Apps"), ...quickAppResults()];
     }
 
@@ -892,6 +898,9 @@ QtObject {
         const head = parts[0];
         const rest = parts.slice(1);
         let r = appResults(head, rest);
+        // Quick apps (Keybinds, Wallpapers, ...) are not desktop entries, so match them too.
+        if (rest.length === 0)
+            r = filterRows(quickAppResults(), head).concat(r).slice(0, maxItems);
         if (r.length === 0 && rest.length === 0) {
             r = [mkResult(`Try ${t} in terminal`, Icons.terminalAlt, "Run as shell command", () => {
                 Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", t]);

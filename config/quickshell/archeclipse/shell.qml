@@ -16,13 +16,10 @@ ShellRoot {
     // FileView won't create missing parent dirs, so ensure every cache
     // dir it writes to exists at startup (else writes silently fail).
     property Process _cacheDirsProc: Process {
-        command: ["bash", "-c", "mkdir -p \"$HOME/.cache/quickshell/settings\" \"$HOME/.cache/quickshell/booru\" \"$HOME/.cache/coloreclipse\" \"$HOME/.cache/quickshell/launcher\" \"$HOME/.cache/quickshell/launcher/clipboard-images\" \"$HOME/.cache/quickshell/manga\" \"$HOME/.cache/quickshell/wallpaper-thumbs\" \"$HOME/.cache/quickshell/activity\" \"$HOME/Pictures/Wallpapers\" \"$HOME/.config/fastfetch/cache\""]
+        command: ["bash", "-c", "mkdir -p \"$HOME/.cache/quickshell/settings\" \"$HOME/.cache/coloreclipse\" \"$HOME/.cache/quickshell/launcher\" \"$HOME/.cache/quickshell/launcher/clipboard-images\" \"$HOME/.cache/quickshell/wallpaper-thumbs\" \"$HOME/.cache/quickshell/activity\" \"$HOME/Pictures/Wallpapers\""]
     }
     Component.onCompleted: {
         _cacheDirsProc.running = true
-        // Prime at boot: the singleton only syncs and attaches its pins watcher
-        // here — otherwise it sleeps until the first manual pin toggle.
-        FastfetchPins.start()
         // One boot probe lets ControlPanelBody bind PpdState.available instead of
         // spawning `powerprofilesctl` on every island open.
         PpdState.start()

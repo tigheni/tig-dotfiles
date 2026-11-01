@@ -57,6 +57,15 @@ Singleton {
     readonly property bool leftOpen: isOpenFor("left", Registry.monitorName)
     readonly property bool rightOpen: isOpenFor("right", Registry.monitorName)
 
+    // Weather button hover per monitor: WeatherIsland holds itself open while the cursor
+    // rests on the button that revealed it (the button sits outside the island).
+    property var weatherHoverByMonitor: ({})
+    function setWeatherHover(monitorName, hovered) {
+        const next = Object.assign({}, root.weatherHoverByMonitor || {});
+        next[monitorName || Registry.monitorName || ""] = hovered;
+        root.weatherHoverByMonitor = next;
+    }
+
     // Open in-bar popovers (tray overflow/menu popups), tracked by their
     // owning monitor so a menu on one output cannot pin every bar open.
     property var popupCountByMonitor: ({})

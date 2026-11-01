@@ -228,6 +228,10 @@ Item {
         }
 
         function toggleBar(monitor: string): string {
+            // Super+W: an open wallpaper island pins the bar visible, so a plain toggle
+            // is a no-op there — close the island instead.
+            if (BarState.isOpenFor("wallpaper", monitor))
+                return root.toggleWallpaperFor(monitor);
             BarState.toggleBarShown(monitor);
             return "bar toggled";
         }
@@ -352,8 +356,7 @@ Item {
             return "window not found: " + key;
         }
 
-        // Widget-state QA probe: selected/page/limit/imagesCount/fetchStatus/bookmarkCount,
-        // plus setPage/setLimit/gotoPage/seed*/load*/fetchApi mutations.
+        // Widget-state QA probe for the left island's active tab ("selected").
         function widgetState(query: string, monitor: string): string {
             try {
                 const w = Registry.get(`left-island-${monitor}`)
@@ -366,114 +369,8 @@ Item {
                 if (query === "_debug") {
                     return `query=${JSON.stringify(query)} activeW=${item ? "yes" : "no"}`;
                 }
-                switch (query) {
-                case "selected": return w.selectedWidget;
-                case "page": return String(item.page);
-                case "limit": return String(item.limit);
-                case "imagesCount": return String((item.images || []).length);
-                case "imagesIds": return (item.images || []).map(x => x && x.id).filter(Boolean).join(",");
-                case "gridSrc": {
-                    const imgs = item.images || [];
-                    if (!imgs.length) return "no-images";
-                    const n = Object.keys(item.previewIds || {}).length;
-                    const cols = (item.masonryColumns || []).map(c => c.length).join("/");
-                    return `cached=${n} cols=[${cols}] src0=${item.gridSource(imgs[0])}`;
-                }
-                case "bookmarkCount": return String((Settings.booru.bookmarks || []).length);
-                case "pinCount": return String((Settings.booru.pins || []).length);
-                case "fetchStatus": return item.progressStatus || "?";
-                case "lastFetchCmd": return item.lastFetchCmd || "?";
-                case "lastFetchError": return item.lastFetchError || "?";
-                case "fetchedTags": return (item.fetchedTags || []).slice(0, 5).join(",");
-                case "tags": return (item.currentTags || []).join(",");
-                case "dialogSrc": {
-                    if (!item.dialogImage) return "no-dialog";
-                    const srcFn = (typeof item.dialogSource === "function") ? item.dialogSource(item.dialogImage) : "?";
-                    return `id=${item.dialogImage.id} src=${srcFn}`;
-                }
-                case "seedBookmarks": {
-                    Settings.booru.bookmarks = [1,2,3,4,5].map(i => ({
-                        id: String(i),
-                        file_url: `http://x/${i}.jpg`,
-                        preview_url: `http://x/${i}.jpg`,
-                        tags: [`tag${i}`]
-                    }));
-                    Settings.updateSetting("booru.bookmarks", Settings.booru.bookmarks);
-                    return "seeded=" + (Settings.booru.bookmarks || []).length;
-                }
-                case "seedPins": {
-                    Settings.booru.pins = ["a","b","c","d","e","f","g"].map(i => ({
-                        id: "p" + i,
-                        file_url: `http://y/${i}.jpg`,
-                        preview_url: `http://y/${i}.jpg`,
-                        tags: [`pt${i}`]
-                    }));
-                    Settings.updateSetting("booru.pins", Settings.booru.pins);
-                    return "seeded=" + (Settings.booru.pins || []).length;
-                }
-                case "loadBookmarks": {
-                    if (typeof item.loadBookmarks === "function") {
-                        item.loadBookmarks();
-                        const ids = (item.images || []).map(x => x && x.id).filter(Boolean);
-                        return `bm(page=${item.page},limit=${item.limit}) -> ${ids.length} ids: ` + ids.join(",");
-                    }
-                    return "no loadBookmarks";
-                }
-                case "loadPins": {
-                    if (typeof item.loadPins === "function") {
-                        item.loadPins();
-                        const ids = (item.images || []).map(x => x && x.id).filter(Boolean);
-                        return `pins(page=${item.page},limit=${item.limit}) -> ${ids.length} ids: ` + ids.join(",");
-                    }
-                    return "no loadPins";
-                }
-                case "fetchApi": {
-                    if (typeof item.fetchImages === "function") {
-                        item.fetchImages();
-                        return "fetchImages called, status=" + (item.progressStatus || "?");
-                    }
-                    return "no fetchImages";
-                }
-                default:
-                    if (query.startsWith("dialog:")) {
-                        // "dialog:<id>" -> open the dialog for that image
-                        // (exercises fetchOriginal + dialogSource live).
-                        const id = String(query.substring(7));
-                        const found = (item.images || []).find(x => x && String(x.id) === id);
-                        if (!found) return "no-image:" + id;
-                        item.dialogImage = found;
-                        const src = (typeof item.dialogSource === "function") ? item.dialogSource(found) : "?";
-                        return `dialog=${id} src=${src}`;
-                    }
-                    if (query.startsWith("setPage:")) {
-                        // "setPage:5" -> substring(8) = "5"
-                        item.page = Math.max(1, Number(query.substring(8)) || 1);
-                        return "page=" + item.page;
-                    }
-                    if (query.startsWith("setTags:")) {
-                        // "setTags:a,b" replicates the chip add/remove path:
-                        // widget tags + Settings + persist + refetch.
-                        const newTags = query.substring(8).split(",").map(s => s.trim()).filter(s => s !== "");
-                        item.currentTags = newTags;
-                        Settings.booru.tags = newTags;
-                        Settings.updateSetting("booru.tags", newTags);
-                        if (typeof item.fetchImages === "function") {
-                            item.fetchImages();
-                            return "tags=" + newTags.join(",") + " refetching";
-                        }
-                        return "tags=" + newTags.join(",") + " (no fetchImages)";
-                    }
-                    if (query.startsWith("setLimit:")) {
-                        // "setLimit:2" -> substring(9) = "2". The widget-local `limit`
-                        // is authoritative (the slider assigns it), so write, then persist.
-                        const n = Math.max(0, Number(query.substring(9)) || 0);
-                        item.limit = n;
-                        Settings.booru.limit = n;
-                        Settings.updateSetting("booru.limit", n);
-                        return "limit=" + item.limit;
-                    }
-                    return "unknown query";
-                }
+                if (query === "selected") return w.selectedWidget;
+                return "unknown query";
             } catch (e) {
                 return "EX: " + e;
             }

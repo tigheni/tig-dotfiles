@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import qs.theme
 import qs.services
@@ -13,6 +14,13 @@ Item {
     property string monitorName: ""
     readonly property string effectiveMonitor: body.monitorName || Registry.monitorName
     readonly property real monitorBrightness: Brightness.screenFor(body.effectiveMonitor)
+
+    // Default mic for the mute toggle; the same node Super+M flips with wpctl.
+    readonly property PwNode micSource: Pipewire.defaultAudioSource
+    readonly property bool micMuted: !!body.micSource && !!body.micSource.audio && body.micSource.audio.muted
+    PwObjectTracker {
+        objects: body.micSource ? [body.micSource] : []
+    }
 
     width: 680
     height: contentRow.height
@@ -224,6 +232,34 @@ Item {
                     checked: Settings.notifDnd || body.dndPing
                     tooltipText: Settings.notifDnd ? "Disable Do Not Disturb" : "Enable Do Not Disturb"
                     onClicked: Settings.updateSetting("notifications.dnd", !Settings.notifDnd)
+                }
+                // Mic mute toggle
+                AppButton {
+                    width: (parent.width - parent.columnSpacing) / 2
+                    height: 46
+                    cornerRadius: Theme.radius
+                    idleBg: Theme.surface
+                    icon: body.micMuted ? Icons.micOff : Icons.micOn
+                    pixelSize: Theme.fontSize + 2
+                    toggle: true
+                    checked: body.micMuted
+                    enabled: !!body.micSource && !!body.micSource.audio
+                    tooltipText: body.micMuted ? "Unmute microphone" : "Mute microphone"
+                    onClicked: body.micSource.audio.muted = !body.micMuted
+                }
+                // Wallpaper picker: upstream opens it with SUPER+W, which toggles the bar here.
+                AppButton {
+                    width: (parent.width - parent.columnSpacing) / 2
+                    height: 46
+                    cornerRadius: Theme.radius
+                    idleBg: Theme.surface
+                    icon: Icons.image
+                    pixelSize: Theme.fontSize + 2
+                    tooltipText: "Change wallpaper"
+                    onClicked: {
+                        BarState.deactivate("control", body.effectiveMonitor);
+                        BarState.activate("wallpaper", 0, body.effectiveMonitor);
+                    }
                 }
                 // Game Mode and the hyprsunset blue light filter are left out: this
                 // Hyprland has no Lua eval, and night-light.sh owns the temperature.

@@ -21,8 +21,8 @@ Item {
             name: "Restart Bar",
             icon: Icons.restartBar,
             description: "Restart the shell bar",
-            keybind: ["SUPER", "B"],
-            command: "lua $HOME/.config/hypr/config/scripts/bar.lua"
+            keybind: [],
+            command: "\"$DOTFILES_DIR/scripts/archeclipse.sh\" restart"
         },
         {
             name: "HyprPicker",
@@ -85,7 +85,7 @@ Item {
             icon: Icons.lazygit,
             description: "Git Manager",
             app: "lazygit",
-            command: "bash -c \"lazygit\""
+            command: "wezterm start -- lazygit"
         },
         {
             name: "Visual Studio Code",
@@ -100,13 +100,6 @@ Item {
             description: "Spotify Client (lightweight - downloaded music)",
             app: "spotube",
             command: "spotube"
-        },
-        {
-            name: "Steam",
-            icon: Icons.steam,
-            description: "Game Launcher",
-            app: "steam",
-            command: "steam"
         },
         {
             name: "Pipes.sh",
@@ -213,9 +206,9 @@ Item {
             command: ["bash", "-c", "rm -rf $HOME/.cache/quickshell/settings/settings.json"]
             stdout: StdioCollector {
                 onStreamFinished: {
-                    // NOTE: never Hyprland.dispatch("exec ...") — Hyprland >= 0.55 (Lua config)
-                    // rejects the legacy string-dispatch syntax. execDetached spawns directly.
-                    Quickshell.execDetached(["lua", Quickshell.env("HOME") + "/.config/hypr/config/scripts/bar.lua"]);
+                    // Restart the shell so it reloads the defaults instead of
+                    // rewriting the old in-memory settings.
+                    Quickshell.execDetached([Quickshell.env("DOTFILES_DIR") + "/scripts/archeclipse.sh", "restart"]);
                     _resetProc.destroy();
                 }
             }
@@ -241,8 +234,9 @@ Item {
         // Spawn via Quickshell.execDetached, NOT Hyprland.dispatch("exec ..."): Hyprland >= 0.55
         // (Lua config) rejects that syntax, so every click silently did nothing.
         if (def.kind === "file-manager") {
-            // xdg-open honours the system default file manager.
-            Quickshell.execDetached(["bash", "-c", "xdg-open \"$HOME\""]);
+            // nautilus, matching $fileManager in config/hypr: the xdg default for
+            // directories here is an editor (cursor.desktop), not a file manager.
+            Quickshell.execDetached(["nautilus", Quickshell.env("HOME")]);
             return;
         }
         if (def.command)

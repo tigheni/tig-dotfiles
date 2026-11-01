@@ -2,7 +2,7 @@
 # daytrack: automatic, local time tracking built on Hyprland focus events.
 # Logs which window has focus into ~/.local/share/daytrack/YYYY-MM-DD.tsv,
 # sorts it into categories and projects, nudges you about breaks and
-# distractions, and feeds a Waybar module. Run `daytrack.sh help`.
+# distractions. Run `daytrack.sh help`.
 
 conf_dir=${XDG_CONFIG_HOME:-$HOME/.config}/daytrack
 data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/daytrack

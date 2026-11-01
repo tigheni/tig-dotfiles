@@ -24,7 +24,7 @@ Singleton {
     property int uiFontSize: 12
 
     // Keybind glyph settings
-    property string keybindsSuperKey: Icons.keySuperArch
+    property string keybindsSuperKey: Icons.keySuperNixOS
     property bool keybindsUseMacSymbol: false
     property bool keybindsUseFunctionSymbol: false
     property bool keybindsUseMouseSymbol: false
@@ -56,7 +56,7 @@ Singleton {
     property int lockGraceSeconds: 10
     // Selected left-panel tab (persisted)
     property string leftPanelWidget: "SettingsWidget"
-    readonly property var leftPanelWidgetNames: ["BooruViewer", "MangaViewer", "SettingsWidget", "CustomScripts", "KeyBinds"]
+    readonly property var leftPanelWidgetNames: ["SettingsWidget", "CustomScripts", "KeyBinds"]
     // Wallpaper switcher category (persisted)
     property string wallpaperCategory: "defaults/sfw"
     // Wallpaper provider: "local" (default/* + custom folders) or "wallhaven"; the
@@ -94,11 +94,6 @@ Singleton {
     // Canonical widget definitions (names + code-owned icons + default enabled).
     function defaultRightPanelWidgets() {
         return [
-            {
-                name: "Waifu",
-                icon: Icons.heart,
-                enabled: true
-            },
             {
                 name: "Media",
                 icon: Icons.play,
@@ -163,51 +158,8 @@ Singleton {
     property string blueLightStart: "21:00"
     property string blueLightEnd: "07:00"
 
-    property var booru: ({
-            api: ({
-                    name: "Danbooru",
-                    value: "danbooru",
-                    url: "https://danbooru.donmai.us/",
-                    idSearchUrl: "https://danbooru.donmai.us/posts/"
-                }),
-            tags: ["-rating:explicit"],
-            limit: 30,
-            page: 1,
-            columns: 3,
-            bookmarks: [],
-            pins: [],
-            selectedTab: "Danbooru"
-        })
-    // Shipped defaults (not {}) so early fetchers like Booru onCompleted have credentials
-    // before the file merges; the per-service User-Agent strings live here too.
+    // Shipped defaults (not {}) so early fetchers have credentials before the file merges.
     property var apiKeys: root.defaultApiKeys()
-    property var userAgents: root.defaultUserAgents()
-
-    function defaultUserAgents() {
-        return {
-            booru: "QuickshellBooru/1.0 (ArchLinux; Hyprland)",
-            mangaDex: "ArchEclipse-MangaCLI/1.0",
-            mangaLib: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            waifu: "QuickshellBooru/1.0 (ArchLinux; Hyprland)",
-            fastfetch: "QuickshellBooru/1.0 (ArchLinux; Hyprland)"
-        };
-    }
-
-    function mergeUserAgents(saved) {
-        const d = root.defaultUserAgents();
-        if (!saved || typeof saved !== "object")
-            return d;
-        for (const key of Object.keys(d)) {
-            const v = saved[key];
-            if (v !== undefined && v !== null && String(v).trim() !== "")
-                d[key] = String(v);
-        }
-        return d;
-    }
-
-    function userAgent(name) {
-        return String((root.userAgents || {})[name] || root.defaultUserAgents()[name] || "");
-    }
 
     // POSIX single-quote escaping: double quotes still expand $(...) and backticks inside
     // `bash -c`, so only single-quote wrapping neutralizes shell metacharacters.
@@ -215,34 +167,9 @@ Singleton {
         return "'" + String(s).replace(/'/g, "'\\''") + "'";
     }
 
-    // Shipped API fallback used when the file has none saved; QS must match or booru.py
-    // hard-rejects danbooru/gelbooru with MISSING_CREDENTIALS.
+    // Shipped API fallback used when the file has none saved.
     function defaultApiKeys() {
         return {
-            danbooru: {
-                user: {
-                    value: "publicapi"
-                },
-                key: {
-                    value: "Pr5ddYN7P889AnM6nq2nhgw1"
-                }
-            },
-            gelbooru: {
-                user: {
-                    value: "1667355"
-                },
-                key: {
-                    value: "1ccd9dd7c457c2317e79bd33f47a1138ef9545b9ba7471197f477534efd1dd05"
-                }
-            },
-            safebooru: {
-                user: {
-                    value: "publicapi"
-                },
-                key: {
-                    value: "Pr5ddYN7P889AnM6nq2nhgw1"
-                }
-            },
             // Wallhaven needs only a key (no user); empty = guest mode
             // (SFW-only). A key unlocks sketchy/NSFW purity + user filters.
             wallhaven: {
@@ -406,16 +333,6 @@ Singleton {
             typeFirst: true
         }
     ]
-
-    // Waifu widget setting group
-    property var waifu: null
-    // Identity key for change detection: id+api+extension only. Tags carry
-    // no identity (and may contain any separator), so they stay out.
-    function waifuKey(w) {
-        if (!w || w.id === undefined || w.id === null)
-            return "";
-        return String(w.id) + "|" + ((w.api && w.api.value) || "") + "|" + String(w.extension || "");
-    }
 
     // Theme variants
     property bool dynamicThemeColors: true
@@ -709,8 +626,7 @@ Singleton {
             "blueLight.start": "blueLightStart",
             "blueLight.end": "blueLightEnd",
             "dynamicThemeColors": "dynamicThemeColors",
-            "dynamicThemeVariants": "dynamicThemeVariants",
-            "waifuWidget.current": "waifu"
+            "dynamicThemeVariants": "dynamicThemeVariants"
         };
         if (aliases[path] !== undefined) {
             // Widget icons are code-owned: never store incoming icons, merge
@@ -736,7 +652,7 @@ Singleton {
         const key = parts[parts.length - 1];
         obj[key] = value;
         // Reassign a FRESH clone or the top-level change signal never fires (assigning the
-        // same reference back leaves bindings like Settings.booru.limit stale).
+        // same reference back leaves bindings like Settings.screenshot.* stale).
         if (parts.length > 1) {
             root[parts[0]] = Object.assign({}, obj);
         }
@@ -922,21 +838,7 @@ Singleton {
                 },
                 screenshot: root.screenshot,
                 recording: root.recording,
-                "waifuWidget": {
-                    current: root.waifu
-                },
-                "booru": {
-                    api: root.booru.api,
-                    tags: root.booru.tags,
-                    limit: root.booru.limit,
-                    page: root.booru.page,
-                    columns: root.booru.columns,
-                    bookmarks: root.booru.bookmarks,
-                    pins: root.booru.pins,
-                    selectedTab: root.booru.selectedTab ?? root.booru.api?.name ?? "Danbooru"
-                },
-                "apiKeys": root.apiKeys,
-                "userAgents": root.userAgents
+                "apiKeys": root.apiKeys
             };
             // One-generation backup: keep the bytes that were on disk before
             // this write, so the previous settings state is always recoverable.
@@ -992,7 +894,7 @@ Singleton {
         }
     }
     // Gate: FileView loads async, so a persist() before the first load would write
-    // in-memory defaults over the saved file (booru.limit 20 clobbered back to 100).
+    // in-memory defaults over the saved file (a saved value clobbered back to its default).
     property bool ready: false
     // Set by reload() once a file has really been parsed; persist() refuses to write
     // while false, so a slow/failed load can never replace the file with code defaults.
@@ -1038,7 +940,7 @@ Singleton {
                 root.uiFontSize = s.ui?.fontSize?.value ?? 12;
 
                 const keybinds = s.keybinds ?? {};
-                root.keybindsSuperKey = typeof keybinds.superKey === "string" && keybinds.superKey !== "" ? keybinds.superKey : Icons.keySuperArch;
+                root.keybindsSuperKey = typeof keybinds.superKey === "string" && keybinds.superKey !== "" ? keybinds.superKey : Icons.keySuperNixOS;
                 root.keybindsUseMacSymbol = keybinds.useMacSymbol ?? false;
                 root.keybindsUseFunctionSymbol = keybinds.useFunctionSymbol ?? false;
                 root.keybindsUseMouseSymbol = keybinds.useMouseSymbol ?? false;
@@ -1132,35 +1034,7 @@ Singleton {
                 const _ble = s.blueLight?.end;
                 root.blueLightEnd = String(((typeof _ble === "object" && _ble !== null) ? _ble.value : _ble) ?? "07:00");
 
-                // Rating tag leads, defaulting to -rating:explicit, done here (not viewer
-                // boot) so the file's tags are normalized the moment they are adopted.
-                let _tags = (s.booru?.tags ?? ["-rating:explicit"]).slice();
-                const _rt = _tags.find(t => t.match(/[-]rating:explicit|rating:explicit/));
-                _tags = _tags.filter(t => !t.match(/[-]rating:explicit|rating:explicit/));
-                _tags.unshift(_rt ?? "-rating:explicit");
-                root.booru = {
-                    api: s.booru?.api ?? {
-                        name: "Danbooru",
-                        value: "danbooru",
-                        url: "https://danbooru.donmai.us/",
-                        idSearchUrl: "https://danbooru.donmai.us/posts/"
-                    },
-                    tags: _tags,
-                    limit: s.booru?.limit ?? 100,
-                    page: s.booru?.page ?? 1,
-                    columns: s.booru?.columns ?? 3,
-                    bookmarks: s.booru?.bookmarks ?? [],
-                    pins: s.booru?.pins ?? [],
-                    selectedTab: s.booru?.selectedTab ?? s.booru?.api?.name ?? "Danbooru"
-                };
                 root.apiKeys = root.mergeApiKeys(s.apiKeys);
-                root.userAgents = root.mergeUserAgents(s.userAgents);
-
-                // Skip the assign when the waifu post is unchanged (same id+api+extension):
-                // every settings write hands down a fresh identity and re-kicks downloads.
-                const _w = s.waifuWidget?.current ?? null;
-                if (root.waifuKey(_w) !== root.waifuKey(root.waifu))
-                    root.waifu = _w;
 
                 // Lockscreen grace period (seconds of free Esc dismiss)
                 root.lockGraceSeconds = s.lockscreen?.graceSeconds ?? 10;
@@ -1323,12 +1197,6 @@ Singleton {
             root.schedulePersist();
         }
         function onDynamicThemeVariantsChanged() {
-            root.schedulePersist();
-        }
-        function onWaifuChanged() {
-            root.schedulePersist();
-        }
-        function onBooruChanged() {
             root.schedulePersist();
         }
     }

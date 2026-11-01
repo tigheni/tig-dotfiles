@@ -219,7 +219,7 @@ Column {
                     implicitWidth: 32
                     width: implicitWidth
                     height: Theme.barContentHeight
-                    icon: Icons.arch
+                    icon: Icons.nixos
                     pixelSize: Theme.fontSize + 1
                     // The row is hidden while the panel is open, so this highlight only shows
                     // for a frame at close; kept so the toggle reflects the state.
@@ -349,6 +349,10 @@ Column {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
 
+                // Only visible while voxtype records or transcribes (Super+V).
+                VoxtypeIndicator {
+                    anchors.verticalCenter: parent.verticalCenter
+                }
                 ResourceMonitor {
                     id: resourceMonitor
                     monitorName: root.monitorName

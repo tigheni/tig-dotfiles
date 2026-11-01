@@ -97,7 +97,7 @@ Item {
         }
     }
 
-    // ---- bar (Booru / Player) ----
+    // ---- bar (Player) ----
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
@@ -122,7 +122,7 @@ Item {
         }
     }
 
-    // ---- badge (Waifu) ----
+    // ---- badge ----
     Rectangle {
         anchors.fill: parent
         visible: root.variant === "badge" && root.active
@@ -155,7 +155,7 @@ Item {
         verticalAlignment: Text.AlignVCenter
     }
 
-    // ---- spinner (Wallpaper / KeyBinds / BooruDialog) ----
+    // ---- spinner (Wallpaper / KeyBinds) ----
     BusyIndicator {
         anchors.centerIn: parent
         visible: root.variant === "spinner" && root.active && root.status === "loading"
