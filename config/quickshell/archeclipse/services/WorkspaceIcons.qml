@@ -15,7 +15,7 @@ QtObject {
         { pattern: /chrome|chromium|brave/i, icon: Icons.chrome },
         { pattern: /firefox|zen/i, icon: Icons.firefox },
         { pattern: /vlc/i, icon: Icons.vlc },
-        { pattern: /spotify|spotube/i, icon: Icons.spotify },
+        { pattern: /spotify/i, icon: Icons.spotify },
         { pattern: /vscode|vscodium|visual.?studio.?code/i, icon: Icons.code },
         { pattern: /(^|[._-])code(?:-oss)?($|[._-])/i, icon: Icons.code },
         { pattern: /sublime/i, icon: Icons.sublime },

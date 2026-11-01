@@ -413,7 +413,7 @@ QtObject {
     function termResults(cmd) {
         const c = (cmd || "").trim();
         if (!c)
-            return [mkResult("Usage: term <command>", Icons.terminalAlt, "e.g. term cava", null)];
+            return [mkResult("Usage: term <command>", Icons.terminalAlt, "e.g. term btop", null)];
         return [mkResult(`Run ${c} in terminal`, Icons.terminalAlt, "Run as shell command", () => {
             Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", c]);
             touchHistory(c);

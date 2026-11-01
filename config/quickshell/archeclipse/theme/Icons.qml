@@ -238,7 +238,6 @@ QtObject {
     readonly property string windowIcon: "\uF2D2"
     readonly property string pavucontrol: "\u{EB14}"
     readonly property string vscode: "\u{F0A1E}"
-    readonly property string lazygit: "\u{F02A2}"
     readonly property string ethereum: "\u{ED58}"
     readonly property string manga: "\u{EAA4}"
     readonly property string chatbot: "\u{EE0D}"
@@ -262,10 +261,7 @@ QtObject {
     readonly property string screenshotWindow: "\u{EBA7}"
     readonly property string btop: "\u{F035B}"
     readonly property string speed: "\u{F04C5}"
-    readonly property string pipes: "\u{F07E5}"
     readonly property string cava: "\u{F057E}"
-    readonly property string cmatrix: "\u{F153C}"
-    readonly property string asciiquarium: "\u{EF30}"
     readonly property string popular: "\uF06D"
 
     // --- device stats ---

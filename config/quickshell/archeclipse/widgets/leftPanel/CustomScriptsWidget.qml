@@ -81,53 +81,11 @@ Item {
             kind: "file-manager"
         },
         {
-            name: "Lazygit",
-            icon: Icons.lazygit,
-            description: "Git Manager",
-            app: "lazygit",
-            command: "wezterm start -- lazygit"
-        },
-        {
             name: "Visual Studio Code",
             icon: Icons.vscode,
             description: "Code Editor",
             app: "code",
             command: "code"
-        },
-        {
-            name: "Spotube",
-            icon: Icons.spotify,
-            description: "Spotify Client (lightweight - downloaded music)",
-            app: "spotube",
-            command: "spotube"
-        },
-        {
-            name: "Pipes.sh",
-            icon: Icons.pipes,
-            description: "Pipes Animation",
-            app: "pipes.sh",
-            command: "wezterm start -- pipes.sh"
-        },
-        {
-            name: "Cava",
-            icon: Icons.cava,
-            description: "Audio Visualizer",
-            app: "cava",
-            command: "wezterm start -- cava"
-        },
-        {
-            name: "CMatrix",
-            icon: Icons.cmatrix,
-            description: "Matrix Digital Rain",
-            app: "cmatrix",
-            command: "wezterm start -- cmatrix"
-        },
-        {
-            name: "Asciiquarium",
-            icon: Icons.asciiquarium,
-            description: "Aquarium Animation",
-            app: "asciiquarium",
-            command: "wezterm start -- asciiquarium"
         },
         {
             name: "Reset Settings",

@@ -73,13 +73,6 @@ in {
       bc # launcher calculator
       translate-shell
       (import ./packages/archeclipse-sysmonitor.nix {inherit pkgs;})
-      # Apps launched from ArchEclipse's Custom scripts tab
-      lazygit
-      spotube
-      pipes # pipes.sh
-      cmatrix
-      asciiquarium
-      cava
 
       # Voxtype voice-to-text and its Wayland typing backend
       voxtype-vulkan
