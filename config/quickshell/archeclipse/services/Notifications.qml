@@ -336,16 +336,23 @@ Singleton {
         return root.iconToFile(n.appIcon) || root.iconToFile(n.image);
     }
 
-    // Theme-name/desktop-entry fallback for the small icon slot.
+    // Theme-name/desktop-entry fallback for the small icon slot. Bare theme names
+    // ("battery", "audio-headset") go through the icon theme: handed straight to
+    // IconImage they resolve against qrc:/ and log "Cannot open" for every toast.
     function iconNameFor(n) {
         if (!n || root.isRecorder(n)) return "";
-        const vals = [n.appIcon, n.image];
+        const vals = [n.appIcon, n.image, n.desktopEntry];
         for (let i = 0; i < vals.length; ++i) {
             const s = vals[i] ? String(vals[i]) : "";
-            if (s !== "" && root.iconToFile(s) === "")
+            if (s === "" || root.iconToFile(s) !== "")
+                continue;
+            if (s.indexOf("://") !== -1)
                 return s;
+            const themed = Quickshell.iconPath(s, true);
+            if (themed !== "")
+                return themed;
         }
-        return (n.desktopEntry || "").toString();
+        return "";
     }
 
     // Large preview candidate for file-path icons (screenshots, etc.).

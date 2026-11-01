@@ -790,7 +790,11 @@ Item {
                         }
                         AppFilterChips {
                             label: "Categories:"
-                            model: root.whCategoryNames
+                            model: root.whCategoryNames.map(name => ({
+                                        value: name,
+                                        label: name,
+                                        tooltip: "Include " + name + " wallpapers"
+                                    }))
                             checkedValues: {
                                 const out = [];
                                 for (let i = 0; i < root.whCategoryNames.length; i++) {
@@ -846,7 +850,7 @@ Item {
                                 hoverFg: on ? Theme.accent : Theme.fg
                                 outlined: true
                                 outlineColor: on ? Theme.accent : Theme.border
-                                tooltipText: (needsKey && root.whApiKey === "") ? "Needs a Wallhaven API key (Settings → API Keys)" : ""
+                                tooltipText: (needsKey && root.whApiKey === "") ? "Needs a Wallhaven API key (Settings → API Keys)" : "Show " + modelData.label + " wallpapers"
                                 onClicked: root.setWh("purity", modelData.value)
                             }
                         }

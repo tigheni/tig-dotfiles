@@ -452,7 +452,7 @@ Item {
                             AppComboBox {
                                 model: root.islandAnimStyleLabels
                                 currentIndex: Math.max(0, root.islandAnimStyleValues.indexOf(Settings.islandAnimStyle))
-                                onActivated: Settings.islandAnimStyle = root.islandAnimStyleValues[index]
+                                onActivated: index => Settings.islandAnimStyle = root.islandAnimStyleValues[index]
                                 Layout.preferredWidth: 160
                             }
                         }

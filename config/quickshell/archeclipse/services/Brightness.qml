@@ -4,16 +4,16 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
-// Brightness of the FOCUSED monitor: internal panels go through brightnessctl on
-// /sys/class/backlight, external ones through DDC/CI (ddcutil needs i2c-dev).
+// Brightness of the FOCUSED monitor over DDC/CI (ddcutil needs i2c-dev). This setup
+// has no laptop backlight, so the brightnessctl path is left out.
 QtObject {
     id: root
 
     // ---- public API (unchanged names, used by bar / OSD / control panel) ----
     // 0..1 brightness of the monitor currently under control (the focused one).
     property real screen: 0
-    // True when anything is controllable (internal backlight OR a DDC/CI monitor).
-    readonly property bool hasBacklight: root._devices.length > 0 || root._ddc.length > 0
+    // True when a DDC/CI monitor is controllable.
+    readonly property bool hasBacklight: root._ddc.length > 0
     // Name of the monitor under control ("" = none, e.g. focused monitor has no DDC).
     property string targetName: ""
     // Default step (percent) for increment()/decrement().
@@ -21,14 +21,6 @@ QtObject {
     // Fires on real changes only (key, slider, external write) — never when focus
     // merely moves to a monitor with another value.
     signal adjusted(string monitorName)
-
-    // ---- internal backlight state ----
-    property var _devices: []
-    property int _primaryMax: 1
-    property bool _maxKnown: false
-    property string _primaryDevice: ""
-    property real _internal: 0
-    property bool _internalReady: false
 
     // ---- DDC/CI state ----
     // [{ name: "DP-1", bus: "5", max: 100, value: 0..1, ready: bool }]
@@ -58,7 +50,7 @@ QtObject {
 
     function hasBacklightFor(monitorName) {
         const name = monitorName || root._focusedName();
-        return root._ddcFor(name) !== null || (root._useInternal(name) && root._maxKnown);
+        return root._ddcFor(name) !== null;
     }
 
     function screenFor(monitorName) {
@@ -66,15 +58,7 @@ QtObject {
         const d = root._ddcFor(name);
         if (d)
             return root._monitorBrightnessValues[name] ?? 0;
-        return root._useInternal(name) && root._maxKnown ? root._internal : 0;
-    }
-
-    // Internal backlight is used for the laptop panel; on setups without any DDC
-    // monitor it is used regardless of the output name (old behaviour).
-    function _useInternal(name) {
-        if (root._devices.length === 0)
-            return false;
-        return root._ddc.length === 0 || name === "" || root._isInternalName(name);
+        return 0;
     }
 
     function _refreshScreen() {
@@ -88,14 +72,9 @@ QtObject {
         root._monitorBrightnessValues = byMonitor;
         let t = "";
         let v = 0;
-        if (d) {
-            if (d.ready) {
-                t = d.name;
-                v = d.value;
-            }
-        } else if (root._useInternal(name) && root._maxKnown) {
-            t = name !== "" ? name : root._primaryDevice;
-            v = root._internal;
+        if (d && d.ready) {
+            t = d.name;
+            v = d.value;
         }
         if (root.targetName !== t)
             root.targetName = t;
@@ -143,8 +122,6 @@ QtObject {
                 return name + ": DDC/CI not ready yet";
             return name + ": " + Math.round(d.value * 100) + "%";
         }
-        if (root._useInternal(name) && root._maxKnown)
-            return (name || root._primaryDevice) + ": " + Math.round(root._internal * 100) + "%";
         return "no controllable display for '" + name + "'";
     }
 
@@ -168,96 +145,7 @@ QtObject {
             return root.describeFor(name);
         }
 
-        // --- internal panel over brightnessctl ---
-        if (root._useInternal(name) && root._maxKnown) {
-            if (Math.abs(root._internal - p) < 0.0005)
-                return root.describeFor(name);
-            root._internal = p;
-            const targetPercent = Math.round(p * 100);
-            // Fan out to ALL backlight devices via the serial queue
-            root._setQueue = root._devices.map(dev => ["brightnessctl", "--device=" + dev, "set", targetPercent + "%", "-q"]);
-            if (!root._setBrightnessProc.running)
-                root._pumpSetQueue();
-            root._refreshScreen();
-            root.adjusted(name);
-            return root.describeFor(name);
-        }
-
         return "no controllable display for '" + name + "'";
-    }
-
-    // ===== Internal backlight (brightnessctl) =====
-
-    // The kernel emits inotify MODIFY on .../brightness for every change, so FileView
-    // gives instant zero-poll updates for our writes and external ones alike.
-    property FileView _brightnessView: FileView {
-        watchChanges: true
-        onFileChanged: reload()
-        onLoaded: {
-            if (!root._maxKnown || root._primaryMax <= 0)
-                return;
-            // While our own writes are in flight the optimistic value is newer
-            // than the file — don't let a stale event bounce it back.
-            if (root._setBrightnessProc.running || root._setQueue.length > 0)
-                return;
-            const v = Number(text().trim());
-            if (isNaN(v))
-                return;
-            const nv = v / root._primaryMax;
-            const changed = Math.abs(nv - root._internal) > 0.0005;
-            root._internal = nv;
-            root._refreshScreen();
-            if (changed && root._internalReady && root.targetName !== "" && !root._ddcFor(root.targetName))
-                root.adjusted(root.targetName);
-            root._internalReady = true;
-        }
-    }
-
-    property Process _detectProc: Process {
-        command: ["/bin/ls", "-1", "/sys/class/backlight"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root._devices = text.trim().split("\n").filter(d => d.length > 0);
-                if (root._devices.length > 0) {
-                    root._primaryDevice = root._devices[0];
-                    root._brightnessView.path = "/sys/class/backlight/" + root._primaryDevice + "/brightness";
-                    root._maxProc.command = ["brightnessctl", "--device=" + root._primaryDevice, "max"];
-                    root._maxProc.running = true;
-                }
-            }
-        }
-    }
-
-    property Process _maxProc: Process {
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root._primaryMax = Number(text.trim()) || 1;
-                root._maxKnown = true;
-                // Max may arrive after the first file load — re-parse now.
-                root._brightnessView.reload();
-            }
-        }
-    }
-
-    // Serial queue: a single reused Process cannot run N commands from a loop
-    // (running=true while running is a no-op), so chain one device per exit.
-    property var _setQueue: []
-    property Process _setBrightnessProc: Process {
-        stderr: StdioCollector {
-            onStreamFinished: {
-                if (text.trim())
-                    console.warn("[Brightness] Failed to set brightness: " + text);
-            }
-        }
-        onExited: root._pumpSetQueue()
-    }
-
-    function _pumpSetQueue() {
-        if (root._setQueue.length === 0)
-            return;
-        const next = root._setQueue.shift();
-        root._setBrightnessProc.command = next;
-        root._setBrightnessProc.running = true;
     }
 
     // ===== External monitors (ddcutil / DDC-CI) =====
@@ -379,7 +267,6 @@ QtObject {
     }
 
     Component.onCompleted: {
-        root._detectProc.running = true;
         root._ddcDetectProc.running = true;
     }
 }
