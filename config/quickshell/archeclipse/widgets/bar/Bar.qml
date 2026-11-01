@@ -52,7 +52,8 @@ PanelWindow {
     // picker grabs too, so Esc closes it without clicking into it first — except while its
     // zenity "Add" dialog is up: an exclusive layer blocks Hyprland from focusing that window.
     WlrLayershell.keyboardFocus: (BarState.isOpenFor("search", root.monitorName) || (BarState.isOpenFor("wallpaper", root.monitorName) && !WallpaperService.filePickerOpen)) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
-    WlrLayershell.exclusiveZone: root.barHeight
+    // No reserved strip while a toast alone maps the window: windows must not shift for it.
+    WlrLayershell.exclusiveZone: root.barVisible ? root.barHeight : 0
     // Toast breakthrough: while toasts are up the window jumps to the Overlay layer (above
     // fullscreen), dropping back to Top when they clear; notifPill resolves below.
     WlrLayershell.layer: notifPill.hasContent ? WlrLayer.Overlay : WlrLayer.Top
@@ -66,13 +67,13 @@ PanelWindow {
     // Click-through everywhere but the pills and edge hot-zones: the window is a full-size
     // transparent surface and eats every click without a mask.
     mask: Region {
-        item: pill
+        item: root.barVisible ? pill : null
         // Workspace wave hang: the expanded strip's buttons hang BELOW the never-growing pill
         // and need their own region; nulled once fully down so the surface stays click-through.
         Region {
             item: {
                 var it = currentPageLoader.item;
-                return (it && it.stripExpanded) ? it.waveHitbox : null;
+                return (root.barVisible && it && it.stripExpanded) ? it.waveHitbox : null;
             }
         }
         Region {
@@ -201,6 +202,8 @@ PanelWindow {
         // ---- the pill ----
         Item {
             id: pill
+            // A toast on a hidden bar maps the window; only the toast shows, not the pill.
+            visible: root.barVisible
             // Pushed-center: islands dock to the edges and side pills chain off the main pill,
             // which centres in the remainder. `x` is rigid; leftPush/rightPush animate the pushes.
             property real leftPush: (leftPanelPill.flag ? 8 + leftPanelPill.width + 8 : 0)
@@ -1194,6 +1197,7 @@ PanelWindow {
         NotificationPopups {
             id: notifPill
             monitorName: root.monitorName
+            barVisible: root.barVisible
             pillX: pill.x
             pillY: pill.y
             pillW: pill.width
