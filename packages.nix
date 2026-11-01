@@ -55,6 +55,7 @@ in {
       wl-gammarelay-rs
       rofi
       grim
+      slurp # area selection for screenrecord.sh
       hyprpicker
       hyprpaper
       nautilus

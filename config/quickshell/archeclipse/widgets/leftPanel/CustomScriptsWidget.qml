@@ -7,15 +7,16 @@ import qs.theme
 import qs.widgets.shared
 import qs.services
 
-// Custom Scripts widget — scrollable list of utility scripts: screenshot entries route through
-// the Screenshot service, everything else spawns via execDetached; a missing binary greys its row out.
+// Custom Scripts widget — scrollable list of utility scripts: screenshot and record entries route
+// through the Screenshot and ScreenRecorder services, everything else spawns via execDetached; a
+// missing binary greys its row out.
 Item {
     id: root
 
     property string monitorName: ""
 
     // Utility script definitions — icons are Nerd Font codepoints. kind marks entries whose
-    // callback does more than a plain exec (screenshot, file manager, reset confirmation).
+    // callback does more than a plain exec (screenshot, record toggle, file manager, reset confirmation).
     property var scriptDefs: [
         {
             name: "Restart Bar",
@@ -53,6 +54,22 @@ Item {
             keybind: ["Print"],
             app: "flameshot",
             kind: "screenshot-area"
+        },
+        {
+            name: "Record Screen",
+            icon: Icons.screenshotWindow,
+            description: "Start/stop recording the screen",
+            keybind: ["SUPER", "Print"],
+            app: "gpu-screen-recorder",
+            kind: "record-now"
+        },
+        {
+            name: "Record Area",
+            icon: Icons.screenshotWindow,
+            description: "Start/stop recording a selected area",
+            keybind: ["SUPER", "SHIFT", "Print"],
+            app: "gpu-screen-recorder",
+            kind: "record-area"
         },
         {
             name: "Refresh Hyprland",
@@ -187,6 +204,14 @@ Item {
         }
         if (def.kind === "screenshot-area") {
             Screenshot.capture("area", root.monitorName);
+            return;
+        }
+        if (def.kind === "record-now") {
+            ScreenRecorder.toggleRecording("now", root.monitorName);
+            return;
+        }
+        if (def.kind === "record-area") {
+            ScreenRecorder.toggleRecording("area", root.monitorName);
             return;
         }
         // Spawn via Quickshell.execDetached, NOT Hyprland.dispatch("exec ..."): Hyprland >= 0.55

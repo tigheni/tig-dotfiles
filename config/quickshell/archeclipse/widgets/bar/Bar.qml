@@ -896,9 +896,10 @@ PanelWindow {
                     // `starting` pins it open through the ~2s pgrep lag before gsr is up.
                     readonly property bool recFlag: (ScreenRecorder.isRecording || ScreenRecorder.starting) && ScreenRecorder.targetMonitors.includes(root.monitorName)
                     property bool shown: false
-                    // Screen recording is hidden in this setup (no gpu-screen-recorder or
-                    // screenrecord.sh), so the record circle never reveals.
-                    property bool flag: false
+                    // Revealed on the empty-right hover, on an actual recording/start, or while
+                    // the launcher island is open (expansion moment, weather-pill recipe)
+                    property bool flag: recHover.hovered || recFlag
+                        || BarState.isOpenFor("search", root.monitorName)
                     onFlagChanged: {
                         if (recordingPiece.flag) {
                             recCloseConfirm.stop();

@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 
-// Manages GPU Screen Recorder through the Hyprland helper script and polls
+// Manages GPU Screen Recorder through scripts/screenrecord.sh and polls
 // for recording state.
 QtObject {
     id: root
@@ -24,8 +24,8 @@ QtObject {
     // Elapsed is computed as Date.now() - start.
     property double startTimestamp: 0
 
-    readonly property string scriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/screenrecord.sh"
-    readonly property string monitorFilePath: "/tmp/screenrecord_monitor"
+    readonly property string scriptPath: Quickshell.env("DOTFILES_DIR") + "/scripts/screenrecord.sh"
+    readonly property string monitorFilePath: Quickshell.env("XDG_RUNTIME_DIR") + "/screenrecord_monitor"
 
     function setTargetMonitors(monitors) {
         const unique = [];

@@ -18,4 +18,8 @@
   # is started from Hyprland's autostart, after the Wayland variables are
   # imported.
   systemd.packages = [pkgs.hyprpolkitagent];
+
+  # Screen recording for ArchEclipse (scripts/screenrecord.sh). The setcap
+  # wrapper on gsr-kms-server lets it capture a monitor without a portal prompt.
+  programs.gpu-screen-recorder.enable = true;
 }
