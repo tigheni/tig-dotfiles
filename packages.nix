@@ -64,7 +64,8 @@ in {
       bibata-cursors
       networkmanagerapplet
       pavucontrol
-      quickshell # Super+D dashboard, config in config/quickshell
+      # Super+D dashboard (config/quickshell) and ArchEclipse (scripts/archeclipse.sh)
+      (import ./packages/quickshell.nix {inherit pkgs;})
 
       # ArchEclipse Quickshell config (config/quickshell/archeclipse)
       (python3.withPackages (ps: with ps; [requests pillow])) # launcher apps, wallhaven, booru, manga

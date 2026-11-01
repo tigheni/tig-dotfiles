@@ -232,6 +232,14 @@ Item {
             return "bar toggled";
         }
 
+        // Super+Q (was `makoctl dismiss`): hide the newest popup, keep it in history.
+        function dismissNotification(): string {
+            const w = Notifications.popupToasts[0];
+            if (!w) return "no popup";
+            Notifications.hideToast(w.notificationId);
+            return "dismissed " + w.notificationId;
+        }
+
         function toggleLeftPanel(monitor: string): string {
             if (BarState.isOpenFor("left", monitor)) {
                 BarState.deactivate("left", monitor);
