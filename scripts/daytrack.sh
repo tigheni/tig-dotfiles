@@ -2,7 +2,7 @@
 # daytrack: automatic, local time tracking built on Hyprland focus events.
 # Logs which window has focus into ~/.local/share/daytrack/YYYY-MM-DD.tsv,
 # sorts it into categories and projects, nudges you about breaks and
-# distractions, and feeds a Waybar module. Run `daytrack.sh help`.
+# distractions. Run `daytrack.sh help`.
 
 conf_dir=${XDG_CONFIG_HOME:-$HOME/.config}/daytrack
 data_dir=${XDG_DATA_HOME:-$HOME/.local/share}/daytrack
@@ -40,7 +40,6 @@ fmt() {
 }
 
 notify() { notify-send -a daytrack -i appointment-soon "$1" "$2" 2>/dev/null; }
-refresh_bar() { pkill -RTMIN+14 waybar 2>/dev/null; }
 
 daemon_alive() {
     [ -r "$run_dir/pid" ] && kill -0 "$(cat "$run_dir/pid")" 2>/dev/null
@@ -314,7 +313,6 @@ switch_to() {
     case $2 in code | code-url-handler | cursor | org.wezfurlong.wezterm) remember_project "$p" ;; esac
     if [ -n "$p" ] && has_word "$PRODUCTIVE" "$c"; then last_proj=$p; fi
     write_live
-    refresh_bar
 }
 
 marker_is_today() { [ "$(cat "$data_dir/.$1" 2>/dev/null)" = "$(today)" ]; }
@@ -344,7 +342,6 @@ EOF
     if [ "$prod" -ge $((GOAL_MIN * 60)) ]; then
         set_marker goal
         notify "Daily goal reached" "$(fmt "$prod") productive today. Top: $top"
-        refresh_bar
     fi
 }
 
@@ -477,106 +474,6 @@ daemon() {
     rm -f "$run_dir/pid" "$run_dir/state" "$run_dir/socat.pid" "$run_dir/stopped"
 }
 
-# --- waybar -----------------------------------------------------------------
-
-json_esc() {
-    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' |
-        awk '{ printf "%s%s", (NR > 1 ? "\\n" : ""), $0 }'
-}
-
-waybar_out() {
-    if ! daemon_alive; then
-        printf '{"text":"󱎫 off","tooltip":"daytrack is not running","class":"off"}\n'
-        return
-    fi
-    IFS=$TAB read -r prod active deep longest sph deeptot top <<EOF
-$(day_vals "$(today)")
-EOF
-    away='' streak=''
-    [ -r "$run_dir/state" ] && IFS=$TAB read -r away streak <"$run_dir/state"
-    [ "$away" = - ] && away=''
-    [ "$streak" = - ] && streak=''
-    cat='' proj='' class='' since=''
-    [ -r "$run_dir/current" ] && IFS=$TAB read -r since _ cat proj class _ <"$run_dir/current"
-    [ "$proj" = - ] && proj=''
-    t=$(now) goal=$((GOAL_MIN * 60))
-    pct=$((goal > 0 ? prod * 100 / goal : 0))
-    streak_len=0
-    [ -n "$streak" ] && streak_len=$((t - streak))
-
-    icon=󱎫 css=normal extra=
-    if [ -n "$away" ]; then
-        icon=󰏤 css=away
-        [ "$away" = paused ] && css=paused
-    elif [ "$streak_len" -ge $((DEEP_MIN * 60)) ]; then
-        icon=󰈸 css=deep extra=" · $(fmt "$streak_len")"
-    elif has_word "$DISTRACT_CATS" "$cat"; then
-        css=fun
-    fi
-    [ "$pct" -ge 100 ] && [ -z "$away" ] && [ "$css" = normal ] && icon=󰓾 css=goal
-
-    now_line="Now: idle"
-    case $away in
-    paused) now_line="Paused (right-click to resume)" ;;
-    locked | idle) now_line="Away ($away)" ;;
-    *) [ -n "$since" ] && now_line="Now: $cat${proj:+ · $proj} ($class) for $(fmt $((t - since)))" ;;
-    esac
-    tip="Productive $(fmt "$prod") / $(fmt "$goal") goal ($pct%)
-Active $(fmt "$active") · $sph switches/h
-Deep work $(fmt "$deeptot") in $deep session(s) · longest $(fmt "$longest")
-$now_line"
-    [ "$streak_len" -gt 0 ] && tip="$tip
-Current streak $(fmt "$streak_len")"
-    [ "$top" != "-" ] && tip="$tip
-Top: $top"
-    tip="$tip
-
-Click: report · Middle: week · Right: pause"
-
-    printf '{"text":"%s %s%s","tooltip":"%s","class":"%s","percentage":%d}\n' \
-        "$icon" "$(fmt "$prod")" "$extra" "$(json_esc "$tip")" "$css" "$pct"
-}
-
-# JSON for the Quickshell dashboard: today's totals, top productive
-# projects and what is happening right now.
-dash_json() {
-    IFS=$TAB read -r prod active deep longest sph deeptot _ <<EOF
-$(day_vals "$(today)")
-EOF
-    away='' streak=''
-    [ -r "$run_dir/state" ] && IFS=$TAB read -r away streak <"$run_dir/state"
-    [ "$away" = - ] && away=''
-    [ "$streak" = - ] && streak=''
-    cat='' proj=''
-    [ -r "$run_dir/current" ] && IFS=$TAB read -r _ _ cat proj _ _ <"$run_dir/current"
-    [ "$proj" = - ] && proj=''
-    daemon_alive || away=off
-    streak_len=0
-    [ -n "$streak" ] && streak_len=$(($(now) - streak))
-    top=$(data_for "$(today)" | awk -F'\t' -v prodlist="$PRODUCTIVE" '
-        BEGIN { n = split(prodlist, t, " "); for (i = 1; i <= n; i++) P[t[i]] = 1 }
-        ($3 in P) && $4 != "" && $2 > $1 { p[$4] += $2 - $1 }
-        END {
-            PROCINFO["sorted_in"] = "@val_num_desc"
-            for (k in p) { if (++c > 3) break; printf "%s{\"name\":\"%s\",\"secs\":%d}", (c > 1 ? "," : ""), k, p[k] }
-        }')
-    # Productive seconds for the last 7 days, oldest first, ending today.
-    week='' i=6
-    while [ "$i" -gt 0 ]; do
-        d=$(date -d "-$i day" +%F)
-        week="$week{\"day\":\"$(date -d "$d" +%a)\",\"secs\":$(day_vals "$d" | cut -f1)},"
-        i=$((i - 1))
-    done
-    week="$week{\"day\":\"$(date +%a)\",\"secs\":$prod}"
-    jq -cn --argjson prod "$prod" --argjson active "$active" --argjson goal $((GOAL_MIN * 60)) \
-        --argjson deep "$deep" --argjson deeptot "$deeptot" --argjson longest "$longest" \
-        --argjson sph "$sph" --argjson streak "$streak_len" --argjson deepmin $((DEEP_MIN * 60)) \
-        --arg away "$away" --arg cat "$cat" --arg proj "$proj" --argjson top "[$top]" --argjson week "[$week]" \
-        '{prod: $prod, active: $active, goal: $goal, deep: $deep, deeptot: $deeptot, longest: $longest,
-          switches: $sph, streak: $streak, deepmin: $deepmin, away: $away, cat: $cat, proj: $proj, top: $top,
-          week: $week}'
-}
-
 # --- commands ---------------------------------------------------------------
 
 week() {
@@ -633,8 +530,6 @@ daytrack: automatic time tracking from Hyprland window focus
   stop              stop the tracker, saving the current block
   idle SECS | active
                     called by hypridle
-  waybar            JSON for the Waybar module
-  dash              JSON for the Quickshell dashboard
 
 Data: ~/.local/share/daytrack/   Config: ~/.config/daytrack/
 EOF
@@ -658,19 +553,15 @@ today | report) d=$(resolve_day "$1") && data_for "$d" | analyze report "$d" ;;
 timeline | log) d=$(resolve_day "$1") && data_for "$d" | analyze timeline "$d" ;;
 week) week ;;
 projects) projects "$1" ;;
-waybar) waybar_out ;;
-dash) dash_json ;;
 idle) echo $(($(now) - ${1:-0})) >"$run_dir/idle" ;;
 active) rm -f "$run_dir/idle" ;;
 pause)
     touch "$run_dir/paused"
     notify "daytrack paused" "Nothing is recorded until you resume."
-    refresh_bar
     ;;
 resume)
     rm -f "$run_dir/paused"
     notify "daytrack resumed" ""
-    refresh_bar
     ;;
 toggle) if [ -e "$run_dir/paused" ]; then "$0" resume; else "$0" pause; fi ;;
 open)

@@ -1,0 +1,912 @@
+pragma Singleton
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Hyprland
+import qs.theme
+import qs.services
+
+// Launcher query pipeline: `cb` clipboard, `note` notes, `apps`, `emoji`, `translate`,
+// `N unit in/unit M`, arithmetic, URLs, "cmd > args", then fuzzy DesktopEntries.
+
+QtObject {
+    id: root
+
+    readonly property int maxItems: 10
+    readonly property string historyPath: `${Quickshell.env("HOME")}/.cache/quickshell/launcher/app-history.json`
+    readonly property string notesPath: `${Quickshell.env("HOME")}/.cache/quickshell/launcher/notes.json`
+    readonly property string emojisPath: `${Quickshell.env("HOME")}/.config/quickshell/archeclipse/assets/emojis/emojis.json`
+    readonly property string quickAppHistoryPath: `${Quickshell.env("HOME")}/.cache/quickshell/launcher/quick-app-history.json`
+
+    property var results: []
+    property int selectedIndex: 0
+    property string lastQuery: ""
+    // Ipc sets this before BarState.activate("search") because LauncherPanel resets to
+    // "" on creation/state change; it is consumed after that reset, or applied directly.
+    property string pendingQuery: ""
+    // Quickshell exposes desktop-entry IDs but not their source paths, so this index
+    // maps IDs to the XDG application-directory groups the old launcher used.
+    property var appSourceById: ({})
+    property bool appSourceMapReady: false
+    property Process _appSourceProcess: Process {
+        command: ["python3", `${Quickshell.env("HOME")}/.config/quickshell/archeclipse/scripts/desktop-entry-sources.py`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.appSourceById = JSON.parse(text || "{}");
+                } catch (e) {
+                    root.appSourceById = {};
+                }
+                root.appSourceMapReady = true;
+            }
+        }
+        onExited: {
+            root.appSourceMapReady = true;
+            // Apps may have been requested while the source map was loading.
+            if (String(root.lastQuery || "").replace(/^\s+/, "").startsWith("apps"))
+                root.runQuery(root.lastQuery);
+        }
+    }
+
+    // Wants the search box to adopt a query (activating "cb ..." fills "cb "), set
+    // programmatically so no textEdited fires and no double query runs.
+    signal fillInputRequested(string query)
+
+    // launch history persisted to quickshell app-history.json
+    property FileView _historyFile: FileView {
+        path: root.historyPath
+        watchChanges: false
+        printErrors: false
+        onLoaded: {
+            // FileView loads async and the first view may have snapshotted an empty
+            // history — refresh once disk content arrives, unless the user typed since.
+            if (root.lastQuery === "")
+                root.runQuery("");
+        }
+    }
+    property var history: {
+        try {
+            return JSON.parse(_historyFile.text() || "[]");
+        } catch (e) {
+            return [];
+        }
+    }
+    // DesktopEntries scans async, so an open before the scan finishes mistakes apps for
+    // shell commands; rebuild after a short quiet period, not on every change.
+    property Timer _desktopEntriesRefreshTimer: Timer {
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (root._shouldRefreshDesktopEntryResults())
+                root.runQuery(root.lastQuery);
+        }
+    }
+    property Connections _desktopEntriesChanges: Connections {
+        target: DesktopEntries.applications
+        function onObjectInsertedPost(object, index) {
+            root._desktopEntriesRefreshTimer.restart();
+        }
+        function onObjectRemovedPost(object, index) {
+            root._desktopEntriesRefreshTimer.restart();
+        }
+    }
+
+    function _shouldRefreshDesktopEntryResults() {
+        const query = String(lastQuery || "").replace(/^\s+/, "");
+        const normalized = query.toLowerCase();
+        if (normalized === "" || normalized.startsWith("apps"))
+            return true;
+        if (/^>(recent|recents|history)(?:\s|$)/.test(normalized))
+            return true;
+        return results.some(row => row && !row.isHeader && row.description === "Run as shell command" && String(row.name || "").startsWith("Try "));
+    }
+    function touchHistory(name) {
+        let h = history.filter(n => n !== name);
+        h.unshift(name);
+        h = h.slice(0, 10);
+        _historyFile.setText(JSON.stringify(h));
+        history = h;
+    }
+
+    // Recent apps: entries resolving to DesktopEntries render as apps, the rest are
+    // past shell commands (the "Try … in terminal" fallback) and re-run as such.
+    function recentApps() {
+        const entries = [];
+        const appsByName = {};
+        for (const e of DesktopEntries.applications.values) {
+            if (!e.noDisplay)
+                appsByName[e.name] = e;
+        }
+        for (const name of history) {
+            const e = appsByName[name];
+            if (e) {
+                entries.push(mkResult(e.name, e.icon ? `image://icon/${e.icon}` : "", e.comment || "", () => {
+                    e.execute();
+                    touchHistory(e.name);
+                }));
+            } else {
+                entries.push(mkResult(name, Icons.terminal, "Run as shell command", () => {
+                    Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", name]);
+                    touchHistory(name);
+                }));
+            }
+        }
+        return entries;
+    }
+
+    // ---- QuickApps (favorites) ----
+    function openLeftIslandTab(selector) {
+        // "Keybinds" quickapp: open the left island and switch tab.
+        if (typeof Registry !== "undefined" && Registry.selectLeftTab) {
+            Registry.selectLeftTab(selector, undefined, BarState.searchMonitor);
+        }
+    }
+
+    function quickAppsList() {
+        return [mkResult("Keybinds", Icons.keyboard, "View or edit your Hyprland keybinds", () => openLeftIslandTab("KeyBinds")), mkResult("Browser", Icons.browser, "Open your default web browser", () => Quickshell.execDetached(["xdg-open", "http://www.google.com"])), mkResult("Terminal", Icons.terminal, "Open a new terminal window", () => Quickshell.execDetached(["wezterm"])), mkResult("Files", Icons.file, "Open your file manager", () => Quickshell.execDetached(["nautilus"])), mkResult("Calculator", Icons.calculator, "Open the calculator", () => Quickshell.execDetached(["wezterm", "start", "--", "bc", "-q"])), mkResult("Text Editor", Icons.textEditor, "Open your default text editor", () => Quickshell.execDetached(["code"])), mkResult("Wallpapers", Icons.image, "Pick a wallpaper (applied with set-wallpaper.sh)", () => openWallpaperPicker()),];
+    }
+    // The launcher row closes the search island before launching, so just open the picker.
+    function openWallpaperPicker() {
+        BarState.activate("wallpaper", 0, BarState.searchMonitor || Registry.monitorName);
+    }
+
+    // QuickApps ordered by quick-app-history (mirrors QuickApps.tsx sortQuickAppsByHistory)
+    property var quickAppOrder: []
+    property FileView _qaFile: FileView {
+        path: root.quickAppHistoryPath
+        watchChanges: false
+        printErrors: false
+    }
+    function refreshQuickApps() {
+        let qaHistory;
+        try {
+            qaHistory = JSON.parse(_qaFile.text() || "[]");
+        } catch (e) {
+            qaHistory = [];
+        }
+        if (!Array.isArray(qaHistory))
+            qaHistory = [];
+        const qapps = quickAppsList();
+        const rank = new Map(qaHistory.map((n, i) => [n, i]));
+        const names = new Set(qapps.map(a => a.name));
+        const valid = qaHistory.filter(n => names.has(n));
+        if (valid.length !== qaHistory.length)
+            _qaFile.setText(JSON.stringify(valid));
+        const ordered = [...qapps].sort((a, b) => {
+            const ar = rank.get(a.name) ?? Number.POSITIVE_INFINITY;
+            const br = rank.get(b.name) ?? Number.POSITIVE_INFINITY;
+            if (ar === br)
+                return qapps.indexOf(a) - qapps.indexOf(b);
+            return ar - br;
+        });
+        quickAppOrder = ordered;
+    }
+    function touchQuickApp(name) {
+        const names = new Set(quickAppsList().map(a => a.name));
+        if (!names.has(name))
+            return;
+        let h;
+        try {
+            h = JSON.parse(_qaFile.text() || "[]");
+        } catch (e) {
+            h = [];
+        }
+        if (!Array.isArray(h))
+            h = [];
+        const next = [name, ...h.filter(n => n !== name)];
+        _qaFile.setText(JSON.stringify(next));
+        refreshQuickApps();
+    }
+    Component.onCompleted: {
+        refreshQuickApps();
+        _appSourceProcess.running = true;
+    }
+
+    function selectNext(dir) {
+        if (!results.length)
+            return;
+        // Skip header rows when navigating (while list[next].app_type === "header")
+        const start = selectedIndex;
+        let next = start;
+        do {
+            next = (next + dir + results.length) % results.length;
+        } while (results[next] && results[next].isHeader && next !== start)
+        selectedIndex = next;
+    }
+
+    function activateSelected() {
+        const r = results[selectedIndex];
+        if (r && r.launch) {
+            // Navigation rows only refill the query; a real launch drops the search island
+            // BEFORE spawning so the bar's Exclusive grab releases before focus moves.
+            if (r.keepOpen !== true) {
+                BarState.deactivate("search");
+                root.expectLaunchedWindow();
+            }
+            r.launch();
+            return r.keepOpen === true;
+        }
+        // Nothing launched (info/placeholder row) — stay open.
+        return true;
+    }
+
+    // follow_mouse=1 leaves focus on the bar pill after a launch, so each launch arms
+    // an expectation and the next openwindow gets focuswindow.
+    property int _expectWindows: 0
+    property Timer _expectTimer: Timer {
+        interval: 4000
+        repeat: false
+        onTriggered: root._expectWindows = 0
+    }
+    function expectLaunchedWindow() {
+        root._expectWindows++;
+        root._expectTimer.restart();
+    }
+    property Connections _hyprFocusConn: Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (root._expectWindows <= 0)
+                return;
+            // HyprlandIpcEvent with .name/.data; openwindow data is
+            // ADDRESS,WORKSPACENAME,CLASS,TITLE with a bare-hex address.
+            if ((event?.name ?? "") !== "openwindow")
+                return;
+            const parts = String(event.data ?? "").split(",");
+            const addr = (parts[0] || "").trim().replace(/^0x/i, "");
+            if (addr === "")
+                return;
+            const wsName = (parts[1] || "").trim();
+            const cur = Hyprland.focusedWorkspace?.name ?? Hyprland.activeWorkspace?.name ?? "";
+            if (wsName !== "" && cur !== "" && wsName !== cur)
+                return; // background window elsewhere — don't yank, keep waiting
+            root._expectWindows = Math.max(0, root._expectWindows - 1);
+            if (root._expectWindows === 0)
+                root._expectTimer.stop();
+            Hyprland.dispatch(`focuswindow address:0x${addr}`);
+        }
+    }
+
+    // `icon` takes a theme name, absolute path, image:// URL or a Nerd Font glyph and
+    // is auto-split into icon/glyph, so AppEntry renders both without callers caring.
+    function mkResult(name, icon, description, launch, argText) {
+        const s = String(icon ?? "");
+        let iconSrc = "", glyph = "";
+        if (s.startsWith("image://icon/"))
+            iconSrc = s.slice("image://icon/".length).split("?")[0];
+        else if (s.startsWith("image://") || s.startsWith("file://") || s.startsWith("qrc:/") || s.startsWith("/"))
+            iconSrc = s;
+        else if (s === "")
+            iconSrc = "";
+        else if (/^[A-Za-z0-9_\-+.:]+$/.test(s) && s.length > 2)
+            iconSrc = s;
+        else
+        // theme icon name like "firefox" (glyphs are 1-2 chars)
+        if (s.length <= 2 || /[^\x00-\x7F]/.test(s))
+            glyph = s;
+        else
+            // Nerd Font codepoint or emoji (incl. ZWJ/VS16 sequences)
+            iconSrc = s;
+        // A bare absolute path (Icon=/path/app.png in a .desktop file) would resolve
+        // against qrc:/ inside IconImage; make it an explicit file URL.
+        if (iconSrc.startsWith("/"))
+            iconSrc = "file://" + iconSrc;
+        return {
+            name,
+            icon: iconSrc,
+            glyph,
+            description,
+            launch,
+            argText: argText || ""
+        };
+    }
+    function copyToClipboard(text) {
+        ClipboardService.copy(text);
+    }
+    // header row factory (app_type === "header")
+    function mkHeader(name) {
+        return {
+            name,
+            isHeader: true
+        };
+    }
+
+    // ---- app search over DesktopEntries (tiered ranking) ----
+    function isSubseq(q, target) {
+        let i = 0;
+        for (const ch of target) {
+            if (ch === q[i])
+                i++;
+            if (i === q.length)
+                return true;
+        }
+        return i === q.length;
+    }
+    function scoreEntry(e, q) {
+        const name = (e.name || "").toLowerCase();
+        if (name === q)
+            return 1000;
+        if (name.startsWith(q))
+            return 900;
+        if (name.split(/[\s\-_]+/).some(w => w.startsWith(q)))
+            return 800;
+        if (name.includes(q))
+            return 600;
+        if (isSubseq(q, name))
+            return 400;
+        const meta = `${e.entry || ""} ${e.executable || ""} ${e.comment || ""}`.toLowerCase();
+        if (meta.includes(q))
+            return 200;
+        return 0;
+    }
+
+    function appResults(query, withArgs) {
+        const q = query.toLowerCase().trim();
+        const entries = DesktopEntries.applications.values.filter(e => !e.noDisplay);
+        const scored = [];
+        for (const e of entries) {
+            // Bare "apps" lists everything (history-first);
+            // scored search otherwise.
+            const s = q ? scoreEntry(e, q) : 1;
+            if (s > 0)
+                scored.push({
+                    e,
+                    s
+                });
+        }
+        scored.sort((a, b) => {
+            const ha = history.indexOf(a.e.name), hb = history.indexOf(b.e.name);
+            const ba = ha >= 0 ? Math.max(48 - ha * 8, 8) : 0;
+            const bb = hb >= 0 ? Math.max(48 - hb * 8, 8) : 0;
+            return (b.s + bb) - (a.s + ba) || a.e.name.localeCompare(b.e.name);
+        });
+        // Bare `apps ` is the all-apps view (no result cap); ListView virtualizes, so
+        // exposing the full catalog costs nothing up front.
+        const limit = q ? maxItems : scored.length;
+        const selected = scored.slice(0, limit).map(({
+                e
+            }) => {
+            const entry = e;
+            return {
+                id: String(entry.id || ""),
+                result: mkResult(entry.name, entry.icon ? `image://icon/${entry.icon}` : "", entry.comment || "", () => {
+                    if (withArgs && withArgs.length > 0)
+                        Quickshell.execDetached(["sh", "-c", `${entry.command} ${withArgs.join(" ")}`]);
+                    else
+                        entry.execute();
+                    touchHistory(entry.name);
+                }, withArgs ? withArgs.join(" ") : "")
+            };
+        });
+
+        // Keep the full catalog usable before the source index finishes
+        // loading, then group the active apps query when the map arrives.
+        if (!appSourceMapReady)
+            return selected.map(item => item.result);
+
+        // System-installed apps rank above user-local ones.
+        const groupOrder = [
+            "System Applications",
+            "Flatpak System Applications",
+            "User Applications",
+            "Flatpak User Applications",
+            "Other Applications"
+        ];
+        const groups = {};
+        for (let i = 0; i < selected.length; i++) {
+            const item = selected[i];
+            const source = appSourceById[item.id] || "Other Applications";
+            if (!groups[source])
+                groups[source] = [];
+            groups[source].push(item.result);
+        }
+        const rows = [];
+        for (let i = 0; i < groupOrder.length; i++) {
+            const group = groupOrder[i];
+            if (groups[group] && groups[group].length > 0)
+                rows.push(mkHeader(group), ...groups[group]);
+        }
+        return rows;
+    }
+
+    // Deterministic twin of the fuzzy "Try … in terminal" row (that one exists only
+    // when no desktop entry matches); the whole argument text is the command.
+    function termResults(cmd) {
+        const c = (cmd || "").trim();
+        if (!c)
+            return [mkResult("Usage: term <command>", Icons.terminalAlt, "e.g. term btop", null)];
+        return [mkResult(`Run ${c} in terminal`, Icons.terminalAlt, "Run as shell command", () => {
+            Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", c]);
+            touchHistory(c);
+        })];
+    }
+
+    // ---- custom commands ----
+    // hypridle's before_sleep_cmd locks with hyprlock, so suspend needs no lock call here.
+    function customCommandsList() {
+        return [mkResult("System Sleep", Icons.themeDark, "Suspend system", () => Quickshell.execDetached(["systemctl", "suspend"])), mkResult("System Restart", Icons.restart, "Reboot system", () => Quickshell.execDetached(["reboot"])), mkResult("System Shutdown", Icons.shutdown, "Power off system", () => Quickshell.execDetached(["shutdown", "now"]))];
+    }
+
+    // ">" command palette (quickapps / recent / commands as results); bare ">" and
+    // ">help" list every query mode as a runnable row.
+    function paletteHelp() {
+        // Navigation row: activating it refills the query (launcher stays
+        // open via keepOpen) AND adopts the query into the search box.
+        function nav(name, query, desc) {
+            const r = mkResult(name, ">", desc, () => {
+                root.fillInputRequested(query);
+                runQuery(query);
+            });
+            r.keepOpen = true;
+            return r;
+        }
+        return [mkHeader("Commands"), nav(">quickapps", ">quickapps", "favorite apps - e.g. >quickapps term"), nav(">recent", ">recent", "recently launched apps - e.g. >recent fire"), nav(">commands", ">commands", "system commands - e.g. >commands shut"), nav("cb ...", "cb ", "clipboard history (text/html/image)"), nav("note ...", "note ", "add/list/edit/remove notes"), nav("apps ...", "apps", "list all installed applications"), nav("emoji ...", "emoji ", "search emojis"), nav("term ...", "term ", "run a command in the terminal"), nav("app --arg ...", "firefox --private", "open app with argument - e.g. firefox --private"), nav("hello > es", "hello > es", "translate into (en,fr,es,de,pt,ru,ar…)"), nav("example.com", "example.com", "open link (… .com or https://…)"), nav("2+2", "2+2", "arithmetics (../*/+-..)"), nav("100c to f", "100c to f", "unit conversion (temp/weight/length/volume/speed/digital)")];
+    }
+    function filterRows(rows, needle) {
+        const q = (needle || "").toLowerCase().trim();
+        if (!q)
+            return rows;
+        return rows.filter(r => `${r.name || ""} ${r.description || ""}`.toLowerCase().includes(q));
+    }
+    function paletteResults(t) {
+        // t starts with ">": strip it, split "<cmd> <filter>"
+        const body = t.slice(1).replace(/^\s+/, "");
+        const sp = body.search(/\s/);
+        const cmd = (sp < 0 ? body : body.slice(0, sp)).toLowerCase();
+        const arg = sp < 0 ? "" : body.slice(sp + 1);
+        // bare ">" / ">help" -> list available palette commands
+        if (!cmd || cmd === "help" || cmd === "h" || cmd === "?")
+            return paletteHelp();
+        if (cmd === "quickapps" || cmd === "qa" || cmd === "fav" || cmd === "favorites") {
+            const out = filterRows(quickAppResults(), arg);
+            if (out.length === 0)
+                return [mkResult("No quick app match", ">", `Nothing matching "${arg}"`, null)];
+            return [mkHeader("Quick Apps"), ...out.slice(0, maxItems)];
+        }
+        if (cmd === "recent" || cmd === "recents" || cmd === "history") {
+            const out = filterRows(recentApps(), arg);
+            if (out.length === 0)
+                return [mkResult("Empty History", ">", "Launch an app to build history", null)];
+            return [mkHeader("Recent Apps"), ...out.slice(0, maxItems)];
+        }
+        if (cmd === "commands" || cmd === "cmd" || cmd === "cmds" || cmd === "actions") {
+            const out = filterRows(customCommandsList(), arg);
+            if (out.length === 0)
+                return [mkResult("No command match", ">", `Nothing matching "${arg}"`, null)];
+            return [mkHeader("Commands"), ...out.slice(0, maxItems)];
+        }
+        // unknown ">foo" -> match against palette names, else hint
+        const all = paletteHelp();
+        const hit = all.filter(r => !r.isHeader && `${r.name}`.toLowerCase().includes(cmd));
+        if (hit.length > 0)
+            return [mkHeader("Commands"), ...hit];
+        return [mkResult(`Unknown command ">${cmd}"`, "?", "Try >quickapps - >recent - >commands", null)];
+    }
+    function setResults(rows) {
+        // reset selection to first non-header row (skip headers)
+        let i = 0;
+        while (i < rows.length && rows[i] && rows[i].isHeader)
+            i++;
+        // Before the model swap: the view writes currentIndex itself on model change,
+        // and an unchanged value emits nothing, so the binding would never re-apply.
+        selectedIndex = Math.min(i, Math.max(0, rows.length - 1));
+        results = rows;
+    }
+
+    // ---- default launcher state: recent apps, quick-apps fallback ----
+    function quickAppResults() {
+        const src = quickAppOrder.length > 0 ? quickAppOrder : quickAppsList();
+        return src.slice(0, maxItems).map(a => mkResult(a.name, a.glyph || a.icon, a.description, () => {
+            touchQuickApp(a.name);
+            if (a.launch)
+                a.launch();
+        }));
+    }
+    // Recent apps stay reachable through ">recent", but the empty launcher shows Quick Apps.
+    function defaultResults() {
+        return [mkHeader("Quick Apps"), ...quickAppResults()];
+    }
+
+    // ---- unit conversion (full table) ----
+    function tryConversion(text) {
+        const m = text.match(/^(?:convert\s+)?(\d+(?:\.\d+)?)\s*([a-zA-Z°/%]+(?:\s+[a-zA-Z]+)?)(?:\s+(?:to|in|as|=>)\s+([a-zA-Z°/%]+(?:\s+[a-zA-Z]+)?))?$/i);
+        if (!m)
+            return null;
+        const v = parseFloat(m[1]);
+        const from = m[2].trim().toLowerCase().replace(/\s+/g, "");
+        const toRaw = m[3];
+        if (!toRaw)
+            return null;
+        const to = toRaw.trim().toLowerCase().replace(/\s+/g, "");
+        // aliases
+        const alias = {
+            "c": "celsius",
+            "f": "fahrenheit",
+            "k": "kelvin",
+            "kph": "kmh",
+            "kmh": "km/h",
+            "mph": "mph"
+        };
+        const f = alias[from] || from;
+        const t = alias[to] || to;
+        const conv = {
+            // temperature
+            "celsius": {
+                "fahrenheit": x => x * 9 / 5 + 32,
+                "kelvin": x => x + 273.15
+            },
+            "fahrenheit": {
+                "celsius": x => (x - 32) * 5 / 9,
+                "kelvin": x => (x - 32) * 5 / 9 + 273.15
+            },
+            "kelvin": {
+                "celsius": x => x - 273.15,
+                "fahrenheit": x => (x - 273.15) * 9 / 5 + 32
+            },
+            // weight
+            "kg": {
+                "g": x => x * 1000,
+                "lb": x => x * 2.20462,
+                "oz": x => x * 35.274,
+                "ton": x => x / 1000
+            },
+            "g": {
+                "kg": x => x / 1000,
+                "lb": x => x * 0.00220462,
+                "oz": x => x * 0.035274
+            },
+            "lb": {
+                "kg": x => x * 0.453592,
+                "g": x => x * 453.592,
+                "oz": x => x * 16
+            },
+            "oz": {
+                "kg": x => x * 0.0283495,
+                "g": x => x * 28.3495,
+                "lb": x => x * 0.0625
+            },
+            // length
+            "m": {
+                "km": x => x / 1000,
+                "cm": x => x * 100,
+                "mm": x => x * 1000,
+                "mi": x => x * 0.000621371,
+                "ft": x => x * 3.28084,
+                "in": x => x * 39.3701
+            },
+            "km": {
+                "m": x => x * 1000,
+                "mi": x => x * 0.621371,
+                "ft": x => x * 3280.84
+            },
+            "mi": {
+                "m": x => x * 1609.34,
+                "km": x => x * 1.60934,
+                "ft": x => x * 5280
+            },
+            "ft": {
+                "m": x => x * 0.3048,
+                "cm": x => x * 30.48,
+                "in": x => x * 12
+            },
+            "in": {
+                "m": x => x * 0.0254,
+                "cm": x => x * 2.54,
+                "ft": x => x / 12
+            },
+            // volume
+            "l": {
+                "ml": x => x * 1000,
+                "gal": x => x * 0.264172,
+                "cup": x => x * 4.22675,
+                "floz": x => x * 33.814
+            },
+            "ml": {
+                "l": x => x / 1000,
+                "cup": x => x * 0.00422675,
+                "tsp": x => x * 0.202884
+            },
+            "gal": {
+                "l": x => x * 3.78541,
+                "ml": x => x * 3785.41,
+                "qt": x => x * 4
+            },
+            // digital
+            "gb": {
+                "mb": x => x * 1024,
+                "kb": x => x * 1024 * 1024,
+                "tb": x => x / 1024,
+                "pb": x => x / (1024 * 1024)
+            },
+            "mb": {
+                "gb": x => x / 1024,
+                "kb": x => x * 1024,
+                "tb": x => x / (1024 * 1024)
+            },
+            // speed
+            "km/h": {
+                "m/s": x => x / 3.6,
+                "mph": x => x * 0.621371,
+                "knot": x => x * 0.539957
+            },
+            "mph": {
+                "km/h": x => x * 1.60934,
+                "m/s": x => x * 0.44704,
+                "knot": x => x * 0.868976
+            }
+        };
+        if (conv[f] && conv[f][t]) {
+            const deg = f === "celsius" || f === "fahrenheit" || f === "kelvin";
+            const out = conv[f][t](v);
+            const suffix = deg ? "°" : " ";
+            const label = `${parseFloat(out.toFixed(4))}${suffix}${toRaw.trim()}`;
+            return [mkResult(label, Icons.convert, `Converted from ${v} ${m[2].trim()}`, () => copyToClipboard(label))];
+        }
+        return null;
+    }
+
+    // ---- arithmetic ----
+    function tryArithmetic(text) {
+        if (!/^[\d\s.+\-*/()%]+$/.test(text.trim()) || !/[+\-*/]/.test(text))
+            return null;
+        try {
+            const val = Function(`"use strict"; return (${text})`)();
+            if (typeof val !== "number" || isNaN(val))
+                return null;
+            return [mkResult(`${val}`, Icons.calculatorAlt, "= " + text.trim(), () => copyToClipboard(`${val}`))];
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ---- URL ----
+    function tryUrl(text) {
+        const t = text.trim();
+        if (/^(https?:\/\/|www\.)\S+$/.test(t) || /^\S+\.com\b/.test(t)) {
+            const url = t.startsWith("http") ? t : `https://${t}`;
+            return [mkResult(`Open ${url}`, Icons.link, "Open in browser", () => Quickshell.execDetached(["xdg-open", url]))];
+        }
+        return null;
+    }
+
+    // ---- emoji (bundled assets/emojis/emojis.json index) ----
+    property FileView _emojiFile: FileView {
+        path: root.emojisPath
+        printErrors: false
+    }
+    property var _emojiIndex: {
+        try {
+            return JSON.parse(_emojiFile.text() || "[]");
+        } catch (e) {
+            return [];
+        }
+    }
+    function emojiResults(query) {
+        const q = query.toLowerCase();
+        let out = [];
+        for (const e of _emojiIndex) {
+            if ((e.app_tags || "").toLowerCase().includes(q)) {
+                const glyph = e.app_name || "";
+                out.push(mkResult(glyph, glyph, e.app_tags, () => copyToClipboard(glyph)));
+                if (out.length >= maxItems)
+                    break;
+            }
+        }
+        return out;
+    }
+
+    // ---- notes (cache/launcher/notes.json; full CRUD) ----
+    property FileView _notesFile: FileView {
+        path: root.notesPath
+        watchChanges: false
+        printErrors: false
+    }
+    property var notes: {
+        try {
+            return JSON.parse(_notesFile.text() || "[]");
+        } catch (e) {
+            return [];
+        }
+    }
+    function persistNotes(list) {
+        _notesFile.setText(JSON.stringify(list));
+        notes = list;
+    }
+    function noteResults(rawCommand) {
+        const list = notes;
+        const norm = (rawCommand || "").trim();
+        if (norm === "" || /^list$/i.test(norm)) {
+            const visible = list.slice(0, maxItems);
+            if (visible.length === 0)
+                return [mkResult("No notes yet", Icons.note, "Type: note buy milk", null)];
+            return visible.map(note => {
+                const content = String(note.content || "");
+                const preview = content.length > 80 ? content.slice(0, 79) + "…" : content;
+                const when = note.updatedAt ? new Date(note.updatedAt).toLocaleString() : "recent";
+                return mkResult(`${note.id}. ${preview}`, Icons.note, `Updated ${when} · click to copy`, () => copyToClipboard(content));
+            });
+        }
+        const updateMatch = norm.match(/^(?:edit|set|update|modify)\s+(\d+)(?:\s+([\s\S]+))?$/i);
+        if (updateMatch) {
+            const idx = Number(updateMatch[1]) - 1;
+            if (idx < 0 || idx >= list.length)
+                return [mkResult("Note not found", Icons.note, "", null)];
+            const next = JSON.parse(JSON.stringify(list));
+            next[idx].content = (updateMatch[2] || "").trim();
+            next[idx].updatedAt = Date.now();
+            persistNotes(next);
+            return [mkResult("Note updated", Icons.note, next[idx].content, null)];
+        }
+        const removeMatch = norm.match(/^(?:del|rm|remove|delete)\s+(\d+)$/i);
+        if (removeMatch) {
+            const idx = Number(removeMatch[1]) - 1;
+            if (idx < 0 || idx >= list.length)
+                return [mkResult("Note not found", Icons.note, "", null)];
+            const next = JSON.parse(JSON.stringify(list));
+            next.splice(idx, 1);
+            persistNotes(next);
+            return [mkResult("Note removed", Icons.note, "", null)];
+        }
+        const addMatch = norm.match(/^(?:add|new)\s+([\s\S]+)$/i);
+        const content = addMatch ? addMatch[1].trim() : norm;
+        if (!content)
+            return [mkResult("No notes yet", Icons.note, "Type: note buy milk", null)];
+        const next = JSON.parse(JSON.stringify(list));
+        next.push({
+            id: next.length + 1,
+            content,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        });
+        persistNotes(next);
+        return [mkResult("Note saved", Icons.note, content, null)];
+    }
+
+    // Clipboard history is owned live by ClipboardService; the JSON is persistence
+    // only — a FileView watch misses rename-replace writes (seen live 2026-10-13).
+    readonly property var _clipboardIndex: ClipboardService.history
+    function clipboardResults(query) {
+        const q = query.toLowerCase().trim();
+        let out = [];
+        for (const entry of _clipboardIndex) {
+            const content = String(entry.content || "");
+            if (content.toLowerCase().includes(q)) {
+                const stroke = content.replace(/\s+/g, " ").slice(0, 128) + (content.length > 128 ? "…" : "");
+                const type = entry.type || (entry.mimeType || "text");
+                out.push(mkResult(stroke, Icons.clipboard, `${type} · click to copy`, () => copyToClipboard(content)));
+                if (out.length >= maxItems)
+                    break;
+            }
+        }
+        if (out.length === 0)
+            out = [mkResult("No clipboard match", Icons.clipboard, `Nothing matching "${query}" in history`, null)];
+        return out;
+    }
+
+    // ---- translate (trans(1) direct; wrapper script deleted) ----
+    property int _trSeq: 0
+    property Process _trProc: Process {
+        id: trProc
+        property string mode: ""
+        property int _seq: 0
+        command: ["true"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                // Stale guard: a newer query replaced this run's answer.
+                if (trProc._seq !== root._trSeq)
+                    return;
+                if (trProc.mode === "translate") {
+                    const out = text.trim();
+                    if (out === "")
+                        root.results = [root.mkResult("Translation failed", Icons.translate, "trans returned no output · check network", null)];
+                    else
+                        root.results = [root.mkResult(out, Icons.translate, "Translation · click to copy", () => root.copyToClipboard(out))];
+                }
+            }
+        }
+    }
+
+    // Main entry, debounced 100ms. QML has no setTimeout and QtObject singletons
+    // cannot host bare Timer children, so the timer is a restartable property.
+    property Timer _debounceTimer: Timer {
+        interval: 100
+        repeat: false
+        property string pendingText: ""
+        onTriggered: root.runQuery(pendingText)
+    }
+    function runQueryDebounced(text) {
+        _debounceTimer.pendingText = text;
+        _debounceTimer.restart();
+    }
+    function runQuery(text) {
+        lastQuery = text;
+        // Prefix dispatch trims leading whitespace by regex only (there is no
+        // trimStart, and a full trim eats "cb " / "note " into app search).
+        const t = String(text || "").replace(/^\s+/, "");
+
+        if (!t || t.trim() === "") {
+            setResults(defaultResults());
+            return;
+        }
+
+        // ">" command palette (quickapps / recent / commands)
+        if (t.charAt(0) === ">") {
+            setResults(paletteResults(t));
+            return;
+        }
+
+        // prefixed modes (in dispatch order)
+        if (t.startsWith("cb ")) {
+            setResults(clipboardResults(t.slice(3)));
+            return;
+        }
+        if (t.startsWith("note ")) {
+            setResults(noteResults(t.slice(5)));
+            return;
+        }
+        if (t.startsWith("term ")) {
+            setResults(termResults(t.slice(5)));
+            return;
+        }
+        if (t.startsWith("apps")) {
+            setResults(appResults(t.slice(4).trim() || ""));
+            return;
+        }
+
+        const conv = tryConversion(t);
+        if (conv) {
+            setResults(conv);
+            return;
+        }
+
+        const parts = t.trim().split(/\s+/);
+
+        // translate "hello > es" — trans(1) direct (auto-detect source)
+        const trMatch = t.match(/^(.+?)\s*>\s*(\w{2})$/);
+        if (trMatch) {
+            // Setting ·starting on an in-flight Process is a no-op, so kill + rearm +
+            // bump the seq: the killed run is dropped by _seq, not published under it.
+            root._trSeq++;
+            trProc._seq = root._trSeq;
+            trProc.mode = "translate";
+            trProc.command = ["trans", "-brief", trMatch[1].trim(), "-t", trMatch[2] || "en"];
+            if (trProc.running)
+                trProc.running = false;
+            trProc.running = true;
+            results = [mkResult("Translating…", Icons.translate, "", null)];
+            return;
+        }
+
+        // emoji "emoji <query>"
+        if (t.startsWith("emoji ")) {
+            setResults(emojiResults(t.slice(6)));
+            return;
+        }
+
+        // math / url
+        const arith = tryArithmetic(t);
+        if (arith) {
+            setResults(arith);
+            return;
+        }
+        const url = tryUrl(t);
+        if (url) {
+            setResults(url);
+            return;
+        }
+
+        // fallback: app fuzzy search, trailing-args support
+        const head = parts[0];
+        const rest = parts.slice(1);
+        let r = appResults(head, rest);
+        // Quick apps (Keybinds, Wallpapers, ...) are not desktop entries, so match them too.
+        if (rest.length === 0)
+            r = filterRows(quickAppResults(), head).concat(r).slice(0, maxItems);
+        if (r.length === 0 && rest.length === 0) {
+            r = [mkResult(`Try ${t} in terminal`, Icons.terminalAlt, "Run as shell command", () => {
+                Quickshell.execDetached(["wezterm", "start", "--", "bash", "-c", t]);
+                touchHistory(t);
+            })];
+        }
+        setResults(r);
+    }
+}

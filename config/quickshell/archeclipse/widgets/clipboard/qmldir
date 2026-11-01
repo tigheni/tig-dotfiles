@@ -1,0 +1,3 @@
+module qs.widgets.clipboard
+
+ClipboardPopup 1.0 ClipboardPopup.qml

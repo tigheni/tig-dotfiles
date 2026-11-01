@@ -1,0 +1,123 @@
+import QtQuick
+import qs.theme
+import qs.services
+import qs.widgets.bar.islands
+import qs.widgets.launcher
+
+// Search island: input + launcher results inline in the bar pill — the pill grows (width via
+// the pill transition, height snapped) while the results body unfolds.
+Column {
+    id: root
+    width: 516
+    spacing: Theme.spacing
+    property string monitorName: ""
+
+    signal queryChanged(string query)
+    signal activateRequested
+    signal navigateRequested(int direction)
+
+    // Expand driver: 0 -> 1 on creation unfolds the results body.
+    property real expand: 0
+    property int bodyFullHeight: 448
+    Component.onCompleted: expand = 1
+
+    // Search input pill (was SearchBar — merged here, its only consumer).
+    // Typing, Enter (activate hook), Up/Down (navigate hook), Esc (close).
+    Rectangle {
+        id: searchInput
+        width: parent.width
+        height: 30
+        radius: Theme.radius
+        color: Theme.surface
+
+        TextInput {
+            id: input
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            verticalAlignment: TextInput.AlignVCenter
+            color: Theme.fg
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSize
+            clip: true
+            focus: true
+
+            onTextEdited: {
+                root.queryChanged(text);
+                Launcher.runQueryDebounced(text);
+            }
+            onAccepted: {
+                root.activateRequested();
+                // Navigation rows (">" tips) and info rows keep the
+                // launcher open; real launches close it.
+                if (!Launcher.activateSelected())
+                    BarState.deactivate("search", root.monitorName);
+            }
+
+            Keys.onEscapePressed: BarState.deactivate("search", root.monitorName)
+            Keys.onDownPressed: {
+                root.navigateRequested(1);
+                Launcher.selectNext(1);
+            }
+            Keys.onUpPressed: {
+                root.navigateRequested(-1);
+                Launcher.selectNext(-1);
+            }
+
+            // focus grab must wait one event-loop turn — the loader creates this
+            // page before the layer surface gets keyboard interactivity
+            Timer {
+                interval: 50
+                running: true
+                onTriggered: input.forceActiveFocus()
+            }
+        }
+
+        // keep focus while the search island is open (clicks elsewhere shouldn't
+        // strand the caret)
+        Connections {
+            target: BarState
+            function onPanelStatesByMonitorChanged() {
+                if (BarState.isOpenFor("search", root.monitorName)) {
+                    input.text = "";
+                    input.forceActiveFocus();
+                }
+            }
+        }
+
+        // Navigation rows adopt their query into the box so typing continues from that format;
+        // setting it programmatically avoids textEdited, so the row's runQuery isn't doubled.
+        Connections {
+            target: Launcher
+            function onFillInputRequested(query) {
+                input.text = query;
+                input.cursorPosition = input.text.length;
+                input.forceActiveFocus();
+            }
+        }
+
+        // blinking caret placeholder hint when empty
+        Text {
+            visible: input.text === "" && !input.focus
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 12
+            text: "Search…"
+            color: Theme.muted
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSize
+        }
+    }
+
+    IslandExpandClip {
+        expand: root.expand
+        contentHeight: root.bodyFullHeight
+
+        LauncherPanel {
+            anchors.top: parent.top
+            width: parent.width
+            height: root.bodyFullHeight
+            monitorName: root.monitorName
+        }
+    }
+}

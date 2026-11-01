@@ -1,0 +1,6 @@
+module qs.widgets.rightPanel
+
+CalendarWidget 1.0 CalendarWidget.qml
+NotificationHistoryWidget 1.0 NotificationHistoryWidget.qml
+NotificationItem 1.0 NotificationItem.qml
+SystemResourcesWidget 1.0 SystemResourcesWidget.qml

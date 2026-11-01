@@ -1,0 +1,5 @@
+module qs.widgets.leftPanel
+
+CustomScriptsWidget 1.0 CustomScriptsWidget.qml
+KeyBindsWidget 1.0 KeyBindsWidget.qml
+SettingsWidget 1.0 SettingsWidget.qml

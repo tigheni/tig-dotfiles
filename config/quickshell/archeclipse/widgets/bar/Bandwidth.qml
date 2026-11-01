@@ -1,0 +1,199 @@
+import QtQuick
+import QtQuick.Controls
+import qs.theme
+import qs.services
+import qs.widgets.shared
+
+// Network speed pill: binds SysInfo.bandwidth (the single bandwidth-loop owner) rather
+// than spawning a second daemon; compact shows up/down, click the stats popover.
+Item {
+    id: root
+    height: Theme.barContentHeight
+
+    // [upKB, downKB, todayUpKB, todayDownKB] (SysInfo rounds B/1024): speeds display as
+    // is, today's counters are scaled back to bytes for formatData().
+    readonly property var _bw: SysInfo.bandwidth
+    property string uploadSpeed: String(_bw[0])      // b[0] KB/s
+    property string downloadSpeed: String(_bw[1])    // b[1] KB/s
+    property real todayUpload: _bw[2] * 1024         // b[2] KB -> bytes
+    property real todayDownload: _bw[3] * 1024       // b[3] KB -> bytes
+
+    // Hover popover (Network Statistics)
+    Popup {
+        id: bwPopup
+        parent: root
+        y: root.height + 6
+        x: root.width / 2 - bwPopup.implicitWidth / 2
+        padding: Theme.pad
+        closePolicy: Popup.CloseOnPressOutside
+        background: Rectangle {
+            color: Theme.surface
+            radius: Theme.radius
+            border.color: Theme.border
+        }
+
+        Column {
+            spacing: Theme.spacing
+            Text {
+                text: "Network Statistics"
+                font.pixelSize: Theme.fontSize + 2
+                font.bold: true
+                color: Theme.fg
+            }
+
+            Row {
+                spacing: Theme.spacing
+
+                // Upload section
+                Column {
+                    spacing: Theme.spacing
+                    Text {
+                        text: "Upload"
+                        color: Theme.muted
+                        font.pixelSize: Theme.fontSize
+                    }
+                    Row {
+                        spacing: Theme.spacing
+                        Column {
+                            spacing: 2
+                            Text {
+                                text: "Packets"
+                                color: Theme.muted
+                                font.pixelSize: Theme.fontSize - 2
+                            }
+                            Text {
+                                text: root.uploadSpeed + " KB/s"
+                                color: Theme.fg
+                                font.pixelSize: Theme.fontSize
+                            }
+                        }
+                        Column {
+                            spacing: 2
+                            Text {
+                                text: "Data"
+                                color: Theme.muted
+                                font.pixelSize: Theme.fontSize - 2
+                            }
+                            Text {
+                                text: root.formatData(root.todayUpload)
+                                color: Theme.fg
+                                font.pixelSize: Theme.fontSize
+                            }
+                        }
+                    }
+                }
+
+                // Download section
+                Column {
+                    spacing: Theme.spacing
+                    Text {
+                        text: "Download"
+                        color: Theme.muted
+                        font.pixelSize: Theme.fontSize
+                    }
+                    Row {
+                        spacing: Theme.spacing
+                        Column {
+                            spacing: 2
+                            Text {
+                                text: "Packets"
+                                color: Theme.muted
+                                font.pixelSize: Theme.fontSize - 2
+                            }
+                            Text {
+                                text: root.downloadSpeed + " KB/s"
+                                color: Theme.fg
+                                font.pixelSize: Theme.fontSize
+                            }
+                        }
+                        Column {
+                            spacing: 2
+                            Text {
+                                text: "Data"
+                                color: Theme.muted
+                                font.pixelSize: Theme.fontSize - 2
+                            }
+                            Text {
+                                text: root.formatData(root.todayDownload)
+                                color: Theme.fg
+                                font.pixelSize: Theme.fontSize
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Compact display — click to open popover
+    Rectangle {
+        id: bg
+        anchors.fill: parent
+        radius: Theme.radius
+        color: "transparent"
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton
+            onClicked: bwPopup.open()
+            cursorShape: Qt.PointingHandCursor
+
+            AppTooltip {
+                visible: parent.containsMouse
+                text: "click to open"
+            }
+        }
+
+        Row {
+            anchors.fill: parent
+            anchors.margins: 6
+            spacing: Theme.spacing
+
+            // Upload (tx) — b[0]
+            Row {
+                spacing: 1
+                Text {
+                    text: root.uploadSpeed
+                    color: Theme.fg
+                    font.pixelSize: Theme.fontSizeCaption
+                    font.family: Theme.fontFamily
+                    // Fixed ASCII digits+units, repainted every second — skip HarfBuzz.
+                    font.preferShaping: false
+                }
+                Text {
+                    text: Icons.arrowUp
+                    color: Theme.accent
+                    font.pixelSize: Theme.fontSizeCaption
+                }
+            }
+            // Download (rx) — b[1]
+            Row {
+                spacing: 1
+                Text {
+                    text: root.downloadSpeed
+                    color: Theme.fg
+                    font.pixelSize: Theme.fontSizeCaption
+                    font.family: Theme.fontFamily
+                    font.preferShaping: false
+                }
+                Text {
+                    text: Icons.arrowDown
+                    color: Theme.accent
+                    font.pixelSize: Theme.fontSizeCaption
+                }
+            }
+        }
+    }
+
+    // Human-readable byte formatter (B/KB/MB/GB)
+    function formatData(bytes) {
+        if (bytes >= 1024 * 1024 * 1024)
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+        if (bytes >= 1024 * 1024)
+            return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        if (bytes >= 1024)
+            return (bytes / 1024).toFixed(2) + " KB";
+        return bytes + " B";
+    }
+}

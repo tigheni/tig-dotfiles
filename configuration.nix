@@ -107,6 +107,9 @@
       enable = true;
       silent = true;
     };
+    # Prebuilt nix-index database: `, cmd` (comma) runs any nixpkgs command
+    # without installing it, and zsh suggests the package for unknown commands.
+    nix-index-database.comma.enable = true;
   };
 
   services = {

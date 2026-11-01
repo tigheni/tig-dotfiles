@@ -65,4 +65,4 @@ fun	stremio|mpv|steam|^steam_app|lutris|heroic	*
 music	spotify	*
 write	ghostwriter|wps|libreoffice|obsidian|org\.kde\.okular	*
 browse	brave|firefox|chromium	*
-system	nautilus|pavucontrol|^float$|blueman|clipse|rofi|mullvad|flameshot|hyprland-share-picker	*
+system	nautilus|pavucontrol|^float$|blueman|rofi|mullvad|flameshot|hyprland-share-picker	*

@@ -3,6 +3,10 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     llm-agents.url = "github:numtide/llm-agents.nix";
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -10,6 +14,7 @@
     nixpkgs,
     nixpkgs-unstable,
     llm-agents,
+    nix-index-database,
     ...
   }: let
     system = "x86_64-linux";
@@ -40,7 +45,10 @@
         llm-agents = llm-agents.packages.${system};
       };
 
-      modules = [./configuration.nix];
+      modules = [
+        ./configuration.nix
+        nix-index-database.nixosModules.nix-index
+      ];
     };
 
     formatter.${system} = pkgs.alejandra;

@@ -36,7 +36,8 @@ if [[ -n "$next_sink" ]]; then
     wpctl set-default "$next_sink"
 
     # Get sink name for notification
-    sink_name=$(wpctl status | awk "/^[[:space:]]*$next_sink\./ {gsub(/^[[:space:]]*[0-9]+\.[[:space:]]*/, \"\"); gsub(/[[:space:]]*\\[.*\\]/, \"\"); print}")
+    # wpctl status prefixes rows with tree glyphs ("│  *  66."), so ask for the name directly.
+    sink_name=$(wpctl inspect "$next_sink" | sed -n 's/.*node\.description = "\(.*\)"/\1/p')
 
     # Send notification
     if command -v notify-send >/dev/null; then

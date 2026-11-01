@@ -32,5 +32,5 @@ filter_filler_words = true
 enabled = true
 
 [osd]
-# The voxtype-osd frontend is not packaged; the Waybar module shows status.
+# The voxtype-osd frontend is not packaged, so there is no on-screen status.
 enabled = false

@@ -28,7 +28,6 @@ in {
       dust
       lazydocker
       pgcli
-      comma
       nurl
       bun
       qutebrowser
@@ -52,22 +51,27 @@ in {
       lynx
 
       # Hyprland and desktop tools
-      # Waybar is started by scripts/waybar-launch.sh, not a systemd unit.
-      waybar
-      mako
       wl-clipboard
       wl-gammarelay-rs
       rofi
-      clipse
       grim
+      slurp # area selection for screenrecord.sh
       hyprpicker
       hyprpaper
       nautilus
       bibata-cursors
       networkmanagerapplet
       pavucontrol
-      wttrbar
-      quickshell # Super+D dashboard, config in config/quickshell
+      # ArchEclipse shell (config/quickshell/archeclipse, scripts/archeclipse.sh)
+      (import ./packages/quickshell.nix {inherit pkgs;})
+
+      # ArchEclipse Quickshell config (config/quickshell/archeclipse)
+      (python3.withPackages (ps: with ps; [requests])) # launcher app list, wallhaven
+      zenity # wallpaper import picker
+      pulseaudio # pactl for the control panel volume section; PipeWire stays the server
+      bc # launcher calculator
+      translate-shell
+      (import ./packages/archeclipse-sysmonitor.nix {inherit pkgs;})
 
       # Voxtype voice-to-text and its Wayland typing backend
       voxtype-vulkan

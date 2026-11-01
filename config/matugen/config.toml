@@ -1,7 +1,7 @@
 [config]
 reload_apps = false
 
-[templates.waybar]
-input_path = "~/.config/matugen/templates/waybar-colors.css"
-output_path = "~/.config/waybar/tokens/colors.css"
-post_hook = "$DOTFILES_DIR/scripts/waybar-launch.sh render && pkill -SIGUSR2 -x 'waybar|\\.waybar-wrapped'; $DOTFILES_DIR/scripts/mako-launch.sh render"
+# ArchEclipse's Theme.qml watches this file, so no reload hook is needed.
+[templates.archeclipse]
+input_path = "~/.config/matugen/templates/archeclipse-colors.scss"
+output_path = "~/.cache/coloreclipse/colors.scss"
