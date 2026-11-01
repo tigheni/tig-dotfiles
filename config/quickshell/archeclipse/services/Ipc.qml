@@ -453,7 +453,7 @@ Item {
                         + " aspects=" + asp + " model=" + mdl + " [" + samples.join(" ") + "]";
                 }
                 if (query === "theme") return "dynamicColors=" + Settings.dynamicThemeColors
-                    + " variant=" + (GlobalTheme.currentTheme ? "light" : "dark");
+                    + " variant=dark";
                 if (query.startsWith("setCategory:")) {
                     Settings.updateSetting("wallpaperSwitcher.category", query.substring(12));
                     return "selected=" + Settings.wallpaperCategory;

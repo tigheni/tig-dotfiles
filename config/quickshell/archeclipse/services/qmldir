@@ -13,7 +13,6 @@ singleton AutoWorkspaceSwitching 1.0 AutoWorkspaceSwitching.qml
 singleton Brightness 1.0 Brightness.qml
 singleton ScreenRecorder 1.0 ScreenRecorder.qml
 singleton Screenshot 1.0 Screenshot.qml
-singleton GlobalTheme 1.0 GlobalTheme.qml
 singleton Lyrics 1.0 Lyrics.qml
 singleton PpdState 1.0 PpdState.qml
 singleton WallpaperService 1.0 WallpaperService.qml
