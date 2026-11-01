@@ -28,7 +28,6 @@ in {
       dust
       lazydocker
       pgcli
-      comma
       nurl
       bun
       qutebrowser
