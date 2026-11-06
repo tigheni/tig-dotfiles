@@ -128,6 +128,10 @@ QtObject {
         // FileView delivers text() via onLoaded, never synchronously — a sync read
         // returned "" and wiped 49 valid entries on boot (2026-10-13).
         root._loadHistory((list) => {
+            // WezTerm copies on mouse-up and again on Ctrl+Shift+C, so one copy
+            // fires two events: replace an identical newest entry, don't stack it.
+            if (list.length > 0 && list[0].type === type && list[0].content === content)
+                list.shift();
             list.unshift({
                 id: root._capTs,
                 timestamp: root._capTs,
