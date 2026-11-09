@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     llm-agents.url = "github:numtide/llm-agents.nix";
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
@@ -12,7 +11,6 @@
   outputs = {
     self,
     nixpkgs,
-    nixpkgs-unstable,
     llm-agents,
     nix-index-database,
     ...
@@ -38,10 +36,6 @@
 
       specialArgs = {
         inherit username dotfilesDir;
-        pkgs-unstable = import nixpkgs-unstable {
-          inherit system;
-          config.allowUnfree = true;
-        };
         llm-agents = llm-agents.packages.${system};
       };
 
@@ -58,6 +52,7 @@
     };
 
     checks.${system} = {
+      alejandra = lint "alejandra" pkgs.alejandra "alejandra --check --quiet .";
       shellcheck = lint "shellcheck" pkgs.shellcheck ''
         find . -name '*.sh' -print0 | xargs -0 shellcheck
       '';
