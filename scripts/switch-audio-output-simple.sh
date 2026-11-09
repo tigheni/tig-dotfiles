@@ -34,6 +34,8 @@ echo "Next sink: $next_sink"
 # Switch to next sink
 if [[ -n "$next_sink" ]]; then
     wpctl set-default "$next_sink"
+    # WirePlumber restores each output's saved mute state, so a speaker muted earlier comes back silent.
+    wpctl set-mute "$next_sink" 0
 
     # Get sink name for notification
     # wpctl status prefixes rows with tree glyphs ("│  *  66."), so ask for the name directly.

@@ -12,6 +12,7 @@
     ./modules/bluetooth.nix
     ./modules/desktop.nix
     ./modules/networking.nix
+    ./modules/printing.nix
     ./zsh
     ./hyprland
     ./neovim
