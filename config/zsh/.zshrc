@@ -122,5 +122,3 @@ export MANWIDTH=999
 eval "$(zoxide init zsh)"
 source <(fzf --zsh)
 eval "$(atuin init zsh --disable-up-arrow)"
-
-alias daytrack='$DOTFILES_DIR/scripts/daytrack.sh'
