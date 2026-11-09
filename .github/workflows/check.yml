@@ -1,5 +1,8 @@
 name: check
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [master]
@@ -9,9 +12,8 @@ jobs:
   flake-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       # Runs alejandra, shellcheck, statix and deadnix, and evaluates the
       # NixOS configuration without building it.
       - run: nix flake check
