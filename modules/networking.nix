@@ -15,18 +15,7 @@ _: {
     firewall = {
       enable = true;
       allowedUDPPorts = [5353]; # mDNS
-      allowedTCPPortRanges = [
-        {
-          from = 1714;
-          to = 1764;
-        } # KDE Connect
-      ];
-      allowedUDPPortRanges = [
-        {
-          from = 1714;
-          to = 1764;
-        } # KDE Connect
-      ];
+      # KDE Connect's ports are opened by programs.kdeconnect (modules/desktop.nix).
     };
   };
 }

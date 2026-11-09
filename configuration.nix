@@ -31,6 +31,10 @@
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
     auto-optimise-store = true;
+
+    # Flush store paths to disk before registering them as valid. Without it,
+    # a power cut during a rebuild can leave registered paths with empty files.
+    fsync-store-paths = true;
   };
 
   nixpkgs.config.allowUnfree = true;
@@ -96,6 +100,16 @@
         };
         pull.rebase = true;
         push.autoSetupRemote = true;
+        core.pager = "delta";
+        interactive.diffFilter = "delta --color-only";
+        delta.navigate = true;
+        merge.conflictStyle = "zdiff3";
+        # Sign commits and tags with the SSH key. GitHub shows them as verified
+        # once the same key is added there as a signing key.
+        gpg.format = "ssh";
+        user.signingkey = "~/.ssh/id_ed25519.pub";
+        commit.gpgsign = true;
+        tag.gpgsign = true;
       };
     };
     nh = {
@@ -111,9 +125,23 @@
     # Prebuilt nix-index database: `, cmd` (comma) runs any nixpkgs command
     # without installing it, and zsh suggests the package for unknown commands.
     nix-index-database.comma.enable = true;
+    # Lets prebuilt binaries that expect a standard Linux loader run, such as
+    # the ones npm packages download (Prisma engines, Playwright browsers).
+    nix-ld.enable = true;
   };
 
   services = {
+    # Kills the largest process when memory runs out, instead of the desktop
+    # freezing while the kernel thrashes. Notifies which process was killed.
+    earlyoom = {
+      enable = true;
+      enableNotifications = true;
+    };
+    # Watches disk SMART health and sends a desktop notification on errors.
+    smartd = {
+      enable = true;
+      notifications.systembus-notify.enable = true;
+    };
     mullvad-vpn = {
       enable = true;
       package = pkgs.mullvad-vpn;
@@ -156,11 +184,14 @@
       };
     };
 
-    # night-light.sh picks the temperature for the current hour. Hyprland runs
-    # it at login; this timer re-runs it when the hour crosses 07:00 or 20:00.
+    # night-light.sh picks the temperature for the current hour and sets it
+    # through wl-gammarelay-rs (modules/desktop.nix). It runs when the session
+    # starts; the timer re-runs it when the hour crosses 07:00 or 20:00.
     # Persistent catches a switch that was missed while suspended.
     services.night-light = {
       description = "Set screen temperature for the time of day";
+      wantedBy = ["graphical-session.target"];
+      after = ["wl-gammarelay-rs.service"];
       unitConfig.ConditionEnvironment = "WAYLAND_DISPLAY";
       path = with pkgs; [systemd gawk coreutils];
       serviceConfig = {

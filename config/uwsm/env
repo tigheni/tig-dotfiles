@@ -1,0 +1,6 @@
+# Sourced by UWSM before Hyprland starts and exported to the systemd user
+# manager, so session services (flameshot, KDE Connect) see it too. Variables
+# set with `env =` in config/hypr/configs/env.conf only reach Hyprland's own
+# children.
+export XCURSOR_THEME=Bibata-Modern-Classic
+export XCURSOR_SIZE=24

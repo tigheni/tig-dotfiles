@@ -1,6 +1,5 @@
 {
   pkgs,
-  pkgs-unstable,
   username,
   llm-agents,
   ...
@@ -27,10 +26,10 @@ in {
       eza
       dust
       lazydocker
+      lazygit
       pgcli
       nurl
       bun
-      qutebrowser
       google-chrome
       zotero
       btop
@@ -38,12 +37,10 @@ in {
       vscode
       wpsoffice
       wezterm
-      (flameshot.override {enableWlrSupport = true;})
       (import ./packages/spotify.nix {inherit pkgs;})
       (mpv.override {scripts = with mpvScripts; [mpris mpv-cheatsheet-ng memo];})
       nodejs_24
       pnpm
-      pkgs-unstable.code-cursor
       kdePackages.ghostwriter
       matugen
       libnotify
@@ -60,7 +57,6 @@ in {
       hyprpaper
       nautilus
       bibata-cursors
-      networkmanagerapplet
       pavucontrol
       # ArchEclipse shell (config/quickshell/archeclipse, scripts/archeclipse.sh)
       (import ./packages/quickshell.nix {inherit pkgs;})
@@ -79,7 +75,6 @@ in {
 
       bluez-tools
       obexftp
-      kdePackages.kdeconnect-kde
 
       # Tmux helpers
       tmux-sessions-fzf
