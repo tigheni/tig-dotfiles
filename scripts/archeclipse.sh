@@ -4,7 +4,7 @@
 #   archeclipse.sh restart       stop the running instance and start a fresh one
 #   archeclipse.sh toggle-bar    hide/show the bar on the focused monitor (Super+W)
 #   archeclipse.sh right-panel   open/close the right panel on the focused monitor (Super+D)
-#   archeclipse.sh search        open/close the launcher on the focused monitor (tap Super)
+#   archeclipse.sh search        open/close the launcher on the focused monitor (Super+/)
 #   archeclipse.sh clipboard     open/close the clipboard history popup (Super+Shift+V)
 #   archeclipse.sh record MODE   start/stop recording, MODE now|area (Super+Print, Super+Shift+Print)
 #   archeclipse.sh dismiss       hide the newest notification popup (Super+Q)

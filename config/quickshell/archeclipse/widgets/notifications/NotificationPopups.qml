@@ -18,6 +18,8 @@ Item {
     property real pillW: 0
     property real pillH: 0
     property bool topBar: true
+    // Hidden bar: toasts dock to the screen edge instead of under the (unmapped) pill.
+    property bool barVisible: true
     // Media pill stacking: when the bottom media pill is showing, toasts
     // dock below it instead of overlapping it.
     property bool mediaVisible: false
@@ -49,13 +51,13 @@ Item {
                 return root.osdY + root.osdH + 8;
             if (root.mediaVisible)
                 return root.mediaY + root.mediaH + 8;
-            return pillY + pillH + 8 + root.waveHang;
+            return root.barVisible ? pillY + pillH + 8 + root.waveHang : 8;
         }
         if (root.osdVisible)
             return root.osdY - height - 8;
         if (root.mediaVisible)
             return root.mediaY - height - 8;
-        return pillY - height - 8;
+        return root.barVisible ? pillY - height - 8 : (parent ? parent.height : 0) - height - 8;
     }
 
     // Grace keeps the pill mapped while the last card slides out.
