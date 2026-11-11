@@ -1,4 +1,4 @@
-# Voxtype is controlled by Hyprland's press/release bindings.
+# Voxtype is controlled by Hyprland's push-to-talk bindings (hold Super+V).
 state_file = "auto"
 
 [hotkey]

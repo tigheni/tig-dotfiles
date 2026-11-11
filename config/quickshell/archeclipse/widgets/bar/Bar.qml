@@ -51,7 +51,10 @@ PanelWindow {
     // the ~100ms resolve lag stole focus back from a freshly launched app. The wallpaper
     // picker grabs too, so Esc closes it without clicking into it first — except while its
     // zenity "Add" dialog is up: an exclusive layer blocks Hyprland from focusing that window.
-    WlrLayershell.keyboardFocus: (BarState.isOpenFor("search", root.monitorName) || (BarState.isOpenFor("wallpaper", root.monitorName) && !WallpaperService.filePickerOpen)) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+    // Otherwise OnDemand only while a panel with inputs is open: Hyprland hands an on-demand
+    // layer the keyboard when it maps or changes layer, so a toast alone stole window focus.
+    readonly property bool wantsKeyboard: ["left", "right", "weather", "control", "overview"].some(name => BarState.isOpenFor(name, root.monitorName))
+    WlrLayershell.keyboardFocus: (BarState.isOpenFor("search", root.monitorName) || (BarState.isOpenFor("wallpaper", root.monitorName) && !WallpaperService.filePickerOpen)) ? WlrKeyboardFocus.Exclusive : root.wantsKeyboard ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     // No reserved strip while a toast alone maps the window: windows must not shift for it.
     WlrLayershell.exclusiveZone: root.barVisible ? root.barHeight : 0
     // Toast breakthrough: while toasts are up the window jumps to the Overlay layer (above
